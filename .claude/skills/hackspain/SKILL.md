@@ -27,7 +27,9 @@ The feed and stack detection only see pushes to the **linked public repo**. Work
 2. **Never run anything interactive.** Bare `hackspain` opens a menu and `hackspain watch` is a full-screen TUI. Both need a real terminal. Tell the user to run them in their own terminal instead.
 3. **Login is the user's job.** `hackspain auth login` opens a browser to approve the device. On exit code `3`, ask the user to run `! hackspain auth login`.
 4. **Confirm before anything outward-facing.** Show the exact command and wait for a clear yes before running any command in the "Changes things" table below. Read-only commands can run freely.
-5. **`submit` without `--draft` is final.** Submitting freezes everything, so always save a `--draft` first and only do the real submit when the user explicitly says so.
+5. **There is only ONE submission, and agents never make it.** A final `submit` (anything without `--draft`) freezes the project for good, and `--json` skips the CLI's own confirmation. A repo hook (`.claude/hooks/guard_hackspain_submit.py`, wired in `.claude/settings.json`) blocks every agent-run `hackspain … submit` that lacks `--draft`.
+   - Don't try to route around the hook: no aliases, variables, scripts or the dashboard's submit button in the browser.
+   - Your job ends at a correct draft. Hand off by showing the draft and asking the user to run the final `hackspain submit` themselves.
 
 ## Step 1: Status check (read-only)
 
@@ -69,7 +71,7 @@ Summarize for the user in plain words: logged in yes/no, repo linked yes/no, sta
 | `milestone add firstCommit\|firstBuild\|firstDemo\|custom [--label …] [--at ISO]` | Record a team milestone. `custom` requires `--label`. |
 | `post "text" [--image file]` | **Public** post to the feed: 500 characters max; jpg, png, webp or gif image up to 5 MB |
 | `submit --draft …` | Save a draft; everything stays editable |
-| `submit …` (no `--draft`) | **Final submission. It freezes the project.** |
+| `submit …` (no `--draft`) | **Final, one-shot submission. It freezes the project. Agents never run it: the hook blocks it and the user runs it.** |
 | `profile edit …`, `profile notify on\|off`, `profile phone`, `profile github`, `profile x` | Edit the user's own profile |
 | `team code --regenerate` | Invalidate the current join code |
 | `team leave` / `team transfer [member]` / `team dissolve` | Leave the team / hand it over / delete it. **Almost never what we want; the owner cannot leave.** |
@@ -105,7 +107,7 @@ hackspain --json submit --draft --name "…" --description "…" \
   --repo https://github.com/luisgonzaleznf/hackspain-prosper-2026 \
   --video "<url>" --track prosper-ai
 ```
-Then check it with `hackspain --json project show`. For the final submit, run the same command without `--draft` and add `-y`, but only on an explicit "submit it" from the user.
+Check the draft with `hackspain --json project show`, show it to the user, and stop there. **The final submit is the user's to run.** They run `hackspain submit` in their own terminal, where the CLI walks through the form and asks for a final confirmation. Do this only once the whole team agrees it's the final version.
 
 **Post an update.** Draft the text, show it to the user, and post only after they approve. Keep it under 500 characters.
 
