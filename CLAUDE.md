@@ -4,7 +4,7 @@ You are building inside **hack-kit**: a private template repo cloned fresh for a
 
 Internalize the posture below. It overrides generic habits.
 
-> **This clone: HackSpain 2026, Prosper track ("Prosper Voice Wars").** The goal is a healthcare scheduling voice agent that stays robust to background noise and confused callers. The full brief, prizes and open questions are in [`HACKATHON.md`](./HACKATHON.md). Read it before `/brainstorm`, and pass it as the brainstorm input.
+> **This clone: HackSpain 2026, Prosper track ("Prosper Voice Wars").** We build an inbound voice agent that handles a clinic's scheduling calls. An automated leaderboard and a live jury both score it by calling our agent. The full brief, scoring and open questions are in [`HACKATHON.md`](./HACKATHON.md). Read it before `/brainstorm`, and pass it as the brainstorm input. **Where it conflicts with the posture below, `HACKATHON.md` wins.** In particular, the agent must be reachable at a live endpoint, so "local only, recorded demo is the deliverable" does not apply. For HackSpain platform actions (team, repo link, feed, milestones, submission), use the `/hackspain` skill.
 
 ## Posture (non-negotiable)
 
