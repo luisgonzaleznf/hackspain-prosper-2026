@@ -15,7 +15,7 @@ from websockets.asyncio.client import connect
 from websockets.asyncio.server import serve
 
 TWILIO_PORT = 8080
-REALTIME_URL = "wss://api.openai.com/v1/realtime?model=gpt-realtime"
+REALTIME_URL = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview"
 SESSION_CONFIG = {
     "type": "session.update",
     "session": {
