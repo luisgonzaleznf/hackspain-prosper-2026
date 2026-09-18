@@ -1,0 +1,51 @@
+# ── Secrets ─────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Python ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+
+# ── uv / virtualenvs ────────────────────────────────────────────────
+.venv/
+venv/
+env/
+# uv.lock is committed for reproducible installs — do not ignore it.
+
+# ── Tooling caches ──────────────────────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# ── Demo artifacts ──────────────────────────────────────────────────
+# Working captures and scratch recordings are ignored; commit only the
+# final cut you actually submit (force-add it):  git add -f demo/final.gif
+demo/*
+!demo/.gitkeep
+!demo/final.gif
+!demo/final.mp4
+
+# ── Node / Vite (only if you use the React UI recipe) ───────────────
+node_modules/
+web/dist/
+web/.vite/
+npm-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+
+# ── OS / editor noise ───────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
