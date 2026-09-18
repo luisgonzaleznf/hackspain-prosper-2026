@@ -4,6 +4,8 @@ You are building inside **hack-kit**: a private template repo cloned fresh for a
 
 Internalize the posture below. It overrides generic habits.
 
+> **This clone: HackSpain 2026, Prosper track ("Prosper Voice Wars").** The goal is a healthcare scheduling voice agent that stays robust to background noise and confused callers. The full brief, prizes and open questions are in [`HACKATHON.md`](./HACKATHON.md). Read it before `/brainstorm`, and pass it as the brainstorm input.
+
 ## Posture (non-negotiable)
 
 - **Build real, but ruthlessly scope to the demo.** The only thing that has to work flawlessly is the golden path the judges will see. Everything off that path is a stub. A feature that isn't in the recorded demo does not exist.
