@@ -1,4 +1,4 @@
-"""DIY voice spike: Twilio µ-law -> whisper-1 -> claude-3-5-sonnet -> tts-1 -> µ-law.
+"""DIY voice spike: Twilio µ-law -> whisper-1 -> gpt-5.6-luna -> tts-1 -> µ-law.
 
 The direction we picked (see notes/voice-stack.md). Sequential and blocking on
 purpose for this first pass: whole utterance in, whole reply out. Streaming,
@@ -13,12 +13,11 @@ import os
 import wave
 
 import audioop
-from anthropic import Anthropic
 from openai import OpenAI
 from websockets.asyncio.server import serve
 
 STT_MODEL = "whisper-1"
-LLM_MODEL = "claude-3-5-sonnet-20241022"
+LLM_MODEL = "gpt-5.6-luna"
 TTS_MODEL = "tts-1"
 
 SAMPLE_RATE = 8000
@@ -29,7 +28,6 @@ SILENCE_FRAMES_TO_FLUSH = 30  # ~600 ms of trailing silence ends the turn
 SYSTEM_PROMPT = "You are a clinic receptionist. Be brief and ask one question at a time."
 
 openai = OpenAI()
-anthropic = Anthropic()
 
 
 def pcm_to_wav(pcm: bytes) -> io.BytesIO:
@@ -50,13 +48,15 @@ def transcribe(pcm: bytes) -> str:
 
 def reply(user_text: str) -> str:
     # TODO: tool loop for lookups once we know which clinic endpoints matter
-    message = anthropic.messages.create(
+    result = openai.chat.completions.create(
         model=LLM_MODEL,
-        max_tokens=300,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_text}],
+        reasoning_effort="low",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_text},
+        ],
     )
-    return "".join(block.text for block in message.content if block.type == "text")
+    return result.choices[0].message.content or ""
 
 
 def speak(text: str) -> bytes:

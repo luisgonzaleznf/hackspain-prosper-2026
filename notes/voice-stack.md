@@ -31,13 +31,13 @@ Inbound phone call. Twilio sends us Media Streams over a WebSocket — `connecte
 
 Slept on it, ran quick numbers, decision made.
 
-**Chosen: Whisper → Claude → TTS, stitched by hand on the Twilio wire.** Models: `whisper-1` → `claude-3-5-sonnet-20241022` → `tts-1`. Spike: [`playground/luis/diy-voice-spike/`](../playground/luis/diy-voice-spike/).
+**Chosen: the DIY loop on cheap OpenAI tiers — `whisper-1` → `gpt-5.6-luna` (reasoning: low) → `tts-1`, stitched by hand on the Twilio wire.** Luna as the brain because the card maths only works on the cheap tiers ($0.2/M in, $1.2/M out at the time of writing) and `reasoning.effort: low` keeps the replies snappy. Spike: [`playground/luis/diy-voice-spike/`](../playground/luis/diy-voice-spike/).
 
 **Why not the realtime API:**
 
 - **Cost.** Audio tokens add up fast — our rough burst test (our setup, numbers not trustworthy, re-measuring) says a full scoring session would eat a scary chunk of the €100 card. The DIY path bills pennies per call.
 - **µ-law pain.** The API wants 16/24 kHz PCM; resampling 8 kHz phone audio both ways cost noticeable quality, and that's before any VAD tuning.
-- We do lose native function calling, but our tool needs are simple lookups — a plain JSON tool loop on Claude is fine.
+- We do lose native function calling, but our tool needs are simple lookups — a plain JSON tool loop on Luna is fine.
 
 **Why not pipecat:** parked. Its Twilio example gets you talking fast, but the abstractions hid exactly the wire-level details (framing, timing, turn-taking) that this challenge grades. On a two-day clock we'd rather own the loop than fight a framework's opinions about it.
 
