@@ -33,6 +33,7 @@ packages = ["lib"]
 target-version = "py312"
 line-length = 100
 src = ["lib", "app", "scripts", "tests"]
+extend-exclude = ["playground"]  # per-member scratch space, not app code
 
 [tool.ruff.lint]
 # Keep it pragmatic for hackathon speed, but catch real bugs.
