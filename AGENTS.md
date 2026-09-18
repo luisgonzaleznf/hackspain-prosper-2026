@@ -48,3 +48,14 @@ One persona per case, each isolating a single front-desk difficulty on top of or
 - Keep call state durable across mid-call changes of mind.
 - Log every decision so any agent utterance can be explained afterwards.
 - Prefer declining with the correct stated reason over making a wrong booking.
+
+## Hackathon mode
+
+2–3 day prototype: the working, convincing demo is the deliverable; production readiness is not.
+
+- **Scope.** Build the smallest end-to-end flow that proves the core idea. No unrequested features, config options, or flexibility for hypothetical futures. Existing stack, familiar libraries; new infrastructure only when the demo requires it. Plain code — duplication beats speculative abstraction. Never refactor unrelated code mid-feature.
+- **Polish.** Main demo flow readable, consistent, usable — then stop. No unsolicited improvement passes.
+- **Security.** Audits, compliance, permission systems: deferred unless requested. Basics stay: no committed secrets, no server credentials in client code, access controls stay enabled. Synthetic demo data; flag concrete risks (real data, public exposure, uncontrolled API spend) — never ignore them.
+- **Reliability.** Handle the failures that break the demo: missing input, failed external requests, loading and error states. Past that, no retry frameworks or fallback layers without demonstrated need. Focused tests on critical logic, no coverage targets; run available build/type checks and walk the demo flow. Never claim a check passed unrun — state what was actually run.
+- **Shortcuts.** Hardcoded config, seed data, manual setup: fine. Mock peripherals and name them; the core stays real — canned results in the core are failure. Note shortcuts in passing; never turn them into an unsolicited cleanup project.
+- **Stopping.** Simplest adequate approach; no relitigating settled decisions without new evidence. Blocked → cut scope before adding complexity. Done = requested behavior works, relevant checks pass, remaining limitations stated. Stop there.
