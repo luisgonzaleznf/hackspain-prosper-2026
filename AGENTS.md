@@ -1,7 +1,6 @@
 # HackSpain — Prosper Track 2026
 
-Repo: https://github.com/luisgonzaleznf/hackspain-prosper-2026-private
-Public mirror: https://github.com/luisgonzaleznf/hackspain-prosper-2026 — exists only for the HackSpain platform link; NEVER commit or push to it unless explicitly told.
+Repo: https://github.com/luisgonzaleznf/hackspain-prosper-2026
 
 ## What we are building
 
