@@ -51,3 +51,13 @@ Thumbs.db
 
 # Local agent session stubs (not part of the repo)
 .claude/
+
+# The subtree copies (leaderboard/, backend/) need the same protection as the root:
+# a pattern containing a slash is anchored to this directory, so docs/private-calls/
+# above does NOT cover leaderboard/docs/private-calls/.
+**/docs/private-calls/
+
+# ...but the agent's own prompt clips ARE code, not call recordings. *.wav above hides
+# them, and without them the voice layer has no nudges to play. They are tracked in the
+# private repo; keep them here too.
+!**/app/voice/clips/*.wav
