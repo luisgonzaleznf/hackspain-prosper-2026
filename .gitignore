@@ -3,6 +3,17 @@
 .env.*
 !.env.example
 
+# A HAR capture carries the live dashboard session cookie in plain text.
+*.har
+
+# Private call material: recordings, per-call logs and the call ledger never
+# belong in the public mirror. Patient data is the organisers' synthetic set,
+# but the private cases themselves are not ours to publish.
+*.wav
+*.opus
+logs/
+docs/private-calls/
+
 # Python
 __pycache__/
 *.py[cod]
