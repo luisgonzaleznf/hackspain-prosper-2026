@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prosper · Call review</title>
+  <link rel="stylesheet" href="/demo/app.css">
+  <style>
+    main { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
+    h1 { font-size: 40px; } audio { width: 100%; margin: 18px 0; }
+    .review-row { padding: 20px 0; border-bottom: 1px solid #293735; }
+    .review-row p { white-space: pre-wrap; line-height: 1.7; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
+    summary { cursor: pointer; } .review-meta { color: #9eaead; font-size: 13px; }
+    nav { display: flex; gap: 24px; flex-wrap: wrap; margin: 24px 0; }
+    a { color: #a8dfb0; } #call-id { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <main>
+    <a href="/demo/">← Role-play Studio</a>
+    <p class="eyebrow">Saved rehearsal</p>
+    <h1>Call review</h1>
+    <p id="call-id"></p>
+    <p id="status" role="status">Loading recording and trace…</p>
+    <audio id="recording" controls preload="metadata" hidden></audio>
+    <nav><a id="download-audio" hidden>Download recording</a><a id="download-trace">Download full JSONL trace</a></nav>
+    <p class="review-meta">Stereo recording: caller on the left, agent on the right. Expand tool calls to see the exact arguments and results. Times are seconds from the start of the call.</p>
+    <section id="timeline"></section>
+  </main>
+  <script type="module" src="/demo/review.js"></script>
+</body>
+</html>
