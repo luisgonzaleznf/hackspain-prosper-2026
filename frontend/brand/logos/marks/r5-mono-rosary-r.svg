@@ -1,0 +1,8 @@
+<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="-84.3 32.3 959.2 959.2">
+<g id="red-monogram" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path id="continuous-letter-stroke" d="m119.3 905.2v-725.7c0-47 31.8-81 81.2-81h238c118 0 203.8 75.8 203.8 187 0 109.3-79.5 182.8-204.1 182.8h-65.7c-49 0-86.6 6.6-110.9 23.8-12.2 8.6-19.9 19.5-17.1 28.3 4 15.2 37.3 33.1 71 51.7 56 30.9 99.7 61.4 141.2 93.6 50.8 50.4 87.6 102.2 130.2 159.9 30.6 41.5 60.5 79.1 84.4 99.8" stroke-width="67" />
+    <path id="upper-stem-node" d="m119.3 287.4h0.1" stroke-width="110" />
+    <path id="lower-stem-node" d="m119.3 749.5h0.1" stroke-width="110" />
+    <path id="diagonal-junction-node" d="m438.6 647.6h0.1" stroke-width="108" />
+  </g>
+</svg>

@@ -1,0 +1,47 @@
+<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="-110.4 -81.9 1187.8 1187.8">
+<path id="black-background" d="M0 0H967V1024H0Z" fill="var(--logo-bg, #000)"/>
+  <g id="oval-ring-of-burgundy-discs" fill="currentColor" stroke="currentColor" stroke-width="2">
+    <ellipse id="top-disc" cx="483.7" cy="118.9" rx="55" ry="55.5"/>
+    <ellipse id="upper-left-disc-1" cx="362.7" cy="143.5" rx="52.2" ry="52.4"/>
+    <ellipse id="upper-left-disc-2" cx="255.8" cy="202.1" rx="51.9" ry="52.1"/>
+    <ellipse id="upper-left-disc-3" cx="177.2" cy="292" rx="51.8" ry="52.1"/>
+    <ellipse id="left-disc-1" cx="129.4" cy="401.8" rx="51.8" ry="52.1"/>
+    <ellipse id="left-disc-2" cx="116.6" cy="518.1" rx="51.9" ry="52"/>
+    <ellipse id="left-disc-3" cx="138.9" cy="632.7" rx="51.9" ry="52.1"/>
+    <ellipse id="lower-left-disc-1" cx="197.8" cy="732.2" rx="51.7" ry="52.1"/>
+    <ellipse id="lower-left-disc-2" cx="283.5" cy="805.8" rx="46.6" ry="46.8"/>
+    <ellipse id="lower-left-small-disc" cx="366.4" cy="856.1" rx="41.1" ry="41.4"/>
+    <ellipse id="bottom-large-disc" cx="483.6" cy="882.6" rx="74.1" ry="76.7"/>
+    <ellipse id="lower-right-small-disc" cx="600.6" cy="856.1" rx="41" ry="41.3"/>
+    <ellipse id="lower-right-disc-2" cx="684" cy="805.8" rx="46.5" ry="46.8"/>
+    <ellipse id="lower-right-disc-1" cx="769.5" cy="732.1" rx="51.8" ry="52"/>
+    <ellipse id="right-disc-3" cx="828.8" cy="632.8" rx="51.9" ry="52.1"/>
+    <ellipse id="right-disc-2" cx="850.8" cy="518.1" rx="52" ry="52"/>
+    <ellipse id="right-disc-1" cx="838.1" cy="401.8" rx="51.9" ry="52.1"/>
+    <ellipse id="upper-right-disc-3" cx="790.1" cy="292" rx="51.9" ry="52.1"/>
+    <ellipse id="upper-right-disc-2" cx="711.6" cy="202.1" rx="51.9" ry="52.1"/>
+    <ellipse id="upper-right-disc-1" cx="604.7" cy="143.5" rx="51.9" ry="52.3"/>
+  </g>
+  <g id="subtle-disc-surface-shading" fill="currentColor">
+    <ellipse cx="483.7" cy="118.9" rx="54" ry="54.5"/>
+    <ellipse cx="362.7" cy="143.5" rx="51.2" ry="51.4"/>
+    <ellipse cx="255.8" cy="202.1" rx="50.9" ry="51.1"/>
+    <ellipse cx="177.2" cy="292" rx="50.8" ry="51.1"/>
+    <ellipse cx="129.4" cy="401.8" rx="50.8" ry="51.1"/>
+    <ellipse cx="116.6" cy="518.1" rx="50.9" ry="51"/>
+    <ellipse cx="138.9" cy="632.7" rx="50.9" ry="51.1"/>
+    <ellipse cx="197.8" cy="732.2" rx="50.7" ry="51.1"/>
+    <ellipse cx="283.5" cy="805.8" rx="45.6" ry="45.8"/>
+    <ellipse cx="366.4" cy="856.1" rx="40.1" ry="40.4"/>
+    <ellipse cx="483.6" cy="882.6" rx="73.1" ry="75.7"/>
+    <ellipse cx="600.6" cy="856.1" rx="40" ry="40.3"/>
+    <ellipse cx="684" cy="805.8" rx="45.5" ry="45.8"/>
+    <ellipse cx="769.5" cy="732.1" rx="50.8" ry="51"/>
+    <ellipse cx="828.8" cy="632.8" rx="50.9" ry="51.1"/>
+    <ellipse cx="850.8" cy="518.1" rx="51" ry="51"/>
+    <ellipse cx="838.1" cy="401.8" rx="50.9" ry="51.1"/>
+    <ellipse cx="790.1" cy="292" rx="50.9" ry="51.1"/>
+    <ellipse cx="711.6" cy="202.1" rx="50.9" ry="51.1"/>
+    <ellipse cx="604.7" cy="143.5" rx="50.9" ry="51.3"/>
+  </g>
+</svg>

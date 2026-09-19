@@ -1,0 +1,25 @@
+# Round 4 on arrow-2-telos: riskier concepts. Monoline first (Nava's mark language), then bolder ideas.
+mono-knot-rose|Logo mark drawn as one continuous monoline stroke with rounded ends, uniform thickness, like a knot: the line loops three times to suggest a rose bud and exits as a stem. Single stroke rendered as a filled path. No text.
+mono-cord-rose|Logo mark in monoline: a coiled telephone cord spiral whose coils tighten into a rose bud at the top. Uniform stroke, rounded terminals. No text.
+mono-wave-loop|Logo mark in monoline: a sound wave drawn as one line that curls into a closed rose spiral and comes back out. Uniform stroke, rounded terminals, geometric. No text.
+mono-double-ring|Logo mark in monoline: two interlocking rounded loops like links of a chain, one loop carrying three small petal bumps so the pair reads as a rose and a phone handset. Uniform stroke. No text.
+mono-thorn-stem|Logo mark in monoline: a single vertical stem with two thorns, ending in a small closed spiral bud, the stem bending like a phone handset cradle. Uniform stroke, rounded ends. No text.
+fingerprint-rose|Logo mark: a fingerprint whose ridges form a rose seen from above, concentric irregular arcs with gaps. Flat single color, no strokes. No text.
+keypad-rose|Logo mark: a phone keypad grid of twelve round dots where the dots vary in size so the grid reads as a rose seen from above. Flat circles only. No text.
+clock-rose|Logo mark: a clock face where the twelve hour marks are petals pointing inward and the two hands form a stem and a leaf. Flat geometric shapes. No text.
+calendar-rose|Logo mark: a rounded square calendar tile with a small tab at the top, and the date area filled by a bold geometric rose. Flat shapes, one color. No text.
+bell-rose|Logo mark: a reception desk call bell whose dome is a rose bud spiral. Bold flat silhouette, one color. No text.
+ellipsis-rose|Logo mark: a speech bubble containing three dots where the middle dot is a small rose spiral. Bold flat silhouette. No text.
+venn-rose|Logo mark: five circles overlapping around a center so the overlaps form a five-petal rose, with only the overlap regions filled. Precise geometry. No text.
+slit-disc|Logo mark: a perfect solid disc with three curved slits cut out that read as a rose bud from above, radically minimal. One color. No text.
+square-rose|Logo mark: a rose constructed inside a square using only quarter circles and straight cuts, brutalist geometric, flat single color. No text.
+isometric-rose|Logo mark: a rose bud built from isometric cubes and rhombi, low-poly geometric, flat single color with black gaps. No text.
+pixel-rose|Logo mark: a rose in a coarse pixel grid of rounded squares, eight by eight, flat single color. No text.
+moire-rose|Logo mark: a rose made of concentric circles that are offset from one another so the rings crowd on one side, reading as petals. Thin flat rings, one color. No text.
+half-rose-dial|Logo mark: the left half is a rotary dial with five finger holes, the right half is five smooth rose petals; the two halves join along a vertical seam into one circle. Flat one color. No text.
+petal-handset|Logo mark: a classic telephone handset silhouette whose earpiece and mouthpiece are each a single rose petal. Bold, minimal, one color. No text.
+rose-r-negative|Logo mark: a bold square tile with a rose spiral cut out of it in negative space, the cut also reading as the letter R. One color. No text.
+orbit-rose|Logo mark: a small solid rose bud in the center with three thin elliptical orbits around it at different angles, like an atom. One color, flat. No text.
+stamp-rose|Logo mark: a circular postage-stamp style emblem with a scalloped edge and a bold rose bud in the center, no text anywhere. Flat one color.
+wave-petals|Logo mark: five petals arranged around a center where each petal is drawn as a stack of three sound-wave bars of decreasing length. Flat one color. No text.
+knot-r|Monogram of the letter R drawn in monoline as one continuous rounded stroke, where the bowl of the R is a small rose spiral. Single letter, uniform stroke, no other text.

@@ -1,0 +1,15 @@
+# Round 1: broad creative sweep on arrow-2. One "<slug>|<prompt>" per line.
+# Theme: ROSARIO = rose (rosa) and rosary (a loop of beads). A clinic receptionist
+# that answers calls: beads as turns in a conversation, petals as sound waves.
+rose-topdown|Logo mark: a single geometric rose seen from above, five or six overlapping petal shapes built from a few clean curved paths. Pictorial mark only, no text.
+rose-one-stroke|Logo mark: a rose drawn as one continuous spiral line that also reads as a fingerprint or a sound wave. Single thick uniform stroke rendered as a filled path. No text.
+rose-soundwave|Logo mark: a rose whose petals are concentric arcs like a sound wave or radio signal radiating from the center. Bold flat shapes. No text.
+rosary-loop|Logo mark: a rosary, a closed loop of small round beads forming a circle, with a slightly larger bead at the bottom in place of a cross. The loop suggests an endless conversation. No text.
+rosary-r|Minimalist monogram of the letter R built from a string of round beads, like a rosary laid out as a letterform. Single letter, no other text.
+monogram-r-rose|Minimalist monogram of the letter R whose bowl spirals inward into a rose. Sharp vector paths, bold geometric letter. Single letter, no other text.
+dial-rose|Logo mark: a rotary telephone dial reimagined as a rose, the finger holes arranged as petals around the center. Flat geometric shapes. No text.
+handset-rose|Logo mark: a classic telephone handset whose earpiece blooms into a stylized rose. Bold flat silhouette. No text.
+bubble-rose|Logo mark: a speech bubble whose interior is a geometric rose spiral. Bold flat silhouette. No text.
+rose-window|Logo mark: a gothic rose window (rosette) simplified to a radial geometric pattern of twelve petals inside a thin circle, like a dial. Flat shapes. No text.
+petal-waveform|Logo mark: a horizontal audio waveform whose bars curve into the silhouette of a rose bud on a stem. Flat shapes. No text.
+wordmark-rosario|Wordmark logo: the text ROSARIO in bold geometric uppercase sans-serif, evenly letterspaced, where the O letters are drawn as rose spirals. Wide horizontal logo, single color.

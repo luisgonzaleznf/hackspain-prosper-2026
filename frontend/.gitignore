@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+fonts/*.zip
+agent-browser.json
+research/screens/
+*.png.bak
+.recordings/

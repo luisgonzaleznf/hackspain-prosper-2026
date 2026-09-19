@@ -1,0 +1,12 @@
+<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="2.7 13.2 997.6 997.6">
+<g id="nested-red-elliptical-rings" fill="none" stroke="currentColor" stroke-width="18.5">
+    <ellipse id="outer-ring" cx="501.5" cy="512" rx="417.5" ry="430"/>
+    <ellipse id="second-ring" cx="465" cy="534" rx="371" ry="384"/>
+    <ellipse id="third-ring" cx="430" cy="554" rx="328" ry="338"/>
+    <ellipse id="fourth-ring" cx="399" cy="574" rx="286" ry="296"/>
+    <ellipse id="fifth-ring" cx="368" cy="590.5" rx="249" ry="253.5"/>
+    <ellipse id="sixth-ring" cx="342" cy="609" rx="214" ry="217"/>
+    <ellipse id="seventh-ring" cx="315" cy="626" rx="181" ry="181"/>
+    <ellipse id="innermost-ring" cx="289.5" cy="646" rx="145.5" ry="146"/>
+  </g>
+</svg>

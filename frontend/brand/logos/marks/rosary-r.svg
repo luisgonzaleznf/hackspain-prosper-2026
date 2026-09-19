@@ -1,0 +1,41 @@
+<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="-114.5 2.3 1020.3 1020.3">
+<g id="dotted-letter-R" fill="currentColor" stroke="currentColor" stroke-width="2">
+    <g id="vertical-stem">
+      <circle cx="105.6" cy="104.5" r="31.8"/>
+      <circle cx="105.8" cy="181.1" r="31.8"/>
+      <circle cx="105.6" cy="258.4" r="31.8"/>
+      <circle cx="105.6" cy="337.2" r="31.8"/>
+      <circle cx="105.5" cy="414.7" r="31.8"/>
+      <circle cx="105.6" cy="493.4" r="31.8"/>
+      <circle cx="105.5" cy="571.9" r="31.8"/>
+      <circle cx="105.5" cy="650.1" r="31.8"/>
+      <circle cx="105.5" cy="728.6" r="31.8"/>
+      <circle cx="105.5" cy="807" r="31.8"/>
+      <circle cx="105.6" cy="885.4" r="31.8"/>
+    </g>
+    <g id="upper-bowl">
+      <circle cx="188.7" cy="104.5" r="31.8"/>
+      <circle cx="271.6" cy="104.5" r="31.8"/>
+      <circle cx="353.8" cy="104.5" r="31.8"/>
+      <circle cx="436.2" cy="104.5" r="31.8"/>
+      <circle cx="512.7" cy="132.4" r="31.8"/>
+      <circle cx="573.7" cy="184.1" r="31.8"/>
+      <circle cx="605.2" cy="258" r="31.8"/>
+      <circle cx="605.2" cy="337.3" r="31.8"/>
+      <circle cx="573" cy="411" r="31.8"/>
+      <circle cx="512.1" cy="464.1" r="31.8"/>
+      <circle cx="435.4" cy="492.7" r="31.8"/>
+      <circle cx="352.1" cy="496" r="31.8"/>
+      <circle cx="269.6" cy="495.8" r="31.8"/>
+      <circle cx="186.4" cy="496.1" r="31.8"/>
+    </g>
+    <g id="descending-diagonal-leg">
+      <circle cx="417.4" cy="564.8" r="31.8"/>
+      <circle cx="468.1" cy="623.1" r="31.8"/>
+      <circle cx="513.2" cy="689.1" r="31.8"/>
+      <circle cx="559.5" cy="753.6" r="31.8"/>
+      <circle cx="605.3" cy="818.3" r="31.8"/>
+      <circle id="enlarged-terminal-dot" cx="663" cy="897.7" r="54.6" fill="currentColor"/>
+    </g>
+  </g>
+</svg>

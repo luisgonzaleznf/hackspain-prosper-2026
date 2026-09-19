@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="988" height="1024" viewBox="0 0 988 1024">
+<!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
+  <defs>
+    <linearGradient id="burgundyFill" y2="1">
+      <stop stop-color="#791333" offset="0"/>
+      <stop stop-color="#7e1437" offset=".55"/>
+      <stop stop-color="#84163d" offset="1"/>
+    </linearGradient>
+  </defs>
+  <rect id="blackBackground" width="988" height="1024"/>
+  <g id="graduatedOvalOfBurgundyDots" fill="url(#burgundyFill)" stroke="#921c47" stroke-opacity=".65" stroke-width="2">
+    <ellipse id="topDot" cx="494.3" cy="75.9" rx="15.4" ry="16.1"/>
+    <ellipse id="upperLeftDot01" cx="440.2" cy="84.1" rx="13.8" ry="14.2"/>
+    <ellipse id="upperLeftDot02" cx="390.5" cy="99.7" rx="15.8" ry="15.8"/>
+    <ellipse id="upperLeftDot03" cx="337.3" cy="123.1" rx="18.9" ry="19"/>
+    <ellipse id="upperLeftDot04" cx="280.7" cy="157.3" rx="23.6" ry="23.4"/>
+    <ellipse id="upperLeftDot05" cx="223" cy="203.8" rx="26.5" ry="26.4"/>
+    <ellipse id="upperLeftDot06" cx="171.6" cy="266.8" rx="30.2" ry="30.3"/>
+    <ellipse id="upperLeftDot07" cx="130.8" cy="343.6" rx="33.5" ry="33.4"/>
+    <ellipse id="upperLeftDot08" cx="106.6" cy="431" rx="35.8" ry="35.6"/>
+    <ellipse id="leftMiddleDot" cx="99.6" cy="525.2" rx="38.4" ry="38.2"/>
+    <ellipse id="lowerLeftDot01" cx="114.6" cy="621.9" rx="40.1" ry="39.6"/>
+    <ellipse id="lowerLeftDot02" cx="153" cy="713.9" rx="41" ry="40.8"/>
+    <ellipse id="lowerLeftDot03" cx="216.3" cy="789.7" rx="42.4" ry="41.8"/>
+    <ellipse id="lowerLeftDot04" cx="295.6" cy="846" rx="44" ry="44"/>
+    <ellipse id="lowerLeftDot05" transform="rotate(13 382.7 880.6)" cx="382.7" cy="880.6" rx="40.9" ry="44.4"/>
+    <ellipse id="bottomFocalDot" cx="494.2" cy="895.4" rx="64.1" ry="68.8"/>
+    <ellipse id="lowerRightDot05" transform="rotate(-14 606.3 880.6)" cx="606.3" cy="880.6" rx="40.2" ry="44.5"/>
+    <ellipse id="lowerRightDot04" cx="692.7" cy="846" rx="44.1" ry="44"/>
+    <ellipse id="lowerRightDot03" cx="772.2" cy="789.7" rx="42.5" ry="41.8"/>
+    <ellipse id="lowerRightDot02" cx="835.2" cy="713.8" rx="41.1" ry="40.8"/>
+    <ellipse id="lowerRightDot01" cx="873.5" cy="621.8" rx="40.2" ry="39.6"/>
+    <ellipse id="rightMiddleDot" cx="888.6" cy="525.2" rx="38.3" ry="38.2"/>
+    <ellipse id="upperRightDot08" cx="881.7" cy="431.1" rx="35.7" ry="35.6"/>
+    <ellipse id="upperRightDot07" cx="857.4" cy="343.6" rx="33.5" ry="33.4"/>
+    <ellipse id="upperRightDot06" cx="816.9" cy="266.9" rx="30.2" ry="30.2"/>
+    <ellipse id="upperRightDot05" cx="765.4" cy="203.8" rx="26.5" ry="26.4"/>
+    <ellipse id="upperRightDot04" cx="708" cy="157.3" rx="23.4" ry="23.4"/>
+    <ellipse id="upperRightDot03" cx="651.8" cy="123.1" rx="18.9" ry="19"/>
+    <ellipse id="upperRightDot02" cx="599.1" cy="99.7" rx="15.8" ry="15.8"/>
+    <ellipse id="upperRightDot01" cx="549.5" cy="84.1" rx="13.7" ry="14.2"/>
+  </g>
+</svg>

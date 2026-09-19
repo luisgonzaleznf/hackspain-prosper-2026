@@ -1,0 +1,163 @@
+/* ROSARIO design tokens. The only file where raw color and font values live.
+ * Source: frontend/DESIGN.md (Galileo-ft style reference recolored to Nava,
+ * supplied by Marcos). Names follow that document. */
+
+/* Plain (Optimo) as the document specifies. Files fetched per the design brief;
+ * Plain is a commercial typeface: license it before anything ships publicly. */
+@font-face { font-family: "Plain"; src: url("../fonts/plain/plain-hairline.woff2") format("woff2"); font-weight: 100; font-display: swap; }
+@font-face { font-family: "Plain"; src: url("../fonts/plain/plain-thin.woff2") format("woff2"); font-weight: 200; font-display: swap; }
+@font-face { font-family: "Plain"; src: url("../fonts/plain/plain-light.woff2") format("woff2"); font-weight: 300; font-display: swap; }
+@font-face { font-family: "Plain"; src: url("../fonts/plain/plain-regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Plain"; src: url("../fonts/plain/plain-medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Iosevka Fixed"; src: url("../fonts/iosevka-fixed-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Iosevka Fixed"; src: url("../fonts/iosevka-fixed-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Iosevka Fixed"; src: url("../fonts/iosevka-fixed-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+
+:root {
+  color-scheme: dark;
+
+  /* Colors, verbatim from DESIGN.md */
+  --color-nava-black: #000000;
+  --color-obsidian-burgundy: #14090a;
+  --color-inkline-crimson: #2d1012;
+  --color-ash-rose: #d4a5a5;
+  --color-muted-coral: #a86d70;
+  --color-dusk-maroon: #5e1f25;
+  --color-nava-white: #fefefe;
+  --color-pure-white: #ffffff;
+  --color-nava-red: #fe0600;
+  --color-nava-fire: #bc0400;
+  --color-ember-glow: #e62800;
+  --gradient-fire-red: linear-gradient(90deg, #bc0400 0%, #fe0600 100%);
+  --gradient-maroon-fire: linear-gradient(90deg, #5e1f25 0%, #bc0400 100%);
+
+  /* Roles (Agent Prompt Guide). Marcos's override on 19 Sep: the page canvas is
+   * Inkline Crimson, not black. Cards step DOWN to Obsidian Burgundy, hairlines
+   * step UP to Dusk Maroon so the two-step depth rule still holds. Black stays
+   * available as --canvas-deep for the darkest plates. */
+  --bg: var(--color-inkline-crimson);
+  --canvas-deep: var(--color-nava-black);
+  --surface-1: var(--color-obsidian-burgundy);
+  --surface-light: var(--color-pure-white);
+  --fg: var(--color-pure-white);
+  --fg-2: var(--color-ash-rose);
+  --fg-3: #bb8688;              /* AA for small metadata, including row hover surfaces */
+  --fg-on-light: var(--color-obsidian-burgundy);
+  --line-1: var(--color-dusk-maroon);
+  --line-2: var(--color-muted-coral);
+  --accent: var(--color-nava-fire);
+  --accent-ink: var(--color-nava-red);
+  /* Filled controls use Nava Fire: white on Nava Red is 4.0:1, below AA for 16px text;
+   * white on Nava Fire is 6.6:1. Nava Red stays the ink for the brand signal and active states. */
+  --primary: var(--color-nava-fire);
+  --primary-hover: #a80300;      /* darker fire; white on it 7.6:1 */
+  --primary-fg: var(--color-pure-white);
+  --focus: var(--color-pure-white);
+  --fill-hover: #ffffff14;      /* white 8%: ghost control hover */
+  --fill-chip: #ffffff0a;       /* white 4%: mono chips, code blocks */
+  --fill-row-live: #0a0405;     /* between canvas-deep and surface-1: the row whose agent is speaking */
+  --chat-caller-bg: var(--color-dusk-maroon);
+  --scrim: #000000a6;           /* white-on-black overlay behind a sheet on narrow screens */
+  --lane-caller: var(--color-ash-rose);
+  --lane-agent: var(--color-nava-red);
+  --marker-decision: var(--color-pure-white);
+  --marker-submit: var(--color-nava-red);
+  --chart-1: var(--color-nava-red);
+  --chart-2: var(--color-ash-rose);
+  --chart-3: var(--color-muted-coral);
+  --chart-grid: var(--color-dusk-maroon);
+  /* Orb color ramp (black -> dark -> light -> white), read by the shader */
+  --orb-dark: var(--color-nava-fire);
+  --orb-light: var(--color-ember-glow);
+  /* Timeline event lanes */
+  --event-lookup: var(--color-ash-rose);
+  --event-availability: var(--color-pure-white);
+  --event-write: var(--color-nava-red);
+  --event-refusal: var(--color-nava-red);
+  --event-submit: var(--color-nava-red);
+
+  /* Type: Plain for everything; Iosevka Fixed (OFL, no ligatures) only for machine text. */
+  --font-plain: "Plain", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-plain);
+  --font-mono: "Iosevka Fixed", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-weight-thin: 100;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+
+  --text-eyebrow: 10px;      --leading-eyebrow: 1.2;   --tracking-eyebrow: 2.5px;
+  --text-caption: 12px;      --leading-caption: 1.5;
+  --text-body: 16px;         --leading-body: 1.3;      --leading-body-spacious: 1.8;
+  --text-subheading: 28px;   --leading-subheading: 1.3; --tracking-subheading: -0.56px;
+  --text-heading-sm: 42px;   --leading-heading-sm: 1.1; --tracking-heading-sm: -0.84px;
+  --text-heading: 56px;      --leading-heading: 1.1;   --tracking-heading: -1.12px;
+  --text-heading-lg: 83px;   --leading-heading-lg: 1;  --tracking-heading-lg: -1.66px;
+  --text-display: 147px;     --leading-display: 0.8;   --tracking-display: -2.94px;
+
+  /* Spacing */
+  --spacing-unit: 4px;
+  --spacing-4: 4px; --spacing-9: 9px; --spacing-16: 16px; --spacing-20: 20px; --spacing-32: 32px;
+  --spacing-52: 52px; --spacing-64: 64px; --spacing-104: 104px; --spacing-196: 196px;
+
+  /* Layout */
+  --page-max-width: 1200px;
+  --section-gap: 64px;
+  --card-padding: 32px;
+  --element-gap: 9px;
+  --gutter: clamp(32px, 4vw, 64px);
+
+  /* Radius */
+  --radius-skeleton: 4px;
+  --radius-tags: 17px;
+  --radius-cards: 35px;
+  --radius-inputs: 35px;
+  --radius-buttons: 48px;
+  --radius-band: 360px;
+
+  /* Canvas texture and soft brand washes (DESIGN.md, atmosphere). */
+  --texture-dots: radial-gradient(circle at 1px 1px, #5e1f2559 1px, transparent 1.6px);
+  --texture-dots-size: 28px 28px;
+  --wash-ember: radial-gradient(closest-side, #e6280024, #e6280000);
+  --wash-maroon: radial-gradient(closest-side, #5e1f2538, #5e1f2500);
+
+  /* Short feedback, longer spatial movement. All timings collapse below. */
+  --ease: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-state: 150ms; --dur-popover: 200ms; --dur-overlay: 300ms;
+  --dur-nav: 350ms; --dur-theme: 500ms; --dur-reveal: 350ms;
+}
+
+/* Warm paper keeps the clinic's burgundy/red identity in daylight. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f7f3ef;
+  --canvas-deep: #e8dfe0;
+  --surface-1: #ffffff;
+  --fg: #2d1012;
+  --fg-2: #62464b;
+  --fg-3: #75565a;
+  --line-1: #ddced0;
+  --line-2: #96767b;
+  --accent-ink: var(--color-nava-fire);
+  --focus: var(--color-inkline-crimson);
+  --fill-hover: #2d10120a;
+  --fill-chip: #2d101206;
+  --fill-row-live: #ede5e2;
+  --chat-caller-bg: #e4c9cd;
+  --lane-caller: #976b73;
+  --lane-agent: var(--color-nava-fire);
+  --marker-decision: var(--color-inkline-crimson);
+  --marker-submit: var(--color-nava-fire);
+  --chart-1: var(--color-nava-fire);
+  --chart-2: #976b73;
+  --chart-3: #75565a;
+  --chart-grid: #ddced0;
+  --event-lookup: #62464b;
+  --event-availability: var(--color-inkline-crimson);
+  --event-write: var(--color-nava-fire);
+  --event-refusal: var(--color-nava-fire);
+  --event-submit: var(--color-nava-fire);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-state: 0ms; --dur-popover: 0ms; --dur-overlay: 0ms; --dur-nav: 0ms; --dur-theme: 0ms; --dur-reveal: 0ms; }
+}

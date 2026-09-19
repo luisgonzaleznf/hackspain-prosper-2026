@@ -1,0 +1,238 @@
+import { ChevronLeft, ChevronRight, ArrowUpRight, CalendarDays, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router";
+import { ScreenHeader } from "@/app";
+import { ProgressStrip } from "@/components/loading";
+import { calendarDay, schedulingRecords, type SchedulingRecord } from "@/lib/calendar";
+import { maskPhone, slotLabel, wallClock } from "@/lib/format";
+import { loadDetail, refreshNow, useCallsIndex } from "@/lib/store";
+import type { CallDetail } from "@/lib/types";
+import "./calendar.css";
+
+const monthFormat = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", month: "long", year: "numeric" });
+const dayFormat = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" });
+const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const actionLabels = { BOOK: "Booking reported", RESCHEDULE: "Reschedule reported", CANCEL: "Cancellation reported" };
+
+function monthDays(month: string): string[] {
+  const first = new Date(`${month}-01T12:00:00Z`);
+  const offset = (first.getUTCDay() + 6) % 7;
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(first);
+    date.setUTCDate(index - offset + 1);
+    return date.toISOString().slice(0, 10);
+  });
+}
+
+export function CalendarScreen() {
+  const { calls, byId, loading, error } = useCallsIndex();
+  const today = calendarDay(new Date());
+  const [month, setMonth] = useState(today.slice(0, 7));
+  const [selectedDay, setSelectedDay] = useState(today);
+  const initialized = useRef(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshInFlight = useRef(false);
+  const mounted = useRef(false);
+  const latest = useRef({ calls, byId });
+  latest.current = { calls, byId };
+  const detailQueue = useRef(Promise.resolve());
+  const callIdsKey = useMemo(() => JSON.stringify(calls.map((call) => call.call_id)), [calls]);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  const loadRecords = useCallback((retryFailed: boolean, cancelled: () => boolean) => {
+    const task = detailQueue.current.then(async () => {
+      if (cancelled()) return;
+      const ids = latest.current.calls.filter((call) => {
+        const record = latest.current.byId[call.call_id];
+        return (!record?.detail && !record?.detailError) || (retryFailed && Boolean(record?.detailError));
+      }).sort((a, b) => Number(Object.hasOwn(actionLabels, b.action)) - Number(Object.hasOwn(actionLabels, a.action))).map((call) => call.call_id);
+      for (let offset = 0; offset < ids.length; offset += 4) {
+        if (cancelled()) return;
+        await Promise.all(ids.slice(offset, offset + 4).map((id) => loadDetail(id, retryFailed)));
+      }
+    });
+    detailQueue.current = task;
+    return task;
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadRecords(false, () => cancelled);
+    return () => { cancelled = true; };
+  }, [callIdsKey, loadRecords]);
+
+  const { records, failed, pending, loaded } = useMemo(() => {
+    let loaded = 0;
+    const details: CallDetail[] = [];
+    let failed = 0;
+    let pending = 0;
+    for (const call of calls) {
+      const record = byId[call.call_id];
+      if (record?.detail) details.push(record.detail);
+      if (record?.detailError) failed += 1;
+      else if (record?.detail) loaded += 1;
+      else pending += 1;
+    }
+    return { records: schedulingRecords(details), failed, pending, loaded };
+  }, [calls, byId]);
+
+  const { byDay, undated } = useMemo(() => {
+    const byDay: Record<string, SchedulingRecord[]> = {};
+    const undated: SchedulingRecord[] = [];
+    for (const record of records) {
+      if (record.day) (byDay[record.day] ??= []).push(record);
+      else undated.push(record);
+    }
+    return { byDay, undated };
+  }, [records]);
+
+  useEffect(() => {
+    if (initialized.current || loading || calls.length === 0) return;
+    const dates = Object.keys(byDay).sort();
+    const current = dates.find((day) => day.startsWith(today.slice(0, 7)));
+    const chosen = byDay[today] ? today : current ?? dates.find((day) => day >= today) ?? dates.at(-1);
+    if (!chosen) return;
+    initialized.current = true;
+    setMonth(chosen.slice(0, 7));
+    setSelectedDay(chosen);
+  }, [byDay, calls.length, loading, today]);
+
+  const days = useMemo(() => monthDays(month), [month]);
+  const monthRecords = records.filter((record) => record.day?.startsWith(month));
+  const agenda = byDay[selectedDay] ?? [];
+  const monthTitle = monthFormat.format(new Date(`${month}-01T12:00:00Z`));
+  const selectedTitle = dayFormat.format(new Date(`${selectedDay}T12:00:00Z`));
+  const loadingRecords = loading || pending > 0 || refreshing;
+  const incomplete = loadingRecords || failed > 0 || Boolean(error);
+
+  function reportCount(count: number) {
+    if (incomplete && count === 0) return loadingRecords ? "Reports loading" : "Reports incomplete";
+    return `${count} ${count === 1 ? "report" : "reports"}${incomplete ? "+" : ""}`;
+  }
+
+  function changeMonth(direction: number) {
+    initialized.current = true;
+    const date = new Date(`${month}-01T12:00:00Z`);
+    date.setUTCMonth(date.getUTCMonth() + direction);
+    const next = date.toISOString().slice(0, 7);
+    setMonth(next);
+    setSelectedDay(Object.keys(byDay).sort().find((day) => day.startsWith(next)) ?? `${next}-01`);
+  }
+
+  function selectDay(day: string) {
+    initialized.current = true;
+    setSelectedDay(day);
+    setMonth(day.slice(0, 7));
+  }
+
+  async function refresh() {
+    if (refreshInFlight.current) return;
+    refreshInFlight.current = true;
+    setRefreshing(true);
+    try {
+      await refreshNow();
+      if (!mounted.current) return;
+      await loadRecords(true, () => !mounted.current);
+    } finally {
+      refreshInFlight.current = false;
+      if (mounted.current) setRefreshing(false);
+    }
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <ScreenHeader title="Calendar" action={
+        <button type="button" className="pill pill-ghost calendar-refresh" onClick={refresh} disabled={refreshing} aria-busy={refreshing}><RefreshCw size={14} aria-hidden="true" />{refreshing ? "Refreshing…" : "Refresh"}</button>
+      } />
+      <div className="scroll-y calendar-scroll flex-1 px-4 pb-24 pt-5 md:px-8 md:pb-8">
+        <div className="measure">
+          <section className="calendar-source" aria-labelledby="calendar-source-title">
+            <CalendarDays size={20} strokeWidth={1.5} aria-hidden="true" />
+            <div>
+              <h2 id="calendar-source-title">Call reports · Read-only clinic</h2>
+              <p>Reports include practice calls and do not change the clinic diary.</p>
+            </div>
+          </section>
+
+          <div className="calendar-loading">
+            {loadingRecords && calls.length > 0 ? <ProgressStrip label={refreshing ? "Refreshing reports" : "Reading calls"} value={loaded + failed} max={calls.length} /> : <p className="calendar-status" role="status">{loadingRecords ? "Loading calls…" : `${records.length} accepted ${records.length === 1 ? "report" : "reports"}${incomplete ? " · Incomplete" : ""}`}</p>}
+            <p className="calendar-status-note" role="status">{error ? "Updates unavailable" : failed > 0 ? `${failed} unavailable` : ""}</p>
+          </div>
+
+          <div className="calendar-layout">
+            <section className="calendar-month card" aria-labelledby="calendar-month-title">
+              <div className="calendar-toolbar">
+                <div>
+                  <h2 className="t-title" id="calendar-month-title" aria-live="polite">{monthTitle}</h2>
+                  <p>{reportCount(monthRecords.length)} · Madrid</p>
+                </div>
+                <div className="calendar-controls">
+                  <button type="button" className="pill pill-ghost" onClick={() => selectDay(today)}>Today</button>
+                  <button type="button" className="calendar-arrow" aria-label="Previous month" onClick={() => changeMonth(-1)}><ChevronLeft size={18} aria-hidden="true" /></button>
+                  <button type="button" className="calendar-arrow" aria-label="Next month" onClick={() => changeMonth(1)}><ChevronRight size={18} aria-hidden="true" /></button>
+                </div>
+              </div>
+              <table className="calendar-table" aria-label={monthTitle}>
+                <thead><tr>{weekdays.map((day) => <th key={day} scope="col">{day}</th>)}</tr></thead>
+                <tbody>{Array.from({ length: days.length / 7 }, (_, week) => (
+                  <tr key={week}>{days.slice(week * 7, week * 7 + 7).map((day) => {
+                    const events = byDay[day] ?? [];
+                    const outside = !day.startsWith(month);
+                    return (
+                      <td key={day}>
+                        <button type="button" className="calendar-day" data-outside={outside} data-selected={day === selectedDay} aria-pressed={day === selectedDay} aria-current={day === today ? "date" : undefined} aria-label={`${dayFormat.format(new Date(`${day}T12:00:00Z`))}, ${reportCount(events.length)}`} onClick={() => selectDay(day)}>
+                          <span className="calendar-date">{Number(day.slice(-2))}{day === today ? <span className="calendar-today-word">Today</span> : null}</span>
+                          {events.length > 0 ? <>
+                            <span className="calendar-day-count">{events.length}{incomplete ? "+" : ""}<span className="calendar-count-word"> {events.length === 1 ? "report" : "reports"}</span></span>
+                            <span className="calendar-day-preview">{events.slice(0, 2).map((event) => <span key={event.id}>{event.kind === "CANCEL" ? "Cancel report" : event.supersededBy ? "Changed" : event.slot ? wallClock(Date.parse(event.slot) / 1000) : "Time unknown"} {event.patient}</span>)}{events.length > 2 ? <span className="calendar-more">+{events.length - 2} more</span> : null}</span>
+                          </> : null}
+                        </button>
+                      </td>
+                    );
+                  })}</tr>
+                ))}</tbody>
+              </table>
+            </section>
+
+            <section className="calendar-agenda card" aria-labelledby="calendar-agenda-title">
+              <div className="calendar-agenda-heading">
+                <h2 id="calendar-agenda-title">{selectedTitle}</h2>
+                <p>{reportCount(agenda.length)}</p>
+              </div>
+              <div className="calendar-agenda-content" aria-busy={loadingRecords}>
+                {agenda.length > 0 ? <ol className="calendar-agenda-list">{agenda.map((record) => <AgendaRecord key={record.id} record={record} />)}</ol> : loadingRecords ? <div className="calendar-record calendar-agenda-placeholder" role="status" aria-label="Loading reports for this date">
+                  <div aria-hidden="true">
+                    <div className="calendar-record-top"><span className="loading-skeleton calendar-placeholder-time" /><span className="loading-skeleton calendar-placeholder-action" /></div>
+                    <h3><span className="loading-skeleton calendar-placeholder-title" /></h3>
+                    <p><span className="loading-skeleton calendar-placeholder-detail" /></p>
+                    <p className="calendar-caller"><span className="loading-skeleton calendar-placeholder-caller" /></p>
+                    <div className="calendar-record-footer"><span className="loading-skeleton calendar-placeholder-kind" /><span className="calendar-call-link"><span className="loading-skeleton calendar-placeholder-link" /></span></div>
+                  </div>
+                </div> : <div className="calendar-empty"><CalendarDays size={28} strokeWidth={1} aria-hidden="true" /><h3>{incomplete ? "Records incomplete" : "No reports for this date"}</h3><p>{incomplete ? "Refresh to retry unavailable calls." : "This does not mean the clinic is free."}</p></div>}
+              </div>
+            </section>
+          </div>
+
+          {undated.length > 0 ? <section className="calendar-undated card" aria-labelledby="calendar-undated-title"><h2 className="t-title" id="calendar-undated-title">Reports without a date</h2><ol className="calendar-agenda-list">{undated.map((record) => <AgendaRecord key={record.id} record={record} />)}</ol></section> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AgendaRecord({ record }: { record: SchedulingRecord }) {
+  return <li className="calendar-record loading-reveal">
+    <div className="calendar-record-top"><span className="mono">{record.slot ? wallClock(Date.parse(record.slot) / 1000) : "Time unavailable"}</span><span className="calendar-action">{actionLabels[record.kind]}</span></div>
+    <h3>{record.patient}</h3>
+    <p>{record.provider ?? "Provider not recorded"}{record.site ? ` · ${record.site}` : " · Site not recorded"}</p>
+    {record.caller ? <p className="calendar-caller">Caller <span className="mono">{maskPhone(record.caller)}</span></p> : null}
+    {record.previousSlot && record.kind === "RESCHEDULE" ? <p className="calendar-change">Moved from {slotLabel(record.previousSlot)}</p> : null}
+    {record.kind === "CANCEL" ? <p className="calendar-change">Cancellation reported for this appointment, not an active booking.</p> : null}
+    {record.supersededBy ? <p className="calendar-change">{record.supersededBy === "CANCEL" ? "Cancellation" : "A later change"} was reported for this appointment in the same call.</p> : null}
+    <div className="calendar-record-footer"><span>{record.practice ? "Practice call" : "Recorded call"}</span><Link to={`/calls/${encodeURIComponent(record.callId)}`} className="calendar-call-link">View call<ArrowUpRight size={14} aria-hidden="true" /></Link></div>
+  </li>;
+}

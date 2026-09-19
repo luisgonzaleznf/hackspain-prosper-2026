@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROSARIO</title>
+<meta name="description" content="ROSARIO is a voice receptionist for clinics. It answers the phone, finds the caller in the record, books against real availability, refuses with the clinic's own reason when it must, and keeps a record of why it said every sentence.">
+<meta name="theme-color" content="#2d1012">
+<link rel="icon" type="image/png" sizes="32x32" href="/brand/logos/final/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/brand/logos/final/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/brand/logos/final/favicon-180.png">
+<link rel="stylesheet" href="/brand/brand.css">
+</head>
+<body>
+<canvas id="grainient" aria-hidden="true"></canvas>
+<canvas id="waves" aria-hidden="true"></canvas>
+<span id="page-top"></span>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <a class="lockup" href="#page-top" aria-label="ROSARIO home"><i data-mark="dial-rose-ten"></i><span>rosario</span></a>
+  <nav class="top-nav" aria-label="Sections">
+    <a href="/live">Live board</a>
+    <a href="/calls">Calls</a>
+    <a href="/cases">Rehearsal</a>
+    <a href="/calendar">Calendar</a>
+    <a href="/brand/identity.html">Identity</a>
+    <a class="btn ghost" href="/metrics">Open the dashboard</a>
+  </nav>
+</header>
+
+<main id="main" tabindex="-1">
+
+<section class="hero">
+  <div class="hero-copy">
+    <h1>Answers with judgement.</h1>
+    <p>ROSARIO answers your clinic's phone, checks who is calling, and books only what your rules allow.</p>
+    <a class="btn primary" href="#live">See a call, turn by turn <span class="arrow" aria-hidden="true">→</span></a>
+  </div>
+  <div class="hero-art"><img src="/brand/imagery/handset.webp" alt="" width="1014" height="1019"></div>
+</section>
+
+<section class="logos" aria-label="Context" data-reveal>
+  <div class="logo-row"><span>Answering for Clínica Arenal</span><span>Centro · Norte · Sur</span><span>Español · Català · Galego · Euskara · English</span></div>
+</section>
+
+<section id="live" class="feature top">
+  <div class="feature-copy" data-reveal>
+    <h2>Every call, as it happens.</h2>
+    <p>Every open call is a row. Open one to follow the conversation and the lookups behind it.</p>
+    <a class="link" href="#calls">What a finished call looks like <span class="arrow" aria-hidden="true">→</span></a>
+  </div>
+  <div class="card dark mock">
+    <div class="tabs" aria-hidden="true"><span class="tab">Overview</span><span class="tab">Calls</span><span class="tab">Calendar</span><span class="tab on">Live</span></div>
+    <table class="mock-table live-board"><caption class="sr-caption">Live board: open calls with elapsed time, caller and stage</caption><thead><tr class="mock-head"><th scope="col">Elapsed</th><th scope="col">Caller</th><th scope="col">Stage</th></tr></thead><tbody><tr class="mock-row live"><td data-label="Elapsed">0m 42s</td><td data-label="Caller">Marta Ruiz Sáez</td><td data-label="Stage">Offering</td></tr><tr class="mock-row"><td data-label="Elapsed">1m 17s</td><td data-label="Caller">Unknown caller</td><td data-label="Stage">Identifying</td></tr><tr class="mock-row"><td data-label="Elapsed">2m 31s</td><td data-label="Caller">Álvaro Cid</td><td data-label="Stage">Writing</td></tr></tbody></table>
+<div class="audiogram" data-audiogram data-length="32">
+      <div class="ag-head"><span>Marta Ruiz Sáez</span><span class="ag-time"><span data-ag-time>0:00</span> / 0:32</span></div>
+      <div class="ag-scrub">
+        <svg class="ag-wave" viewBox="0 0 600 72" preserveAspectRatio="none" aria-hidden="true" focusable="false"></svg>
+        <input class="ag-range" type="range" min="0" max="32" step="1" value="0" aria-label="Scrub the call, 32 seconds">
+      </div>
+      <ol class="ag-turns"><li class="caller" data-from="0" data-to="12"><span class="who">Caller</span><span lang="es">Espere, tengo DKV, no Sanitas.</span></li><li class="decision" data-from="12" data-to="15"><span class="who">Lookup</span><span>availability · insurer=dkv · 3 slots · Dr. Vilar</span></li><li class="rosario" data-from="15" data-to="32"><span class="who">ROSARIO</span><span lang="es">El viernes a las nueve y cuarto en Arenal Centro, ¿le viene bien?</span></li></ol>
+    </div>
+  </div>
+</section>
+
+<section class="plate-wrap">
+  <div class="plate-copy" data-reveal>
+    <h2>It knows when to say no.</h2>
+    <p>ROSARIO checks every booking before it touches your diary. When it declines, it gives your reason.</p>
+    <a class="btn ghost" href="#cases">How it rehearses <span class="arrow" aria-hidden="true">→</span></a>
+  </div>
+  <div class="plate"><img src="/brand/imagery/dial.webp" alt="" width="1024" height="1024" loading="lazy" decoding="async"></div>
+</section>
+
+<section id="cases" class="glance">
+  <div data-reveal>
+  <h2>Tested on the calls that go wrong.</h2>
+  <p class="lede">Scripted callers for the calls that go wrong at a front desk. Each one has a right answer.</p>
+  </div>
+  <div class="stats">
+    <div><strong>20</strong><span>Calls answered at once</span></div>
+    <div><strong>5</strong><span>Languages</span></div>
+    <div><strong>24</strong><span>Hours a day</span></div>
+    <div><strong>0</strong><span>Bookings without a check</span></div>
+  </div>
+  <div class="card dark mock board">
+    <table class="mock-table situations"><caption class="sr-caption">Rehearsal outcomes: what ROSARIO does in the situations that trip a front desk</caption><thead><tr class="mock-head"><th scope="col">Situation</th><th scope="col">What ROSARIO does</th></tr></thead><tbody><tr class="mock-row"><td data-label="Situation">The caller's details match four patient records</td><td data-label="What ROSARIO does">Asks for a date of birth before it opens any record</td></tr><tr class="mock-row"><td data-label="Situation">The plan does not cover the specialty</td><td data-label="What ROSARIO does">Declines and names the rule</td></tr><tr class="mock-row"><td data-label="Situation">A daughter calls for her father</td><td data-label="What ROSARIO does">Verifies both of them, then books for him</td></tr><tr class="mock-row"><td data-label="Situation">The caller needs a doctor now</td><td data-label="What ROSARIO does">Hands the call to a clinician and books nothing</td></tr><tr class="mock-row"><td data-label="Situation">The caller changes their mind halfway</td><td data-label="What ROSARIO does">Drops the pending booking and starts again</td></tr><tr class="mock-row"><td data-label="Situation">A terrible line</td><td data-label="What ROSARIO does">Repeats back what it heard and confirms before writing anything</td></tr></tbody></table>
+  </div>
+</section>
+
+<section class="light">
+  <div class="light-head" data-reveal>
+    <div>
+      <h2>What happens on every call.</h2>
+    </div>
+    <p>The voice is the part you hear. These six steps are the part that matters.</p>
+  </div>
+  <div class="grid">
+    <div><i class="ico" data-icon="identify"></i><h3>Identify</h3><p>A name and two identifiers before anything is written.</p></div>
+    <div><i class="ico" data-icon="lookup"></i><h3>Look up</h3><p>The chart, the note and the visits, read before it offers anything.</p></div>
+    <div><i class="ico" data-icon="offer"></i><h3>Offer</h3><p>Only real slots, and only ones the plan covers.</p></div>
+    <div><i class="ico" data-icon="confirm"></i><h3>Confirm</h3><p>Site, doctor, day and hour, read back in the caller's language.</p></div>
+    <div><i class="ico" data-icon="write"></i><h3>Write</h3><p>One action per request. Or a refusal, with the reason.</p></div>
+    <div><i class="ico" data-icon="explain"></i><h3>Explain</h3><p>Every sentence opens to show the lookups and the rule behind it.</p></div>
+  </div>
+</section>
+
+<section id="calls" class="feature reverse">
+  <div class="feature-copy" data-reveal>
+    <h2>Every answer has a reason.</h2>
+    <p>Every call, with what ROSARIO did and why. Open a row for the transcript and the recording.</p>
+    <a class="btn primary" href="#talk">Hear it answer <span class="arrow" aria-hidden="true">→</span></a>
+  </div>
+  <div class="card dark mock">
+    <p class="lane-key"><span class="key caller">Caller</span><span class="key agent">ROSARIO</span><span class="key quiet">Silence</span></p>
+    <table class="mock-table wide"><caption class="mock-title">Calls</caption><thead><tr class="mock-head"><th scope="col">Time</th><th scope="col">Caller</th><th scope="col">Call</th><th scope="col">Outcome</th></tr></thead><tbody><tr class="mock-row"><td data-label="Time">16:31</td><td data-label="Caller"><span>Josefa Navarro</span><span class="sub mono">711 ··· 529</span></td><td data-label="Call"><i class="callbar" data-bars="c3 a4 c2 a5 c3 a3 c1 a4"></i><span class="sr-only">8 turns, caller 36% of the call, ROSARIO 64%</span></td><td data-label="Outcome"><span>Booked</span></td></tr><tr class="mock-row"><td data-label="Time">16:26</td><td data-label="Caller"><span>Unknown caller</span><span class="sub mono">634 ··· 802</span></td><td data-label="Call"><i class="callbar" data-bars="a3 c4 a2 c3 a4 c2 a5 c2 a2"></i><span class="sr-only">9 turns, caller 41% of the call, ROSARIO 59%</span></td><td data-label="Outcome"><span>Registered</span></td></tr><tr class="mock-row"><td data-label="Time">16:10</td><td data-label="Caller"><span>Álvaro Cid</span><span class="sub mono">617 ··· 905</span></td><td data-label="Call"><i class="callbar" data-bars="c2 a3 c4 a6 c1 a2"></i><span class="sr-only">6 turns, caller 39% of the call, ROSARIO 61%</span></td><td data-label="Outcome"><span>Declined</span><span class="sub mono">provider_on_leave</span></td></tr><tr class="mock-row"><td data-label="Time">15:58</td><td data-label="Caller"><span>Withheld</span><span class="sub mono">No number</span></td><td data-label="Call"><i class="callbar" data-bars="c5 a2 c3 a4"></i><span class="sr-only">4 turns, caller 57% of the call, ROSARIO 43%</span></td><td data-label="Outcome"><span>Escalated</span><span class="sub mono">medical_emergency</span></td></tr><tr class="mock-row"><td data-label="Time">15:57</td><td data-label="Caller"><span>Lucía Sáenz</span><span class="sub mono">699 ··· 120</span></td><td data-label="Call"><i class="callbar" data-bars="a2 c3 a3 s8"></i><span class="sr-only">3 turns, caller 19% of the call, ROSARIO 31%</span></td><td data-label="Outcome"><span>In progress</span></td></tr></tbody></table>
+      </div>
+</section>
+
+<section id="talk" class="cta-band">
+  <div class="cta-copy" data-reveal>
+    <h2>Hear it answer.</h2>
+    <p>ROSARIO sits on your existing line. Your number and your diary stay yours.</p>
+    <div class="row"><a class="btn primary" href="/calls">Listen to a call <span class="arrow" aria-hidden="true">→</span></a></div>
+  </div>
+  <div class="cta-art"><img src="/brand/imagery/rosary.webp" alt="" width="732" height="1471" loading="lazy" decoding="async"></div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <a class="lockup" href="#page-top" aria-label="ROSARIO home"><i data-mark="dial-rose-ten"></i><span>rosario</span></a>
+  <nav aria-label="ROSARIO"><a href="/metrics">Dashboard</a><a href="/calls">Call history</a><a href="/calendar">Calendar</a><a href="/live">Live board</a><a href="/cases">Rehearsal</a><a href="/brand/identity.html">Identity</a></nav>
+  <p>ROSARIO, a voice receptionist for clinics. Madrid, 2026.</p>
+</footer>
+
+<a class="float" id="float" href="/metrics" hidden><i data-mark="dial-rose-ten"></i><span>Open the dashboard</span></a>
+
+<script src="/brand/vendor/gsap.min.js"></script>
+<script src="/brand/vendor/ScrollTrigger.min.js"></script>
+<script src="/brand/vendor/SplitText.min.js"></script>
+<script src="/brand/waves.js" defer></script>
+<script src="/brand/brand.js"></script>
+<script src="/brand/motion.js"></script>
+</body>
+</html>

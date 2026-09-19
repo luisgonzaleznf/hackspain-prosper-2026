@@ -1,0 +1,24 @@
+<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="-89.5 -8.0 1038.7 1038.7">
+<g id="red-circle-pattern" fill="currentColor">
+    <g id="top-small-circles">
+      <ellipse id="top-left" cx="209.4" cy="154.3" rx="55.8" ry="56.2"/>
+      <ellipse id="top-center" cx="430" cy="125.5" rx="61.7" ry="61.9"/>
+      <ellipse id="top-right" cx="650.6" cy="155.5" rx="56" ry="56.4"/>
+    </g>
+    <g id="upper-large-circles">
+      <ellipse id="upper-left" cx="167.7" cy="373.4" rx="104" ry="103.4"/>
+      <ellipse id="upper-center" cx="429.7" cy="363.6" rx="128" ry="128.3"/>
+      <ellipse id="upper-right" cx="692.1" cy="373.7" rx="103.8" ry="103.3"/>
+    </g>
+    <g id="lower-large-circles">
+      <ellipse id="lower-left" cx="170.9" cy="641.1" rx="104.8" ry="104.4"/>
+      <ellipse id="lower-center" cx="430.1" cy="656.1" rx="126.8" ry="126.6"/>
+      <ellipse id="lower-right" cx="689.8" cy="646.2" rx="103.8" ry="103.5"/>
+    </g>
+    <g id="bottom-small-circles">
+      <ellipse id="bottom-left" cx="209.9" cy="868.9" rx="55.5" ry="55.9"/>
+      <ellipse id="bottom-center" cx="430" cy="898.2" rx="60.8" ry="60.8"/>
+      <ellipse id="bottom-right" cx="648.7" cy="867.6" rx="55.6" ry="55.8"/>
+    </g>
+  </g>
+</svg>

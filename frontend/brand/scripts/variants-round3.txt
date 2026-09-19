@@ -1,0 +1,8 @@
+# Round 3 on arrow-2-telos: round-1 concepts re-run on the best model, plus dial-rose refinements.
+rose-topdown-telos|Logo mark: a single geometric rose seen from above, five or six overlapping petal shapes built from a few clean curved paths. Pictorial mark only, no text.
+rosary-loop-telos|Logo mark: a rosary, a closed loop of equal round beads forming a circle, with one larger bead at the bottom in place of a cross. The loop suggests an endless conversation. No text.
+monogram-r-rose-telos|Minimalist monogram of the letter R in a bold geometric sans-serif whose bowl spirals inward into a rose. Sharp vector paths. Single letter, no other text.
+dial-rose-eight|Logo mark: a rotary telephone dial reimagined as a rose. A perfect circle with eight evenly spaced round finger holes near the rim, and a compact three-petal rose spiral filling the center. Bold flat silhouette. No text.
+dial-rose-ten-bud|Logo mark: a rotary telephone dial as a rose: a circle with ten round finger holes near the rim and a single tight rose bud spiral in the center, drawn as one curved cut through the disc. Bold flat silhouette. No text.
+dial-rose-petal-holes|Logo mark: a rotary telephone dial whose ten finger holes are shaped like rose petals pointing inward, around a small round center. Perfectly circular, bold flat silhouette. No text.
+dial-rose-open|Logo mark: a thick ring like a rotary dial with ten round holes punched through it, and inside the ring a separate three-petal rose spiral floating in the center. Bold flat shapes, precise circular geometry. No text.

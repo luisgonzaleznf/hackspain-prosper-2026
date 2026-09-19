@@ -1,0 +1,8 @@
+<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="49.0 33.0 927.1 927.1">
+<g id="red-emblem" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <path id="upper-inward-spiral" d="m709 200c-40-51-114-88-193-86-105-3-204 61-239 150-14 34-14 65-7 99 6 32 24 48 53 48 27 1 53-21 93-42 51-27 101-42 141-39 82 0 135 54 151 121 18 74-1 161-60 216" stroke-width="94"/>
+    <path id="lower-left-inward-spiral" d="m165 480c-35 34-52 85-52 131-2 85 34 158 95 209 52 44 118 61 175 59 59 0 117-24 145-55 19-21 22-40 10-54-12-12-30-16-55-22-57-13-103-39-133-78-23-30-35-68-37-108" stroke-width="92"/>
+    <path id="right-outer-arc" d="m834 410c48 37 73 100 77 156 8 91-27 169-83 221-42 40-95 62-146 64" stroke-width="92"/>
+    <circle id="central-round-mark" cx="512" cy="539" r="27.5" stroke-width="55"/>
+  </g>
+</svg>

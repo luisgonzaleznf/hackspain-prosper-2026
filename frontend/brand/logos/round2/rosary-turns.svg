@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="975" height="1024" viewBox="0 0 975 1024">
+<!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
+  <defs>
+    <linearGradient id="berry-fill" y2="1">
+      <stop stop-color="#7b103c" offset="0"/>
+      <stop stop-color="#80123f" offset=".52"/>
+      <stop stop-color="#880f43" offset="1"/>
+    </linearGradient>
+    <linearGradient id="berry-edge" x2=".8" y2="1">
+      <stop stop-color="#941346" offset="0"/>
+      <stop stop-color="#8c1544" offset=".55"/>
+      <stop stop-color="#a0154e" offset="1"/>
+    </linearGradient>
+  </defs>
+  <rect id="black-background" width="975" height="1024" fill="#000"/>
+  <g id="oval-ring-of-berry-beads" fill="url(#berry-fill)" stroke="url(#berry-edge)" stroke-width="2">
+    <g id="large-beads">
+      <ellipse id="top-bead" cx="487.7" cy="118.3" rx="53.9" ry="54.7"/>
+      <ellipse id="upper-right-bead" cx="678.4" cy="171.8" rx="51.7" ry="51.9"/>
+      <ellipse id="right-upper-bead" cx="812.6" cy="308.7" rx="51" ry="50.9"/>
+      <ellipse id="right-middle-bead" cx="862.2" cy="493.9" rx="49.8" ry="49.7"/>
+      <ellipse id="right-lower-bead" cx="824" cy="678.8" rx="50" ry="49.6"/>
+      <ellipse id="lower-right-bead" cx="689.3" cy="818" rx="50.6" ry="50.5"/>
+      <ellipse id="bottom-focal-bead" cx="487.6" cy="881.6" rx="78.8" ry="79.3"/>
+      <ellipse id="lower-left-bead" cx="286.4" cy="818.6" rx="50.6" ry="50.6"/>
+      <ellipse id="left-lower-bead" cx="151.2" cy="679.4" rx="50.3" ry="50.1"/>
+      <ellipse id="left-middle-bead" cx="113.8" cy="493" rx="50.4" ry="50.2"/>
+      <ellipse id="left-upper-bead" cx="163.5" cy="308.6" rx="51.4" ry="51.1"/>
+      <ellipse id="upper-left-bead" cx="297.4" cy="171.7" rx="51.7" ry="51.9"/>
+    </g>
+    <g id="small-spacer-beads">
+      <ellipse id="top-right-spacer" cx="587.9" cy="130.8" rx="28.3" ry="28.3"/>
+      <ellipse id="upper-right-spacer" cx="758.3" cy="228.9" rx="28" ry="28"/>
+      <ellipse id="right-upper-spacer" cx="849.7" cy="397" rx="27.6" ry="27.8"/>
+      <ellipse id="right-middle-spacer" cx="851.8" cy="587.6" rx="27.6" ry="27.7"/>
+      <ellipse id="right-lower-spacer" cx="765.8" cy="757" rx="27.6" ry="27.5"/>
+      <ellipse id="bottom-right-spacer" cx="606.1" cy="854.6" rx="27" ry="26.8"/>
+      <ellipse id="bottom-left-spacer" cx="369.4" cy="854.9" rx="27.1" ry="27"/>
+      <ellipse id="left-lower-spacer" cx="209.8" cy="757.5" rx="27.7" ry="27.7"/>
+      <ellipse id="left-middle-spacer" cx="123.2" cy="587.7" rx="27.7" ry="27.8"/>
+      <ellipse id="left-upper-spacer" cx="125.8" cy="397.1" rx="27.8" ry="27.8"/>
+      <ellipse id="upper-left-spacer" cx="217" cy="228.9" rx="28" ry="28"/>
+      <ellipse id="top-left-spacer" cx="387.9" cy="130.7" rx="28.1" ry="28.4"/>
+    </g>
+  </g>
+</svg>

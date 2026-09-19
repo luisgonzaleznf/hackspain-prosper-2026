@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ROSARIO console</title>
+    <meta name="description" content="ROSARIO answers Clínica Arenal's phone. This console shows every call as it happens and explains every sentence afterwards." />
+    <meta name="theme-color" content="#2d1012" />
+    <script>
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem("rosario-theme") === "light" ? "light" : "dark";
+      } catch {
+        document.documentElement.dataset.theme = "dark";
+      }
+      document.querySelector('meta[name="theme-color"]').content = document.documentElement.dataset.theme === "light" ? "#f7f3ef" : "#2d1012";
+    </script>
+    <link rel="icon" type="image/png" sizes="32x32" href="/brand/logos/final/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/brand/logos/final/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/brand/logos/final/favicon-180.png" />
+  </head>
+  <body>
+    <div id="root"><div class="app-boot" role="status">Loading ROSARIO…</div></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

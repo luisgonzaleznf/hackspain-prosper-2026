@@ -1,0 +1,17 @@
+# Round 5 on arrow-2-telos: hairline and monoline marks to sit beside Plain weight 100, plus abstract risks.
+hair-spiral|Logo mark: a single very thin line, uniform hairline width, drawn as a rose seen from above: one continuous spiral that widens into five gentle petal bumps. Rendered as a thin filled path. No text.
+hair-moire|Logo mark: eight thin concentric circles of hairline width, each offset a little toward the lower left, so the rings bunch into a rose bud on one side. Thin uniform strokes only. No text.
+hair-dial-rose|Logo mark: a large thin hairline circle with ten tiny solid dots evenly spaced just inside it, and a small solid rose bud spiral in the center. Delicate, precise. No text.
+hair-wave-rose|Logo mark: one continuous hairline that is a flat sound wave on the left, coils into a rose spiral in the middle, and exits as a flat line on the right. Thin uniform stroke. No text.
+hair-r|Monogram of the letter R in a single hairline stroke, geometric, where the bowl is a small spiral. Single letter, thin uniform stroke, no other text.
+mono-rosary-r|Monogram of the letter R drawn as one monoline path of medium thickness with round ends, with three small round beads sitting on the stroke like a rosary. Single letter, no other text.
+mono-bud-stem|Logo mark in monoline with round caps: a vertical stem that ends at the top in a closed spiral bud, and at the bottom curls once like a telephone cord. Medium uniform stroke. No text.
+mono-rose-open|Logo mark in monoline: a rose seen from above drawn as three nested open C shapes rotating around a small dot. Medium uniform stroke, round caps. No text.
+mono-handset-loop|Logo mark in monoline: a telephone handset silhouette drawn as one open line whose cord loops once into a small spiral. Uniform stroke, round caps. No text.
+abstract-turns|Logo mark: three concentric circular arcs of decreasing radius, each arc a quarter turn, offset so they read as a spiral of turns. Bold flat shapes. No text.
+abstract-dial-slice|Logo mark: a solid disc with one wedge removed like a rotary dial finger stop, and a tiny solid dot floating in the gap. Radically minimal. No text.
+abstract-bead-arc|Logo mark: seven solid circles of gradually increasing size arranged along a spiral arc, the largest at the center. Flat circles only. No text.
+petal-dot-ring|Logo mark: twelve small solid petal shapes pointing outward in a ring, with a large gap where two petals are missing, like an open loop. Flat, one color. No text.
+rosette-thin|Logo mark: a twelve-petal rosette drawn only with hairline outlines, petals overlapping like a rose window, inside a thin circle. Thin uniform strokes. No text.
+knot-rose-thin|Logo mark: a Celtic style knot of one continuous thin line forming a five-petal rose, over and under crossings visible, hairline width. No text.
+rose-cutout-circle|Logo mark: a solid disc with a rose bud spiral cut out of it in negative space, the spiral made of one thin curved cut. Minimal, one color. No text.

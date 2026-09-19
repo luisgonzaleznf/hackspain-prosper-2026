@@ -1,0 +1,104 @@
+{
+  "plugins": [
+    "stylelint-declaration-strict-value"
+  ],
+  "ignoreFiles": [
+    "node_modules/**",
+    "dist/**",
+    "research/**",
+    "brand/logos/**",
+    "brand/fonts/**"
+  ],
+  "rules": {
+    "color-no-hex": true,
+    "color-named": "never",
+    "scale-unlimited/declaration-strict-value": [
+      [
+        "/color$/",
+        "fill",
+        "stroke",
+        "background",
+        "font-family"
+      ],
+      {
+        "ignoreValues": {
+          "/color$/": [
+            "transparent",
+            "inherit",
+            "currentColor",
+            "currentcolor"
+          ],
+          "fill": [
+            "none",
+            "currentColor",
+            "currentcolor"
+          ],
+          "stroke": [
+            "none",
+            "currentColor",
+            "currentcolor"
+          ],
+          "background": [
+            "none",
+            "transparent",
+            "currentColor",
+            "currentcolor"
+          ]
+        },
+        "message": "Use var(--token) for ${property} (got ${value}). Raw values live only in tokens.css.",
+        "ignoreFunctions": false
+      }
+    ],
+    "declaration-property-value-disallowed-list": {
+      "animation-iteration-count": [
+        "infinite"
+      ],
+      "animation": [
+        "/infinite/"
+      ],
+      "filter": [
+        "/drop-shadow/"
+      ],
+      "content": [
+        "/\\u2014/"
+      ],
+      "font-weight": [
+        "800",
+        "900",
+        "bolder"
+      ],
+      "text-decoration": [
+        "/underline/"
+      ]
+    },
+    "declaration-property-value-allowed-list": {
+      "box-shadow": [
+        "none",
+        "/^inset /",
+        "/^var\\(--/"
+      ],
+      "backdrop-filter": [
+        "none",
+        "/^var\\(--/"
+      ]
+    },
+    "font-weight-notation": "numeric",
+    "unit-disallowed-list": [
+      "pt",
+      "cm",
+      "mm",
+      "in"
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/tokens.css"
+      ],
+      "rules": {
+        "color-no-hex": null,
+        "scale-unlimited/declaration-strict-value": null
+      }
+    }
+  ]
+}

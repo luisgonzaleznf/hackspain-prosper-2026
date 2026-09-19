@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="1024" viewBox="0 0 1020 1024">
+<!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
+  <rect id="black-background" width="1020" height="1024" fill="#000"/>
+  <g id="circular-emblem" fill="#800f37">
+    <ellipse id="outer-disc" cx="510" cy="511.5" rx="448" ry="450.5"/>
+    <g id="eight-perimeter-openings" fill="#000">
+      <ellipse id="opening-top" cx="510" cy="166" rx="72" ry="72.5"/>
+      <ellipse id="opening-upper-right" cx="757.5" cy="261.5" rx="71" ry="71.5"/>
+      <ellipse id="opening-right" cx="853.5" cy="512" rx="71" ry="72"/>
+      <ellipse id="opening-lower-right" cx="757.5" cy="760" rx="71" ry="71.5"/>
+      <ellipse id="opening-bottom" cx="510" cy="856" rx="72" ry="72.5"/>
+      <ellipse id="opening-lower-left" cx="262.5" cy="760" rx="71.5" ry="71.5"/>
+      <ellipse id="opening-left" cx="167.5" cy="512" rx="72" ry="72"/>
+      <ellipse id="opening-upper-left" cx="262.5" cy="262" rx="71.5" ry="71.5"/>
+    </g>
+    <g id="central-three-part-spiral">
+      <path id="central-black-field" d="m510 260.5c136 0 249 117.5 249 258s-109 242.5-247 242.5c-137 0-249-103-249-241 0-139 110-259.5 247-259.5z" fill="#000"/>
+      <path id="upper-spiral-blade" d="m321 468c-8-48 11-89 48-123 38-34 89-53 139-52 51-1 92 23 113 63 22 43 17 105-12 151-2-37-26-70-59-86-36-19-78-14-110-8-45 9-84 29-119 55z"/>
+      <path id="lower-left-spiral-blade" d="m480 434c-36 0-73 10-104 28-41 24-65 58-67 95-7 56 25 106 73 137 41 27 88 39 132 30 25-4 45-14 61-28-46-17-87-45-116-83-23-30-36-62-33-94 2-37 21-67 54-85z"/>
+      <path id="right-and-inner-spiral-blade" d="m660 381c48 26 73 79 72 140 1 49-17 97-53 125-29 23-67 29-101 19-52-14-98-54-116-99-13-30-12-58 3-81 13-21 33-33 56-32 29-1 53 18 59 40 6 20-3 39-17 45-11 5-22 1-29-7s-4-18 4-26c-6-9-14-11-23-7-12 4-17 15-17 29-1 25 22 46 48 46 30 3 58-13 78-39 27-36 40-92 36-153z"/>
+    </g>
+  </g>
+</svg>

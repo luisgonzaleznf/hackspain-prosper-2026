@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROSARIO call review</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2d1012">
+<link rel="icon" type="image/png" sizes="32x32" href="/brand/logos/final/favicon-32.png">
+<link rel="stylesheet" href="/demo/demo.css">
+</head>
+<body>
+<canvas id="grainient" aria-hidden="true"></canvas>
+<canvas id="waves" aria-hidden="true"></canvas>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <a class="lockup" href="/demo/" aria-label="ROSARIO roleplay"><i data-mark="dial-rose-ten"></i><span>rosario</span></a>
+  <p class="top-note">Saved rehearsal</p>
+</header>
+
+<main id="main" class="review" tabindex="-1">
+  <section class="lead">
+    <h1>Call review.</h1>
+    <p id="status" role="status">Loading the recording and the trace.</p>
+    <p id="call-id" class="mono quiet"></p>
+  </section>
+
+  <audio id="recording" controls preload="metadata" hidden></audio>
+
+  <p class="row">
+    <a class="back" href="/demo/">Back to the studio</a>
+    <a id="download-audio" class="back" hidden>Download the recording</a>
+    <a id="download-trace" class="back">Download the trace</a>
+  </p>
+
+  <p class="quiet" style="margin-top: 20px">Caller on the left channel, ROSARIO on the right. Times are seconds from the start.</p>
+  <ol id="trace" class="trace"></ol>
+</main>
+
+<script src="/brand/vendor/gsap.min.js"></script>
+<script src="/brand/waves.js" defer></script>
+<script src="/brand/brand.js"></script>
+<script type="module" src="/demo/review.js"></script>
+</body>
+</html>

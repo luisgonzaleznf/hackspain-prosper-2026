@@ -1,0 +1,82 @@
+<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="-20.0 -7.8 1041.1 1041.1">
+<g id="red-grid" fill="currentColor">
+    <g id="row-one">
+      <rect x="62.5" y="64" width="99" height="100.5" rx="23"/>
+      <rect x="174.5" y="64" width="98" height="100.5" rx="23"/>
+      <rect x="285.5" y="64" width="98" height="100.5" rx="23"/>
+      <rect x="396.5" y="64" width="98.5" height="100.5" rx="23"/>
+      <rect x="507" y="64" width="99" height="100.5" rx="23"/>
+      <rect x="618" y="64" width="98.5" height="100.5" rx="23"/>
+      <rect x="728.5" y="64" width="99" height="100.5" rx="23"/>
+      <rect x="840" y="64" width="98.5" height="100.5" rx="23"/>
+    </g>
+    <g id="row-two">
+      <rect x="62.5" y="178" width="99" height="101" rx="24"/>
+      <rect x="174.5" y="178" width="98" height="101" rx="24"/>
+      <path id="lower-left-small-tab" d="m312.5 278.5v-9.5c0-17.5 13-30 29-30h25c11 0 17 6.5 17 17.5v2c0 12-7.5 20-20 20z"/>
+      <rect x="394.5" y="178" width="100.5" height="101" rx="24"/>
+      <rect x="507" y="178" width="99.5" height="101" rx="24"/>
+      <path id="lower-right-small-tab" d="m637.5 239h24c17.5 0 30 12.5 30 30v9.5h-53c-13 0-20-8-20-20v-1c0-11 7-18.5 19-18.5z"/>
+      <rect x="728.5" y="178" width="99" height="101" rx="24"/>
+      <rect x="840" y="178" width="98.5" height="101" rx="24"/>
+    </g>
+    <g id="row-three">
+      <rect x="63.5" y="292.5" width="98.5" height="100.5" rx="23"/>
+      <path id="left-inward-tab" d="m208.5 393v-27c0-16 11.5-28 27-28h21c12 0 17.5 6.5 17.5 18v17c0 12.5-7.5 20-20 20z"/>
+      <rect x="285.5" y="292.5" width="98" height="100.5" rx="23"/>
+      <path id="center-inward-tab" d="m425 393v-11c0-17.5 12-29.5 29.5-29.5h22.5c12 0 18 6 18 18.5v2c0 12.5-7 20-19.5 20z"/>
+      <rect x="507" y="292.5" width="98.5" height="100.5" rx="23"/>
+      <rect x="618" y="292.5" width="98.5" height="100.5" rx="23"/>
+      <path id="right-inward-tab" d="M748.5 341.5h19c16 0 27 12 27 28V393h-45c-13 0-21-7.5-21-20.5v-11c0-12.5 7.5-20 20-20z"/>
+      <rect x="840" y="292.5" width="98.5" height="100.5" rx="23"/>
+    </g>
+    <g id="row-four">
+      <rect x="174.5" y="406.5" width="98" height="100" rx="23"/>
+      <rect x="285.5" y="406.5" width="53" height="100" rx="21"/>
+      <rect x="396.5" y="406.5" width="98.5" height="100" rx="23"/>
+      <rect x="507" y="406.5" width="98.5" height="100" rx="23"/>
+      <rect x="665" y="406.5" width="51.5" height="100" rx="20"/>
+      <rect x="728.5" y="406.5" width="99" height="100" rx="23"/>
+    </g>
+    <g id="row-five">
+      <rect x="62.5" y="515.5" width="99" height="102" rx="23"/>
+      <rect x="174.5" y="520" width="98" height="100.5" rx="23"/>
+      <rect x="285.5" y="520" width="98" height="100.5" rx="23"/>
+      <rect x="396.5" y="568.5" width="98.5" height="52" rx="22"/>
+      <rect x="507" y="568.5" width="98.5" height="52" rx="22"/>
+      <rect x="618" y="520" width="98.5" height="100.5" rx="23"/>
+      <rect x="728.5" y="520" width="99" height="100.5" rx="23"/>
+      <rect x="840" y="520" width="98.5" height="100.5" rx="23"/>
+    </g>
+    <g id="row-six">
+      <rect x="62.5" y="634" width="99" height="100.5" rx="23"/>
+      <path id="left-lower-tab" d="m195 682.5h24c17 0 29 12 29 29v23h-52c-13.5 0-21.5-8-21.5-21.5v-9c0-13 7.5-21.5 20.5-21.5z"/>
+      <rect x="285.5" y="634" width="98" height="100.5" rx="23"/>
+      <rect x="396.5" y="634" width="98.5" height="100.5" rx="23"/>
+      <rect x="507" y="634" width="98.5" height="100.5" rx="23"/>
+      <rect x="618" y="634" width="98.5" height="100.5" rx="23"/>
+      <path id="right-lower-tab" d="M754 734.5V711c0-16.5 12-28.5 28.5-28.5H806c13 0 21 8 21 21v9.5c0 13-8 21.5-21.5 21.5z"/>
+      <rect x="840" y="634" width="98.5" height="100.5" rx="23"/>
+    </g>
+    <g id="row-seven">
+      <rect x="62.5" y="748" width="99" height="100" rx="23"/>
+      <rect x="174.5" y="748" width="98" height="100" rx="23"/>
+      <rect x="285.5" y="784.5" width="94" height="63.5" rx="22"/>
+      <rect x="396.5" y="748" width="98.5" height="100" rx="23"/>
+      <rect x="507" y="748" width="98.5" height="100" rx="23"/>
+      <rect x="620" y="784.5" width="96.5" height="63.5" rx="22"/>
+      <rect x="728.5" y="748" width="99" height="100" rx="23"/>
+      <rect x="840" y="748" width="98.5" height="100" rx="23"/>
+    </g>
+    <g id="row-eight">
+      <rect x="62.5" y="861.5" width="99" height="100" rx="23"/>
+      <rect x="174.5" y="861.5" width="98" height="100" rx="23"/>
+      <rect x="285.5" y="861.5" width="98" height="100" rx="23"/>
+      <rect x="396.5" y="861.5" width="98.5" height="100" rx="23"/>
+      <rect x="507" y="861.5" width="98.5" height="100" rx="23"/>
+      <rect x="618" y="861.5" width="98.5" height="100" rx="23"/>
+      <rect x="728.5" y="861.5" width="99" height="100" rx="23"/>
+      <rect x="840" y="861.5" width="98.5" height="100" rx="23"/>
+    </g>
+  </g>
+</svg>

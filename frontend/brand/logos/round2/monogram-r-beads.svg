@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="795" height="1024" viewBox="0 0 795 1024">
+<!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
+  <rect id="black-background" width="795" height="1024" fill="#010200"/>
+  <g id="geometric-letter-r" fill="#791636" stroke="#84203e" stroke-width="2">
+    <path id="stem-and-diagonal-leg" d="M72.5 98H216V521.5H422.5L721.8 951.5H523L216 582V951.5H73.5Z"/>
+    <g id="dotted-upper-bowl">
+      <ellipse id="dot-top-left" cx="292.7" cy="123.6" rx="50.8" ry="50.5"/>
+      <ellipse id="dot-top-center" cx="409" cy="127.4" rx="50.8" ry="50.5"/>
+      <ellipse id="dot-upper-right" cx="519.5" cy="166.8" rx="50.7" ry="50.3"/>
+      <ellipse id="dot-right-upper" cx="603.3" cy="243.9" rx="49.8" ry="49.8"/>
+      <ellipse id="dot-right-middle" cx="633.4" cy="349.8" rx="49.5" ry="49.4"/>
+      <ellipse id="dot-right-lower" cx="599.5" cy="453.4" rx="49.6" ry="49.5"/>
+      <ellipse id="dot-bottom" cx="513.1" cy="530" rx="50.6" ry="50.3"/>
+    </g>
+  </g>
+</svg>

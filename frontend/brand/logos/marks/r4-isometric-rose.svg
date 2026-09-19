@@ -1,0 +1,26 @@
+<svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="-150.8 -15.8 1056.2 1056.2">
+<g id="geometric-emblem" fill="currentColor">
+    <path id="top-diamond" d="m377.5 57 135 81.5-135 76.5-135-76.5z"/>
+    <g id="upper-inset-facets">
+      <path id="upper-left-facet" d="m230.5 160 116.5 72-65 38-47.5-32.5z"/>
+      <path id="upper-right-facet" d="m524.5 160-4 77.5-47.5 32.5-65-38z"/>
+    </g>
+    <g id="upper-outer-panels">
+      <path id="left-upper-panel" d="m106.5 182.5 141 89v174l-141-98z"/>
+      <path id="right-upper-panel" d="m648 182.5v165l-141 98v-174z"/>
+    </g>
+    <g id="central-fold">
+      <path id="central-left-panel" d="m275.5 270.5 96 61v199.5l-97-66.5z"/>
+      <path id="central-right-panel" d="m479.5 270.5 1 194-97.5 66.5v-199.5z"/>
+    </g>
+    <g id="broad-side-panels">
+      <path id="left-broad-panel" d="m57 354.5 264 174v196.5l-54 30.5-210-135.5z"/>
+      <path id="right-broad-panel" d="m697.5 354.5v265.5l-209.5 135.5-54.5-30.5v-196.5z"/>
+    </g>
+    <path id="lower-diamond" d="m377.5 707.5 94 65.5-94 67.5-94.5-67.5z"/>
+    <g id="base-chevron">
+      <path id="left-base-panel" d="m61 649.5 305.5 201.5v116.5l-259-167.5z"/>
+      <path id="right-base-panel" d="m693.5 649.5-46 150.5-258.5 167.5v-116.5z"/>
+    </g>
+  </g>
+</svg>

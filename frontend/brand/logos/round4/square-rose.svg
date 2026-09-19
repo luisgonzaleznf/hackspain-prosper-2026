@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="970" height="1024" viewBox="0 0 970 1024">
+<!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
+  <rect id="black-background" width="970" height="1024" fill="#000"/>
+  <g id="red-geometric-artwork" fill="#f00">
+    <g id="corner-panels">
+      <path id="upper-left-panel" d="M66.5 68H326.5C276 168 173 268 66.5 310.5Z"/>
+      <path id="upper-right-panel" d="M642.5 68H901.5V310.5C793 267 697 167 642.5 68Z"/>
+      <path id="lower-left-panel" d="M66.5 638.5C200 693 322 825 363.5 957.5H66.5Z"/>
+      <path id="lower-right-panel" d="M901.5 638.5V957.5H604C643 825 763 695 901.5 638.5Z"/>
+    </g>
+    <g id="outer-rounded-petals">
+      <path id="top-petal" d="m275 236c18-94 106-168 209-168 104 0 191 72 209.5 168z"/>
+      <path id="left-petal" d="M267 247V699.5C161 687 78 588 78 474C78 359 159 262 267 247Z"/>
+      <path id="right-petal" d="m699.5 247c108.5 15 190 112 190 227 0 114-81.5 212-190 225.5z"/>
+    </g>
+    <g id="central-spiral">
+      <path id="upper-spiral-arc" d="m295.5 396.5c22.5-81.5 101.5-146 187.5-146 111 0 200 87 200 197.5 0 56-24 107-61.5 144v-195.5z"/>
+      <path id="inner-spiral-petal" d="m399 521.5c-1-58.5 35-109.5 90-109.5 61 0 109 55 109 123 0 55-34 91-78 91-10 0-20-1-28.5-5v-80c-33.5 0-64.5-4-92.5-19.5z"/>
+      <path id="lower-spiral-sweep" d="m290.5 410.5c38.5 57.5 99.5 134.5 150.5 192.5 27 31 53 42 99 42h133.5v18c0 114-88.5 205.5-199.5 205.5-97 0-177-65.5-199-157h196c-50-6.5-100-33.5-134-79.5-46-58-64-141-46.5-221.5z"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="963" height="1024" viewBox="0 0 963 1024">
+<!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
+  <rect id="black-background" width="963" height="1024" fill="#000"/>
+  <g id="atomic-orbits" fill="none" stroke="#f00" stroke-width="15.5">
+    <ellipse id="vertical-orbit" cx="480.5" cy="512" rx="192" ry="439"/>
+    <path id="ascending-orbit" d="m887 419c31 87-126 197-350 246s-429 22-460-65 126-197 350-246 429-22 460 65z"/>
+    <path id="descending-orbit" d="m125 275c56-84 263-23 464 111s313 297 245 367-275-6-476-140-289-254-233-338z"/>
+  </g>
+  <g id="rose" fill="#f00">
+    <path id="left-petal" d="m385 438c31 10 59 33 74 65-22 37-31 81-21 123-31-10-50-34-53-66-5-41 9-66 10-86 1-13-3-26-10-36z"/>
+    <path id="right-petal" d="m578 437c-41 5-77 32-100 70-24 39-36 81-22 124 38 7 79-3 102-27 24-25 24-54 17-86-7-30-13-53 3-81z"/>
+    <path id="upper-petal" d="m429 419c6 11 17 16 31 15 16 0 28-8 25-14-3-9-17-9-27-4-8 4-15 0-15-5 3-13 23-19 41-17 26 1 44 10 52 36-26 12-49 32-65 57-11-21-28-37-45-48-1-7 1-15 3-20z"/>
+  </g>
+</svg>

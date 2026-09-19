@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1018" height="1024" viewBox="0 0 1018 1024">
+<!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
+  <rect id="black-background" width="1018" height="1024" fill="#000"/>
+  <g id="red-circles" fill="#f00">
+    <ellipse id="top-small-circle" cx="351.7" cy="117.3" rx="54.9" ry="55.3"/>
+    <ellipse id="upper-left-circle" cx="223.1" cy="240.2" rx="74.8" ry="75.1"/>
+    <ellipse id="left-circle" cx="152.1" cy="438.2" rx="91.5" ry="92.4"/>
+    <ellipse id="central-large-circle" cx="501.2" cy="474.3" rx="182.1" ry="181.9"/>
+    <ellipse id="right-circle" cx="858" cy="514.6" rx="99.4" ry="99.4"/>
+    <ellipse id="lower-right-circle" cx="743.5" cy="749.2" rx="117.8" ry="117.8"/>
+    <ellipse id="bottom-circle" cx="446.9" cy="830.5" rx="131" ry="131.6"/>
+  </g>
+</svg>

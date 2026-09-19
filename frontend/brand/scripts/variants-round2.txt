@@ -1,0 +1,9 @@
+# Round 2 on arrow-2-telos: refine round-1 winners and try hybrids.
+dial-rose-v2|Logo mark: a rotary telephone dial reimagined as a rose. A circle with ten round finger holes around the rim, and the center is a compact rose spiral of three curved petals. Bold flat silhouette, perfectly circular. No text.
+dial-rose-petals|Logo mark: a rose seen from above whose five outer petals each carry one round hole like a rotary dial, with a tight spiral bud in the center. Bold flat shapes. No text.
+rosary-wave|Logo mark: a closed ring of round beads like a rosary, where bead sizes rise and fall smoothly around the circle like the amplitude of a sound wave, with the largest bead at the bottom. No text.
+rosary-turns|Logo mark: a closed ring of beads like a rosary, beads alternating between two sizes to suggest two voices taking turns, with one large bead at the bottom. Flat circles only. No text.
+rose-topdown-v2|Logo mark: a rose seen from above reduced to five bold petals spiraling around a small center, each petal a single clean curved shape separated by thin black gaps. Balanced, circular overall silhouette. No text.
+rose-window-dial|Logo mark: a gothic rose window with twelve petal-shaped openings inside a thin ring, where the ring also reads as a telephone dial. Flat shapes, precise radial symmetry. No text.
+monogram-r-beads|Minimalist monogram of the letter R: the stem and leg are solid bold strokes, the bowl is a string of round beads like a rosary. Single letter, no other text.
+rosary-r-v2|Monogram of the letter R made entirely of evenly spaced round beads of equal size, geometric and precise, with one larger bead at the end of the leg. Single letter, no other text.
