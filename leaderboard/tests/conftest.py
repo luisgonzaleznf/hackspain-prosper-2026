@@ -1,0 +1,17 @@
+"""Keep this package's tests inside this package.
+
+The repo-root checkout is on `sys.path` for everything using the root venv (hack-kit is
+installed editable), so a module missing from this copy — `scripts.call_ledger`, say —
+would silently import the root's and the suite would test code this package does not ship.
+Drop the root so a missing module fails loudly instead.
+"""
+
+import sys
+from pathlib import Path
+
+PACKAGE = Path(__file__).resolve().parents[1]
+ROOT = PACKAGE.parent
+
+sys.path[:] = [p for p in sys.path if p and Path(p).resolve() != ROOT]
+if str(PACKAGE) not in sys.path:
+    sys.path.insert(0, str(PACKAGE))
