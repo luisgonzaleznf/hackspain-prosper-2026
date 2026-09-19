@@ -1,9 +1,9 @@
-# ── Secrets ─────────────────────────────────────────────────────────
+# Secrets
 .env
 .env.*
 !.env.example
 
-# ── Python ──────────────────────────────────────────────────────────
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -12,14 +12,9 @@ __pycache__/
 build/
 dist/
 .eggs/
-
-# ── uv / virtualenvs ────────────────────────────────────────────────
 .venv/
 venv/
 env/
-# uv.lock is committed for reproducible installs — do not ignore it.
-
-# ── Tooling caches ──────────────────────────────────────────────────
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
@@ -27,25 +22,21 @@ env/
 htmlcov/
 .hypothesis/
 
-# ── Demo artifacts ──────────────────────────────────────────────────
-# Working captures and scratch recordings are ignored; commit only the
-# final cut you actually submit (force-add it):  git add -f demo/final.gif
-demo/*
-!demo/.gitkeep
-!demo/final.gif
-!demo/final.mp4
-
-# ── Node / Vite (only if you use the React UI recipe) ───────────────
+# Node
 node_modules/
-web/dist/
-web/.vite/
+dist/
+.vite/
 npm-debug.log*
 yarn-error.log*
 *.tsbuildinfo
 
-# ── OS / editor noise ───────────────────────────────────────────────
+# OS / editor
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
 *.swp
+*~
+
+# Local agent session stubs (not part of the repo)
+.claude/
