@@ -28,6 +28,7 @@ from app import config
 NOISE_KINDS = {"codex", "usage"}
 # What the console renders as a warning badge on a call.
 WARNING_KINDS = {"fallback", "error", "socket_closed", "stop_received"}
+END_KINDS = {"call_ended", "stop_received", "socket_closed", "closed_by_agent"}
 
 
 def _calls_dir() -> Path:
@@ -76,9 +77,9 @@ def _status(events: list[dict[str, Any]]) -> str:
     if submits:
         codes = [int(s.get("status") or 0) for s in submits]
         return "submitted" if all(200 <= c < 300 for c in codes) else "rejected"
-    if _of_kind(events, "call_ended"):
+    if any(e.get("kind") in END_KINDS for e in events):
         return "ended"
-    # The console's Live screen keys off this exact string (`isActive` in
+    # The console's Calls screen keys off this exact string (`isActive` in
     # frontend/src/lib/store.ts); do not reword it.
     return "in progress"
 
@@ -121,6 +122,10 @@ def _summary(path: Path, events: list[dict[str, Any]]) -> dict[str, Any]:
     call_id = path.stem
     stamps = [float(e["t"]) for e in events if isinstance(e.get("t"), int | float)]
     started = min(stamps) if stamps else path.stat().st_mtime
+    ended = next(
+        (float(e["t"]) for e in events if e.get("kind") in END_KINDS and isinstance(e.get("t"), int | float)),
+        None,
+    )
     modified = path.stat().st_mtime
     return {
         "call_id": call_id,
@@ -129,7 +134,7 @@ def _summary(path: Path, events: list[dict[str, Any]]) -> dict[str, Any]:
         "modified_iso": datetime.fromtimestamp(modified, UTC).isoformat(),
         "status": _status(events),
         "action": _action(events),
-        "duration_seconds": round(max(stamps) - started, 3) if stamps else None,
+        "duration_seconds": round(max(0, (ended if ended is not None else max(stamps)) - started), 3) if stamps else None,
         "warnings": len(_warnings(events)),
         "has_audio": _audio_path(call_id).exists(),
         "run": None,  # Prosper does not tell us its run id on the call.

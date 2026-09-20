@@ -96,6 +96,11 @@ Everything below is written as if you were the one on the phone: apply it throug
 """
 
 
+def voice_prompt(settings: VoiceSettings) -> str:
+    language = "Spanish" if settings.opening_language == "es" else "English"
+    return presentation_preferences(settings) + _VOICE_PROMPT_TEMPLATE.format(opening_language=language)
+
+
 async def run_call(
     transport: BaseTransport,
     session: CallSession,
@@ -123,8 +128,7 @@ async def run_call(
     voice = "cove"
     if settings is not None:
         voice = settings.voice
-        language = "Spanish" if settings.opening_language == "es" else "English"
-        prompt = presentation_preferences(settings) + _VOICE_PROMPT_TEMPLATE.format(opening_language=language)
+        prompt = voice_prompt(settings)
         if settings.opening_language == "es":
             greeting = spanish_greeting(session.started_at)
 

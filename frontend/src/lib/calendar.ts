@@ -19,6 +19,7 @@ export interface SchedulingRecord {
   appointmentId: string | null;
   supersededBy: SchedulingKind | null;
   practice: boolean;
+  persisted?: boolean;
 }
 
 const madridDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit" });

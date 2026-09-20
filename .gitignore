@@ -12,6 +12,7 @@
 *.wav
 *.opus
 logs/
+backend/data/
 docs/private-calls/
 
 # Python

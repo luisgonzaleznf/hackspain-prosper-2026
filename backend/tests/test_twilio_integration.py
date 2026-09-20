@@ -89,10 +89,10 @@ def test_twilio_start_enables_human_tools_for_gptlive_only_when_configured(monke
             registered[name] = handler
 
     register_pipecat_tools(LLM(), session)
-    assert set(registered) == {tool["name"] for tool in tools_for_session(session)}
+    assert set(registered) == {tool["name"] for tool in session.tool_specs(tools_for_session(session))}
     assert {"set_appointment_email", "confirm_customer_account"} <= registered.keys()
     scored = asyncio.run(CallSession.start(call_id="scored"))
     assert scored.demo_mode is False
     assert "set_appointment_email" not in {tool["name"] for tool in tools_for_session(scored)}
     monkeypatch.setattr(config, "EVAL_MODE", True)
-    assert "set_appointment_email" not in {tool["name"] for tool in tools_for_session(session)}
+    assert "set_appointment_email" not in {tool["name"] for tool in session.tool_specs(tools_for_session(session))}

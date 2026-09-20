@@ -54,7 +54,7 @@
         "infinite"
       ],
       "animation": [
-        "/infinite/"
+        "/^(?!call-status-spin var\\(--dur-live-status\\) linear infinite$).*infinite/"
       ],
       "filter": [
         "/drop-shadow/"

@@ -9,6 +9,21 @@ from app import clinic
 from app.session import CallSession
 from app.tools import patient_view
 
+STAGED_WRITE_RULES = """\
+  As soon as every field is present, call record_registration immediately and wait for its
+  successful result; do this before any read-back. It validates and stages the registration, so do
+  not wait for confirmation. Only after it succeeds, give one compact read-back of the ID, phone
+  and email. If the caller corrects a value, use the corrected value and all the other fields
+  already given, call record_registration again immediately, then read back the corrected ID,
+  phone and email. The second call replaces the first staged REGISTER. Do not book them anything.
+- If the caller changes their mind, record the new outcome: a new booking for the same patient
+  replaces their earlier one and a new move or cancellation replaces the earlier one for that
+  appointment, so do not clear first. Call clear_recorded_actions(patient_id=X) only when they
+  drop that patient's booking with nothing to replace it ("forget mine, just do my mother's"),
+  and clear_recorded_actions(appointment_id=Y) for a dropped move or cancellation; other staged
+  actions stay. Omit both only if they want nothing at all.
+"""
+
 RULES = """\
 You are the receptionist at Clínica Arenal, a clinic in Madrid with three sites, answering the phone.
 You book, move and cancel appointments, register new patients, and decline correctly when the
@@ -179,19 +194,7 @@ RULES YOU NEVER BREAK
   ask in two halves: "the first four digits", then "the last four digits and the letter". Never
   repeat the same digit-by-digit request, restart the form, or re-confirm a field that already
   validated.
-  As soon as every field is present, call record_registration immediately and wait for its
-  successful result; do this before any read-back. It validates and stages the registration, so do
-  not wait for confirmation. Only after it succeeds, give one compact read-back of the ID, phone
-  and email. If the caller corrects a value, use the corrected value and all the other fields
-  already given, call record_registration again immediately, then read back the corrected ID,
-  phone and email. The second call replaces the first staged REGISTER. Do not book them anything.
-- If the caller changes their mind, record the new outcome: a new booking for the same patient
-  replaces their earlier one and a new move or cancellation replaces the earlier one for that
-  appointment, so do not clear first. Call clear_recorded_actions(patient_id=X) only when they
-  drop that patient's booking with nothing to replace it ("forget mine, just do my mother's"),
-  and clear_recorded_actions(appointment_id=Y) for a dropped move or cancellation; other staged
-  actions stay. Omit both only if they want nothing at all.
-  If the caller corrects an identifier they gave ("sorry, 5 not 9"), use the corrected value:
+""" + STAGED_WRITE_RULES + """  If the caller corrects an identifier they gave ("sorry, 5 not 9"), use the corrected value:
   find_patient again with it if the chart is not yet confirmed; a corrected identifier that
   matches confirms the chart. The slip rule is for an extra identifier the caller does not correct.
   Preserve all other constraints. A pause is not consent or cancellation.
@@ -258,11 +261,11 @@ def _caller_id(session: CallSession) -> str:
     )
 
 
-def instructions(session: CallSession) -> str:
+def instructions(session: CallSession, *, rules: str = RULES) -> str:
     from app import appointment_email, customer_accounts
 
     cat = clinic.cached()
-    parts = [RULES, _caller_id(session)]
+    parts = [rules, _caller_id(session)]
     if session.demo_mode and appointment_email.enabled():
         parts.append(APPOINTMENT_EMAIL_RULES)
         parts.append(customer_accounts.INSTRUCTIONS)

@@ -1,7 +1,7 @@
 // Regression: lifecycle labels are event-backed. Run with `pnpm test`.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { project } from "../timeline.ts";
+import { outcomeOf, project } from "../timeline.ts";
 import { turnsUntil } from "../replay.ts";
 import type { CallDetail, RawEvent } from "../types.ts";
 
@@ -29,6 +29,20 @@ const base: RawEvent[] = [
   { t: 104.2, kind: "transcript", role: "user", text: "Hello, I need an appointment.", _line: 5 },
   { t: 105, kind: "transcript", role: "agent", text: "One moment while I check.", _line: 6 },
 ];
+
+test("a finished call without an action is not labelled in progress", () => {
+  for (const action of ["", String.fromCodePoint(0x2014)]) {
+    assert.equal(outcomeOf(null, { status: "in progress", action }).verb, "in progress");
+    assert.equal(outcomeOf(null, { status: "ended", action }).verb, "Ended");
+  }
+});
+
+test("every hang-up event stops the live indicator and elapsed clock", () => {
+  for (const kind of ["stop_received", "socket_closed", "closed_by_agent", "call_ended"]) {
+    const timeline = project(detail([...base, { t: 107, kind, _line: 7 }]));
+    assert.equal(timeline.endedAt, 107, kind);
+  }
+});
 
 test("an ordinary caller reply does not mark the agent turn as cut off", () => {
   const tl = project(detail(base));
