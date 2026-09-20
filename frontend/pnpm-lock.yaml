@@ -14,6 +14,9 @@ importers:
       '@number-flow/react':
         specifier: 0.6.2
         version: 0.6.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@phosphor-icons/react':
+        specifier: 2.1.10
+        version: 2.1.10(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@pipecat-ai/client-js':
         specifier: 1.13.1
         version: 1.13.1
@@ -26,9 +29,6 @@ importers:
       gsap:
         specifier: 3.15.0
         version: 3.15.0
-      lucide-react:
-        specifier: 1.47.0
-        version: 1.47.0(react@19.3.0)
       orb-ui:
         specifier: ^0.8.1
         version: 0.8.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -363,6 +363,13 @@ packages:
   '@oxlint/plugins@1.83.0':
     resolution: {integrity: sha512-qD64wr6SS1DL7YbJQ8WWjyUfFfrJsvAy9Vo0sG/PYUQy30w0uemN2h6j4xuvj4noyETDpzcGC20sv+FH7GrN5A==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+
+  '@phosphor-icons/react@2.1.10':
+    resolution: {integrity: sha512-vt8Tvq8GLjheAZZYa+YG/pW7HDbov8El/MANW8pOAz4eGxrwhnbfrQZq0Cp4q8zBEu8NIhHdnr+r8thnfRSNYA==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      react: '>= 16.8'
+      react-dom: '>= 16.8'
 
   '@pipecat-ai/client-js@1.13.1':
     resolution: {integrity: sha512-kRzNWBouHrYyoc6iN60RO97kBhB+uAPSXzf3M1tL//w59X8lkPGCL1onM0crh28C64nxP4hJ0+v6Spf5amJKIg==}
@@ -1529,11 +1536,6 @@ packages:
   lodash@4.18.1:
     resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
 
-  lucide-react@1.47.0:
-    resolution: {integrity: sha512-o8C23aXpNQypRY73W7fW02EyvWJinEMXgKeGjFoKym0zj3Q73hD97A1IQps1g8C14HTGsOpZL0Am+xjfgFZAbg==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -2213,6 +2215,11 @@ snapshots:
     optional: true
 
   '@oxlint/plugins@1.83.0': {}
+
+  '@phosphor-icons/react@2.1.10(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
 
   '@pipecat-ai/client-js@1.13.1':
     dependencies:
@@ -3228,10 +3235,6 @@ snapshots:
   lodash.truncate@4.4.2: {}
 
   lodash@4.18.1: {}
-
-  lucide-react@1.47.0(react@19.3.0):
-    dependencies:
-      react: 19.3.0
 
   magic-string@0.30.21:
     dependencies:

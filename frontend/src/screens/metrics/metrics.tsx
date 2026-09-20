@@ -1,5 +1,5 @@
 import NumberFlow from "@number-flow/react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRightIcon } from "@phosphor-icons/react/dist/csr/ArrowUpRight";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -151,15 +151,15 @@ export function MetricsScreen() {
           </div>
 
           <section className="overview-recent" aria-labelledby="recent-title">
-            <div className="overview-section-heading"><h2 id="recent-title">Recent conversations</h2><Link className="overview-text-link" to="/calls">All calls <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
-            {!available && !error ? <div className="overview-call-list" role="status"><span className="sr-only">Loading recent conversations</span>{[0, 1, 2, 3].map((row) => <div className="overview-call overview-call-skeleton" key={row} aria-hidden="true"><span className="overview-call-person"><strong className="loading-skeleton" /><span className="loading-skeleton" /></span><span className="overview-call-outcome loading-skeleton" /><span className="overview-call-duration loading-skeleton" /><ArrowUpRight size={17} /></div>)}</div> : stats.finished.length ? <div className="overview-call-list loading-reveal">{stats.finished.slice(0, 4).map((call) => {
+            <div className="overview-section-heading"><h2 id="recent-title">Recent conversations</h2><Link className="overview-text-link" to="/calls">All calls <ArrowUpRightIcon size={16} aria-hidden="true" /></Link></div>
+            {!available && !error ? <div className="overview-call-list" role="status"><span className="sr-only">Loading recent conversations</span>{[0, 1, 2, 3].map((row) => <div className="overview-call overview-call-skeleton" key={row} aria-hidden="true"><span className="overview-call-person"><strong className="loading-skeleton" /><span className="loading-skeleton" /></span><span className="overview-call-outcome loading-skeleton" /><span className="overview-call-duration loading-skeleton" /><ArrowUpRightIcon size={17} /></div>)}</div> : stats.finished.length ? <div className="overview-call-list loading-reveal">{stats.finished.slice(0, 4).map((call) => {
               const record = currentDetail(call, byId);
               const name = record?.timeline?.identified?.name;
               return <Link className="overview-call" key={call.call_id} to={`/calls/${encodeURIComponent(call.call_id)}`}>
                 <span className="overview-call-person"><strong>{name || (record ? "Unidentified caller" : byId[call.call_id]?.detailError ? "Caller details unavailable" : "Loading caller details")}</strong><span>{dayLabel(call.started_at)} at {wallClock(call.started_at)}</span></span>
                 <span className="overview-call-outcome">{outcomeLabel(call)}</span>
                 <span className="overview-call-duration">{call.duration_seconds == null ? "Not recorded" : duration(call.duration_seconds)}</span>
-                <ArrowUpRight size={17} aria-hidden="true" />
+                <ArrowUpRightIcon size={17} aria-hidden="true" />
               </Link>;
             })}</div> : <p className="overview-outcome-empty">{available ? "Completed conversations will appear here." : "Recent conversations could not be loaded."}</p>}
           </section>

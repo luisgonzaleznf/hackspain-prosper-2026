@@ -6,10 +6,10 @@ Current implementation overrides the older component sketches below:
 
 - No chips, tags, decorative dots or left-side selection stripes. IDs and reason codes are plain mono text; outcomes and stages use icons and text.
 - Dropdowns use Base UI Select with token-styled popups, keyboard selection and viewport collision handling.
-- Calls use a stereo audiogram, transcript-span track and individually clickable tool/action icons. Peaks come from the actual recording. Selecting an icon seeks and opens its decision; late submissions remain accessible after the audio ends.
+- Calls use a stereo audiogram and individually clickable tool/action icons. Peaks come from the actual recording. Selecting an icon seeks and opens its decision; late submissions remain accessible after the audio ends.
 - Talk uses the `orb-ui` radial component in controlled mode. Its button plays/pauses recordings or mutes/unmutes the local microphone. Directional levels come from Web Audio, never simulated caller activity. Live calls without an audio feed do not receive amplitude values.
 - Browser calling is not connected. Talk offers recorded calls and a local microphone preview, not a telephone session. The old language selector is omitted because it could not change either mode.
-- `/` is the landing page. `/metrics` is the dashboard entry; `/dashboard` redirects there. Primary navigation is Overview, Calls, Calendar and Live. `/cases` and `/talk` have a separate tools header with a return to the dashboard.
+- `/` is the landing page. Its ROSARIO logos and “Sign in” links open `/metrics`; `/dashboard` redirects there. Primary navigation is Overview, Calls and Calendar. `/cases` and `/talk` have a separate tools header with a return to the dashboard. “Sign in” is a dashboard link, not an authentication flow.
 - The console shell is one viewport tall. Screen headers stay outside their content scroller; split-view lists and drawers scroll independently. Scrollable flex children may shrink below content height. Nested transcript scrolling chains to the outer panel at its edges. Mobile content has bottom clearance for navigation.
 - Live transcripts follow new turns only while the reader is within 48px of the bottom. Scrolling up preserves the reading position; returning to the bottom resumes following.
 - Light and dark themes share semantic tokens and persist across dashboard/tool routes. The theme switch adapts Magic UI's circular View Transition reveal; reduced motion skips the transition. Navigation and tabs share one moving selection background, measured again when individual controls resize after font or label changes.
@@ -18,7 +18,7 @@ Current implementation overrides the older component sketches below:
 - Calendar shows accepted scheduling reports, including practice calls. The clinic API is read-only: acceptance does not reserve or change an appointment. Staged/rejected actions are excluded; changes reconcile by appointment ID within one call. Separate calls remain separate reports.
 - Unknown data uses content-shaped skeletons, not zero counts or empty-state claims. Placeholders fade in after 150ms and remain still; cached content does not return to placeholders. Already-loaded records remain usable if an update fails. JSON requests time out after 15 seconds, freeing pending requests for retry.
 - Calls load details as rows approach the viewport, including older history. A loading drawer always has a Close button. Rows do not replay entrance animations as data arrives; newly available fields use a short opacity reveal. Reduced motion is immediate.
-- The recording frame reserves its waveform and a two-row, internally scrolling decision lane (one row in compact mode). The lane snaps to whole rows, has a contrasting scrollbar and supports keyboard access to every marker. Loading, buffering and cancellation do not move the transcript below it. Audio can be cancelled before playback starts. Audio and waveform retries remain separate, so waveform failure does not block playback or transcript review.
+- The decision lane reserves two rows (one in compact mode) and grows to show three whole rows before scrolling. Denser stacks snap to whole rows, have a contrasting scrollbar and support keyboard access to every marker. The waveform stays reserved during loading, buffering and cancellation. Audio can be cancelled before playback starts. Audio and waveform retries remain separate, so waveform failure does not block playback or transcript review.
 - The call library uses a pinned private GitHub snapshot. From `frontend/`, run `pnpm recordings:import` with authenticated `gh`, `ffprobe` and `ffmpeg` installed. The importer stores logs and Opus files in ignored `.recordings/`; rerunning rebuilds derived data from cached sources. Reload the console after importing. Recordings and credentials are not included in the public repository.
 - Caller bubbles use a distinct burgundy fill in dark mode and rose fill in light mode. Both speakers have visible borders; text contrast is above 11:1 in both themes.
 
@@ -114,7 +114,7 @@ Rules:
 - Row height 36px in tables; cell padding 8px 12px; panel padding 16px; page gutter 24px.
 - Radius, copied from Nava: `--radius-control` 8px (chips, timeline squares, code tags), `--radius-panel` 16px (swatches, drawers), `--radius-card` 24px (glass cards, hero panel, tiles), `--radius-pill` (buttons, inputs). `rounded-4xl` is an error **[lint]**.
 - Borders are white at 5% or 15% (`--line-glass-soft`, `--line-glass`), drawn as a 1px ring (`--glow-card`) on glass fills. Table rows have no rules; spacing separates them (Nava's comparison table).
-- Selection uses a neutral surface fill without an inset left rule. Live rows use `--fill-row-live`.
+- Selection uses a neutral surface fill without an inset left rule.
 - Links: plain white, grey on hover (Nava nav). No underline.
 - Focus: 1px `--accent-ink` outline, 3px offset. Never remove it.
 
@@ -155,40 +155,27 @@ Not used anywhere: eyebrow labels, status pills, chip rows as decoration, light-
 
 ### 7.1 Information architecture
 
-Primary navigation uses a collapsible desktop rail and a four-item mobile bar:
+Primary navigation uses a fixed-width desktop sidebar and a three-item mobile bar. The sidebar footer contains the theme switch and About ROSARIO link.
 
 | Screen | Route | Purpose |
 |---|---|---|
 | Overview | `/metrics` | Reception activity, reported bookings, duration and response gap |
-| Calls | `/calls` | Search/filter recordings and review each conversation |
+| Calls | `/calls` | Active calls above searchable, filterable call history |
 | Calendar | `/calendar` | Accepted scheduling reports by appointment date |
-| Live | `/live` | Current calls, with explicitly labeled recording replays |
 
 Rehearsal (`/cases`) and the voice demo (`/talk`) live outside the dashboard in a separate tools shell. The landing-page footer links to both.
 
-### 7.2 Live board
+### 7.2 Live calls
 
-Reception staff can inspect current calls and their decisions. Recorded replays are labeled as replay.
+Calls starts with actual active calls, followed by completed history. Call-ID search applies to both sections; outcome filters apply only to history. Recorded calls are never presented as live replays. Previous and Next follow the displayed order across both sections.
 
-```
-LIVE                                              3 active · 10 queued
-──────────────────────────────────────────────────────────────────────
-● 00:42  +34 612 ··· 678  Marta Ruiz Sáez  P00042   OFFERING   book ×1   1.2s
-● 01:17  withheld          identifying…    —        IDENTIFY   —          0.9s
-● 00:08  +34 699 ··· 120  (4 matches)      —        IDENTIFY   —          —
-──────────────────────────────────────────────────────────────────────
-[row click] → drawer: live transcript + decision cards streaming, pending
-actions list, patient brief, engine seconds and spend, "Report" preview of
-what would be submitted right now.
-```
-
-Rows show elapsed time, caller, conversation strip, stage and recorded per-call median response gap. Replay withholds the completed-call metric until the timeline ends. Unknown identity stays unknown until a lookup supplies it. Selecting a call opens its conversation and recorded context.
+Active rows show elapsed time, caller, conversation strip, stage and recorded per-call median response gap. Selecting a call opens its live transcript and decision cards, with Report, Patient and Raw tabs retained. Scrolling up pauses following; returning to the bottom resumes it. When the call completes, it moves into history once and the same open drawer switches to recording review.
 
 Data comes from the calls index and per-call details. The index polls every four seconds; active details refresh every 1.5 seconds. Overlapping index requests share one response, and unchanged polls do not restart detail loading. The backend does not expose an event stream.
 
 ### 7.3 Calls
 
-The call list shows time, caller, conversation strip, outcome, duration and recorded per-call median response gap (p50 gap). Quick filters and call-ID search narrow the list. Challenge attribution stays out of the primary review surface.
+The history list shows time, caller, conversation strip, outcome, duration and recorded per-call median response gap (p50 gap), grouped by date. Quick filters narrow history; call-ID search also applies to active calls above it. Challenge attribution stays out of the primary review surface.
 
 The drawer places decision icons above the stereo audiogram and caller/ROSARIO chat below it. Its tabs are Transcript, Report, Patient and Raw. Report retains submitted actions, replies and recorded metadata; Patient is read-only lookup data. Full chat is available before playback. During playback, turns appear at detected speech endings, with frame updates at message boundaries rather than waiting for the next media timeupdate. Unmatched fragments retain logged timing; Raw keeps original timestamps. Scrolling or pausing restores full review; a message seeks the player. A marker switches to Transcript, clears search and opens its exact decision card, scrolling the transcript pane on desktop or the drawer on mobile.
 

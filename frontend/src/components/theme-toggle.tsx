@@ -1,7 +1,8 @@
 // Circle reveal adapted from Magic UI's Animated Theme Toggler (MIT).
 // https://magicui.design/docs/components/animated-theme-toggler
 // Copyright (c) Magic UI. License: licenses/magic-ui.txt.
-import { Moon, Sun } from "lucide-react";
+import { MoonIcon } from "@phosphor-icons/react/dist/csr/Moon";
+import { SunIcon } from "@phosphor-icons/react/dist/csr/Sun";
 import { useEffect, useRef } from "react";
 import { flushSync } from "react-dom";
 import { setTheme, useTheme } from "@/lib/theme";
@@ -58,7 +59,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
 
   return <button ref={button} type="button" role="switch" aria-checked={theme === "dark"} aria-label="Dark mode" title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} className={`theme-toggle ${compact ? "theme-toggle-compact" : ""}`} onClick={() => void toggle()}>
     <span className="theme-toggle-track" aria-hidden="true">
-      <span className="theme-toggle-knob"><Sun className="theme-sun" size={16} /><Moon className="theme-moon" size={16} /></span>
+      <span className="theme-toggle-knob"><SunIcon className="theme-sun" size={16} /><MoonIcon className="theme-moon" size={16} /></span>
     </span>
     {!compact ? <span>{theme === "dark" ? "Dark" : "Light"} mode</span> : null}
   </button>;

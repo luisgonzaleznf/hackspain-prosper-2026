@@ -1,63 +1,58 @@
 import { clsx } from "clsx";
-import { Activity, ArrowLeft, ArrowUpRight, CalendarDays, ChartNoAxesCombined, PanelLeftClose, PanelLeftOpen, Phone, Search } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { ArrowLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowLeft";
+import { ArrowUpRightIcon } from "@phosphor-icons/react/dist/csr/ArrowUpRight";
+import { CalendarDotsIcon } from "@phosphor-icons/react/dist/csr/CalendarDots";
+import { ChartLineIcon } from "@phosphor-icons/react/dist/csr/ChartLine";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
+import { PhoneIcon } from "@phosphor-icons/react/dist/csr/Phone";
+import type { ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
-import { isActive, useCallsIndex, usePolling } from "@/lib/store";
+import { usePolling } from "@/lib/store";
 import { SelectionIndicator } from "@/components/selection-indicator";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV = [
-  { to: "/metrics", label: "Overview", icon: ChartNoAxesCombined },
-  { to: "/calls", label: "Calls", icon: Phone },
-  { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/live", label: "Live", icon: Activity },
+  { to: "/metrics", label: "Overview", icon: ChartLineIcon },
+  { to: "/calls", label: "Calls", icon: PhoneIcon },
+  { to: "/calendar", label: "Calendar", icon: CalendarDotsIcon },
 ] as const;
 
 export function Shell() {
   usePolling();
-  const { calls, error, loadedAt } = useCallsIndex();
-  const active = calls.filter(isActive).length;
-  const [railOpen, setRailOpen] = useState(true);
   const { pathname } = useLocation();
 
   return (
     <div className="h-dvh overflow-hidden md:grid md:grid-cols-[auto_1fr]">
-      <aside className={clsx("dashboard-rail hidden border-r border-line-1 md:flex md:h-dvh md:flex-col md:py-6", railOpen ? "md:w-[208px] md:px-4" : "md:w-[72px] md:px-3")} aria-label="Dashboard sidebar">
+      <aside className="dashboard-rail hidden border-r border-line-1 md:flex md:h-dvh md:w-[208px] md:flex-col md:px-4 md:py-6" aria-label="Dashboard sidebar">
         <div className="flex items-center justify-between gap-2 px-2">
-          <a href="/" className="flex min-h-11 items-center gap-3" aria-label="ROSARIO home">
+          <Link to="/metrics" className="flex min-h-11 items-center gap-3" aria-label="ROSARIO dashboard">
             <Mark className="size-7 shrink-0 text-accent-ink" />
-            {railOpen ? <span className="text-[23px] font-light tracking-tight text-fg">rosario</span> : null}
-          </a>
-          {railOpen ? <button type="button" className="rail-collapse" onClick={() => setRailOpen(false)} aria-label="Collapse navigation"><PanelLeftClose size={15} /></button> : null}
+            <span className="text-[23px] font-light tracking-tight text-fg">rosario</span>
+          </Link>
         </div>
         <nav className="relative isolate mt-10 grid gap-1" aria-label="Dashboard navigation">
           <SelectionIndicator activeKey={pathname} />
           {NAV.map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} title={label} className={({ isActive: on }) => clsx("sliding-tab flex min-h-12 items-center gap-3 rounded-tags px-3 text-[14px]", on ? "text-fg" : "text-fg-2 hover:text-fg", !railOpen && "justify-center")}>
-              <Icon size={18} strokeWidth={1.5} />
-              {railOpen ? <span>{label}</span> : <span className="sr-only">{label}</span>}
-              {to === "/live" && active > 0 && railOpen ? <span className="mono ml-auto text-[12px] text-fg-2">{active}</span> : null}
+            <NavLink key={to} to={to} title={label} className={({ isActive: on }) => clsx("sliding-tab flex min-h-12 items-center gap-3 rounded-tags px-3 text-[14px]", on ? "text-fg" : "text-fg-2 hover:text-fg")}>
+              <Icon size={18} />
+              <span>{label}</span>
             </NavLink>
           ))}
         </nav>
         <footer className="mt-auto grid gap-5">
-          {railOpen ? <div className="px-3 text-[12px] leading-relaxed text-fg-3">
-            <span className="flex items-center gap-2"><Activity size={14} />{error ? "Connection interrupted" : loadedAt ? active > 0 ? `${active} calls in progress` : "Recorded calls" : "Loading recordings"}</span>
-          </div> : <button className="rail-collapse mx-auto" onClick={() => setRailOpen(true)} aria-label="Expand navigation"><PanelLeftOpen size={18} /></button>}
-          <div className={clsx("grid gap-3 border-t border-line-1 pt-4", !railOpen && "justify-items-center")}>
-            <ThemeToggle compact={!railOpen} />
-            {railOpen ? <a href="/" className="flex min-h-9 items-center justify-between px-3 text-[12px] text-fg-3 hover:text-fg">About ROSARIO<ArrowUpRight size={13} /></a> : null}
+          <div className="grid gap-3 border-t border-line-1 pt-4">
+            <ThemeToggle />
+            <a href="/" className="flex min-h-9 items-center justify-between px-3 text-[12px] text-fg-3 hover:text-fg">About ROSARIO<ArrowUpRightIcon size={13} /></a>
           </div>
         </footer>
       </aside>
       <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden"><Outlet /></div>
       <nav className="safe-b fixed inset-x-0 bottom-0 z-20 border-t border-line-1 bg-bg p-1.5 md:hidden" aria-label="Dashboard navigation">
-        <div className="relative isolate grid grid-cols-4">
+        <div className="relative isolate grid grid-cols-3">
           <SelectionIndicator activeKey={pathname} />
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to} className={({ isActive: on }) => clsx("sliding-tab flex flex-col items-center gap-1 rounded-tags py-2 text-[11px]", on ? "text-fg" : "text-fg-3")}>
-              <Icon size={18} strokeWidth={1.5} />{label}
-              {to === "/live" && active > 0 ? <span className="sr-only">{active} active</span> : null}
+              <Icon size={18} />{label}
             </NavLink>
           ))}
         </div>
@@ -71,7 +66,7 @@ export function ToolsShell() {
   usePolling();
   return <div className="flex h-dvh flex-col overflow-hidden">
     <header className="flex shrink-0 items-center justify-between gap-3 border-b border-line-1 px-4 py-3 md:px-8">
-      <Link to="/metrics" className="flex min-h-9 items-center gap-2 text-[13px] text-fg-2 hover:text-fg"><ArrowLeft size={15} />Dashboard</Link>
+      <Link to="/metrics" className="flex min-h-9 items-center gap-2 text-[13px] text-fg-2 hover:text-fg"><ArrowLeftIcon size={15} />Dashboard</Link>
       <nav className="flex items-center gap-4 text-[12px] text-fg-3" aria-label="Secondary tools">
         <NavLink to="/cases" className={({ isActive }) => isActive ? "text-fg" : "hover:text-fg"}>Rehearsal</NavLink>
         <NavLink to="/talk" className={({ isActive }) => isActive ? "text-fg" : "hover:text-fg"}>Voice demo</NavLink>
@@ -123,17 +118,17 @@ export function ScreenHeader({
       <div className="measure">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
-            <a href="/" className="flex min-h-8 items-center gap-3 md:hidden" aria-label="ROSARIO home">
+            <Link to="/metrics" className="flex min-h-8 items-center gap-3 md:hidden" aria-label="ROSARIO dashboard">
               <Mark className="size-5 text-accent-ink" />
               <span className="text-[14px] text-fg-2">rosario</span>
-            </a>
+            </Link>
             <h1 className="t-title mt-3 text-fg md:mt-0">{title}</h1>
             {lede ? <p className="mt-1 max-w-[60ch] text-[14px] text-fg-2">{lede}</p> : null}
           </div>
           {search || action ? <div className={search ? "flex w-full flex-wrap items-center gap-2 sm:w-auto" : "flex flex-wrap items-center gap-2"}>
             {search ? (
               <label className="relative flex-1 sm:w-[260px] sm:flex-none">
-                <Search size={14} strokeWidth={1.5} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-fg-3" />
+                <MagnifyingGlassIcon size={14} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-fg-3" />
                 <input className="input pl-10" placeholder={search.placeholder} value={search.value} onChange={(e) => search.onChange(e.target.value)} type="search" aria-label={search.placeholder} />
               </label>
             ) : null}

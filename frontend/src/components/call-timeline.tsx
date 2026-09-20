@@ -1,13 +1,24 @@
 // The call as a video-editor timeline: an audiogram of both lanes across the
-// full width (caller above the axis, ROSARIO below), a speaker track of turn
-// blocks, a marker lane with one icon per tool call / staged action / refusal /
-// submission, a time ruler, and a scrubbable playhead. Peaks are decoded once
-// from the stereo recording with Web Audio and drawn on canvas in token colors.
+// full width (caller above the axis, ROSARIO below), a marker lane with one icon
+// per tool call / staged action / refusal / submission, a time ruler, and a
+// scrubbable playhead. Peaks are decoded once from the stereo recording with
+// Web Audio and drawn on canvas in token colors.
 // Playback goes through a plain <audio>; the orb's stereo meter taps it once.
 
 import { Tooltip } from "@base-ui/react/tooltip";
 import { clsx } from "clsx";
-import { AlertTriangle, CalendarSearch, Check, ClipboardCheck, Pause, Play, Search, Send, ShieldOff, UserPlus, UserSearch, type LucideIcon } from "lucide-react";
+import type { Icon } from "@phosphor-icons/react";
+import { WarningIcon } from "@phosphor-icons/react/dist/csr/Warning";
+import { CalendarDotsIcon } from "@phosphor-icons/react/dist/csr/CalendarDots";
+import { CheckIcon } from "@phosphor-icons/react/dist/csr/Check";
+import { ClipboardTextIcon } from "@phosphor-icons/react/dist/csr/ClipboardText";
+import { PauseIcon } from "@phosphor-icons/react/dist/csr/Pause";
+import { PlayIcon } from "@phosphor-icons/react/dist/csr/Play";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
+import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/csr/PaperPlaneTilt";
+import { ShieldSlashIcon } from "@phosphor-icons/react/dist/csr/ShieldSlash";
+import { UserPlusIcon } from "@phosphor-icons/react/dist/csr/UserPlus";
+import { UserFocusIcon } from "@phosphor-icons/react/dist/csr/UserFocus";
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { offset as fmtOffset, playerClock } from "@/lib/format";
 import type { Decision, Turn } from "@/lib/timeline";
@@ -101,18 +112,18 @@ async function decodePeaks(url: string, signal: AbortSignal): Promise<Peaks> {
 }
 
 /** Icon and lane color per decision, so a glance says what happened. */
-export function decisionGlyph(d: Decision): { Icon: LucideIcon; tone: "lookup" | "availability" | "write" | "refusal" | "submit"; title: string } {
-  if (d.kind === "submit") return { Icon: Send, tone: d.attention ? "refusal" : "submit", title: `Submitted ${d.label.replace("submit ", "")}` };
-  if (d.kind === "fallback" || d.kind === "guard" || d.kind === "error") return { Icon: d.kind === "error" ? AlertTriangle : ShieldOff, tone: "refusal", title: d.label };
-  if (d.kind === "staged") return { Icon: ClipboardCheck, tone: "write", title: d.label };
-  if (d.label === "caller_id_lookup") return { Icon: UserSearch, tone: "lookup", title: "Looked up the caller number" };
-  if (d.label === "list_appointments") return { Icon: CalendarSearch, tone: "availability", title: "Looked up existing appointments" };
-  if (d.label === "find_patient") return { Icon: UserSearch, tone: "lookup", title: "Looked up the patient" };
-  if (d.label === "search_availability") return { Icon: CalendarSearch, tone: "availability", title: "Queried availability" };
-  if (d.label === "validate_registration_details") return { Icon: Check, tone: "lookup", title: "Validated registration details" };
-  if (d.label.startsWith("record_registration")) return { Icon: UserPlus, tone: "write", title: "Recorded a new patient" };
-  if (d.label.startsWith("record_")) return { Icon: ClipboardCheck, tone: "write", title: `Recorded ${d.label.replace("record_", "")}` };
-  return { Icon: Search, tone: "lookup", title: d.label };
+export function decisionGlyph(d: Decision): { Icon: Icon; tone: "lookup" | "availability" | "write" | "refusal" | "submit"; title: string } {
+  if (d.kind === "submit") return { Icon: PaperPlaneTiltIcon, tone: d.attention ? "refusal" : "submit", title: `Submitted ${d.label.replace("submit ", "")}` };
+  if (d.kind === "fallback" || d.kind === "guard" || d.kind === "error") return { Icon: d.kind === "error" ? WarningIcon : ShieldSlashIcon, tone: "refusal", title: d.label };
+  if (d.kind === "staged") return { Icon: ClipboardTextIcon, tone: "write", title: d.label };
+  if (d.label === "caller_id_lookup") return { Icon: UserFocusIcon, tone: "lookup", title: "Looked up the caller number" };
+  if (d.label === "list_appointments") return { Icon: CalendarDotsIcon, tone: "availability", title: "Looked up existing appointments" };
+  if (d.label === "find_patient") return { Icon: UserFocusIcon, tone: "lookup", title: "Looked up the patient" };
+  if (d.label === "search_availability") return { Icon: CalendarDotsIcon, tone: "availability", title: "Queried availability" };
+  if (d.label === "validate_registration_details") return { Icon: CheckIcon, tone: "lookup", title: "Validated registration details" };
+  if (d.label.startsWith("record_registration")) return { Icon: UserPlusIcon, tone: "write", title: "Recorded a new patient" };
+  if (d.label.startsWith("record_")) return { Icon: ClipboardTextIcon, tone: "write", title: `Recorded ${d.label.replace("record_", "")}` };
+  return { Icon: MagnifyingGlassIcon, tone: "lookup", title: d.label };
 }
 
 const TONE_VAR: Record<string, string> = { lookup: "--event-lookup", availability: "--event-availability", write: "--event-write", refusal: "--event-refusal", submit: "--event-submit" };
@@ -212,7 +223,7 @@ export function CallTimeline({
     };
   }, [audioUrl, loadWaveform]);
 
-  // Draw: audiogram (two lanes mirrored around the axis) + speaker blocks.
+  // Draw the audiogram with two lanes mirrored around the axis.
   const draw = useCallback(() => {
     const c = canvas.current;
     const w = wrap.current;
@@ -520,6 +531,7 @@ export function CallTimeline({
     });
     return { markers, markerRows: rowEnds.length };
   }, [decisions, total, markerWidth, width]);
+  const visibleMarkerRows = Math.min(3, Math.max(compact ? 1 : 2, markerRows));
 
   return (
     <div className="review-player relative grid min-w-0 gap-2 select-none" data-compact={compact}>
@@ -530,8 +542,8 @@ export function CallTimeline({
 
       {/* Marker lane */}
       {markers.length > 0 ? (
-        <div className="review-marker-frame" data-compact={compact}>
-          <div className="review-marker-scroll" role="region" tabIndex={0} aria-label={`Call decisions: ${markers.length} decisions in ${markerRows} rows. Scroll vertically for more.`}>
+        <div className="review-marker-frame" data-compact={compact} style={{ height: visibleMarkerRows * (MARKER_SIZE + MARKER_GAP) + MARKER_INSET * 2 }}>
+          <div className="review-marker-scroll" role="region" tabIndex={0} aria-label={`Call decisions: ${markers.length} decisions in ${markerRows} rows.${markerRows > visibleMarkerRows ? " Scroll vertically for more." : ""}`}>
           <div ref={markerLane} className="review-marker-track" style={{ height: markerRows * (MARKER_SIZE + MARKER_GAP) }}>
             {Array.from({ length: markerRows }, (_, row) => <span key={row} aria-hidden="true" className="review-marker-row" style={{ top: row * (MARKER_SIZE + MARKER_GAP), height: MARKER_SIZE + MARKER_GAP }} />)}
             <Tooltip.Provider>
@@ -554,7 +566,7 @@ export function CallTimeline({
                         onDecision?.(decision);
                       }}
                     >
-                      <Icon size={17} strokeWidth={1.75} aria-hidden="true" />
+                      <Icon size={17} aria-hidden="true" />
                     </Tooltip.Trigger>
                     <Tooltip.Portal>
                       <Tooltip.Positioner side="top" sideOffset={8} collisionPadding={12} sticky className="review-tooltip-positioner">
@@ -620,18 +632,6 @@ export function CallTimeline({
         ) : null}
       </div>
 
-      {/* Speaker track */}
-      <div className="relative h-2 overflow-hidden rounded-band bg-canvas-deep">
-        {turns
-          .filter((t) => t.text.length > 0)
-          .map((t, i, all) => {
-            const next = all[i + 1];
-            const start = clampSeconds(t.offset, total);
-            const end = Math.max(start, clampSeconds(next ? next.offset : t.offset + Math.max(1.2, t.text.split(/\s+/).length * 0.36), total));
-            return <span key={t.key} className={clsx("absolute top-0 h-2 rounded-band", t.role === "agent" ? "bg-lane-agent" : "bg-lane-caller/70")} style={{ left: `${(start / total) * 100}%`, width: `${Math.min(100 - start / total * 100, Math.max(0.3, ((end - start) / total) * 100))}%` }} title={`${t.role === "agent" ? "ROSARIO" : "Caller"} ${fmtOffset(t.offset)}`} />;
-          })}
-      </div>
-
       {/* Ruler + transport */}
       <div className="relative h-4">
         {ticks.map((t) => (
@@ -642,7 +642,7 @@ export function CallTimeline({
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" className="pill pill-ghost review-playback-button" onClick={toggle} disabled={!audioUrl} aria-busy={mediaLoading || playbackWait != null} aria-label={playbackWait ? "Cancel playback" : playing ? "Pause" : playError ? "Retry audio" : "Play"}>
-          {playbackWait || playing ? <Pause size={15} strokeWidth={1.75} aria-hidden="true" /> : <Play size={15} strokeWidth={1.75} aria-hidden="true" />}
+          {playbackWait || playing ? <PauseIcon size={15} aria-hidden="true" /> : <PlayIcon size={15} aria-hidden="true" />}
           {playbackWait ? "Cancel" : playing ? "Pause" : playError ? "Retry audio" : "Play"}
         </button>
         <span className="mono text-[13px] text-fg tabular">

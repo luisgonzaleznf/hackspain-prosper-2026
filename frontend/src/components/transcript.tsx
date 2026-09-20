@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { ChevronDown } from "lucide-react";
+import { CaretDownIcon } from "@phosphor-icons/react/dist/csr/CaretDown";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { decisionGlyph } from "./call-timeline";
 import { KeyValue, ReasonCode, ToolName } from "./primitives";
@@ -14,7 +14,7 @@ export const DecisionCard = memo(function DecisionCard({ decision, compact }: { 
   return (
     <article className="review-decision" data-decision={decision.key} aria-label={`${title} ${decision.label}`}>
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <Icon size={14} strokeWidth={1.75} className={clsx("shrink-0", tone === "refusal" ? "text-accent-ink" : "text-fg-2")} aria-hidden="true" />
+        <Icon size={14} className={clsx("shrink-0", tone === "refusal" ? "text-accent-ink" : "text-fg-2")} aria-hidden="true" />
         <span className="text-[13px] text-fg">{title}</span>
         <span className="mono ml-auto text-[11px] text-fg-3 tabular">{offset(decision.offset)}</span>
       </header>
@@ -64,7 +64,7 @@ export const TranscriptTurn = memo(function TranscriptTurn({
       ) : <div className="chat-bubble"><Highlight text={message} query={highlight} /></div>}
       {hasDecisions ? (
         <button type="button" className="chat-decisions-toggle" aria-expanded={expanded} onClick={() => onToggle(turn.key)}>
-          <ChevronDown size={14} strokeWidth={1.75} className={clsx("chat-chevron", expanded && "chat-chevron-open")} aria-hidden="true" />
+          <CaretDownIcon size={14} className={clsx("chat-chevron", expanded && "chat-chevron-open")} aria-hidden="true" />
           <span>{turn.decisions.length === 1 ? decisionGlyph(turn.decisions[0]!).title : `${turn.decisions.length} decisions`}</span>
         </button>
       ) : null}
