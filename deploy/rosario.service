@@ -11,7 +11,7 @@ EnvironmentFile=/home/ubuntu/hackspain-prosper-standalone/.env
 Environment=PORT=7860
 Environment=CALLS_DIR=logs/phone-calls
 Environment=AUDIO_DIR=logs/phone-audio
-Environment=DATABASE_PATH=data/clinic.sqlite3
+Environment=DATABASE_PATH=data/runtime.sqlite3
 Environment=PATH=/home/ubuntu/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
 ExecStart=/home/ubuntu/.local/bin/uv run --project . python -m app.server
 Restart=always

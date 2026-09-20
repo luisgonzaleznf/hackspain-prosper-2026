@@ -48,6 +48,7 @@ check:  ## Run backend, SQLite, and frontend verification
 
 deploy: frontend-build  ## Install frontend, backend services, and Caddy routing
 	sudo mkdir -p /var/www/rosario
+	test -f data/runtime.sqlite3 || cp data/clinic.sqlite3 data/runtime.sqlite3
 	sudo cp -a ../frontend/dist/. /var/www/rosario/
 	sudo cp ../deploy/rosario.service /etc/systemd/system/rosario.service
 	sudo cp ../deploy/rosario-demo.service /etc/systemd/system/rosario-demo.service
