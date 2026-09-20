@@ -10,8 +10,16 @@ import { recordings } from "./tools/recordings-server.ts";
 // Override with ROSARIO_DEMO_API=http://host:port.
 const demoApi = process.env.ROSARIO_DEMO_API ?? "http://127.0.0.1:7860";
 
+// A local demo reads fresh call logs from its console server. Without a local
+// backend configured, retain the imported recording library used for static demos.
+const callsApi = process.env.ROSARIO_CALLS_API ?? process.env.ROSARIO_CLINIC_API;
+
 const proxy = {
+  ...(callsApi ? { "/api/calls": { target: callsApi, changeOrigin: true } } : {}),
+  "/api/clinic": { target: process.env.ROSARIO_CLINIC_API ?? "http://127.0.0.1:8000", changeOrigin: true },
   "/api/demo": { target: demoApi, changeOrigin: true },
+  "/sessions": { target: demoApi, changeOrigin: true },
+  "/api/offer": { target: demoApi, changeOrigin: true },
   "/start": { target: demoApi, changeOrigin: true },
 };
 
@@ -47,7 +55,7 @@ function landingAndConsole(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), recordings(root), landingAndConsole()],
+  plugins: [react(), tailwindcss(), ...(callsApi ? [] : [recordings(root)]), landingAndConsole()],
   build: { rollupOptions: { input: { console: "console.html", demo: "demo.html" } } },
   publicDir: "public",
   resolve: {

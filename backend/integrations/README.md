@@ -25,9 +25,27 @@ Auth Token is needed to serve TwiML or handle media. Keep the server and tunnel
 running while receiving calls. Check `/health` for `voice: gptlive` and
 `catalogue_loaded: true`.
 
-Calls use the real synthetic clinic directory and availability. Outcomes are
-stored in `backend/logs/calls/<Twilio CallSid>.jsonl`; they are **demo actions**, not
-persisted appointments: Twilio call IDs aren't registered with Prosper's scorer.
+Calls use the real synthetic Prosper clinic directory and availability, with local
+patients and appointments stored in `backend/data/clinic.sqlite3` (gitignored).
+Registrations, bookings, moves and cancellations persist immediately after caller
+confirmation. Future calls see those records, and local bookings block overlapping
+slots. `LOCAL_CLINIC_DB` can override the database path; voice and console must use
+the same database. Keep this file to retain the diary across restarts.
+
+These writes are local only: Prosper's read-only records remain unchanged. Cancelling
+an upstream appointment locally does not release its upstream availability. For new
+local patients, insured specialist care needs staff verification because Prosper cannot
+verify their patient-specific authorization. Optional emails follow the consent flow below.
+
+The local console's `/calendar` defaults to saved appointments; the Call reports view
+retains the scored practice reports. Start it with `make console CONSOLE_PORT=8001`
+after building the frontend (`cd ../frontend && pnpm build`). For Vite development,
+set `ROSARIO_CLINIC_API=http://127.0.0.1:8001`. The calendar API is only on the local
+console server, never on the public phone server.
+
+Decisions and local writes are also logged in
+`backend/logs/calls/<Twilio CallSid>.jsonl`. Twilio call IDs are not submitted to
+Prosper's scorer; the original `/ws` endpoint retains the scored report workflow.
 Audio is stored in `backend/logs/audio/`, as with the existing voice server.
 
 Optional [Resend emails](../docs/appointment-email.md) send a clearly labelled demo

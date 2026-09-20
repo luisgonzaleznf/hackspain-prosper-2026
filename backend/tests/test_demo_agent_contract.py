@@ -1,11 +1,12 @@
 from app.demo import bot
 from app.tools import TOOLS, call_tool
-from app.voice import codex
+from app.voice import codex, gptlive
+from integrations.local_session import LocalCallSession
 
 
-def test_demo_imports_exact_scored_codex_module():
-    assert bot.codex is codex
-    assert bot.codex.run_call is codex.run_call
+def test_demo_uses_gptlive_and_persistent_phone_session():
+    assert bot.gptlive is gptlive
+    assert issubclass(bot.DemoCallSession, LocalCallSession)
 
 
 def test_codex_voice_uses_canonical_tool_contract():

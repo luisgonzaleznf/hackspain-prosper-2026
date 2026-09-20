@@ -19,8 +19,8 @@ help:  ## Show this help
 serve:  ## Prosper call server on ws://0.0.0.0:$(PORT)/ws (VOICE=codex|gptlive|none)
 	VOICE=$(VOICE) PORT=$(PORT) $(UV) python -m app.server
 
-roleplay-demo:  ## Role-play Studio: serve, then open http://127.0.0.1:$(PORT)/demo/
-	VOICE=$(VOICE) PORT=$(PORT) $(UV) python -m app.server
+roleplay-demo:  ## Browser GPT-Live with local bookings; pair with the frontend demo proxy
+	$(UV) python -m app.demo.bot --host 127.0.0.1 --port $(PORT) --transport webrtc
 
 console:  ## ROSARIO console (call log API + built frontend) on http://127.0.0.1:$(CONSOLE_PORT)
 	$(UV) uvicorn app.dashboard:app --port $(CONSOLE_PORT) --reload

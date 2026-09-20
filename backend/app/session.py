@@ -7,6 +7,7 @@ is what lets a caller change their mind on the third turn without leaving a wron
 
 import json
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -51,6 +52,18 @@ class CallSession:
     customer_account: customer_accounts.AccountRequest | None = None
     customer_account_result: dict | None = None
 
+    @property
+    def clinic_client(self) -> Any:
+        return prosper.client()
+
+    async def execute_tool(
+        self, name: str, args: dict, handler: Callable[..., Awaitable[dict]]
+    ) -> dict:
+        return await handler(self, args)
+
+    def tool_specs(self, specs: list[dict]) -> list[dict]:
+        return specs
+
     @classmethod
     async def start(
         cls,
@@ -79,7 +92,7 @@ class CallSession:
             # Caller ID finds the line owner's chart before a word is said. A hint, never proof:
             # the caller is not always the patient.
             try:
-                session.caller_matches = await prosper.client().directory(phone=from_number)
+                session.caller_matches = await session.clinic_client.directory(phone=from_number)
                 session.remember_patients(session.caller_matches)
                 session.log(
                     "caller_id_lookup", matches=[m["patient_id"] for m in session.caller_matches]

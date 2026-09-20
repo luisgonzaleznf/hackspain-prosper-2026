@@ -1,31 +1,35 @@
-# Role-play Studio
+# Browser GPT-Live demo
 
-Optional [appointment emails](../../docs/appointment-email.md) use Resend to send a real,
-clearly labelled demo summary after hang-up. Enable the feature before starting the server;
-the caller must dictate and confirm their own address. The clinic diary is not changed.
-When enabled, **Create your customer account** also saves a confirmed name and email
-locally and sends a welcome email. Both paths finalize after disconnect; the receipt
-reports customer persistence and whether Resend accepted the welcome email.
+This demo uses the same GPT-Live voice and persistent local patient/calendar tools
+as Twilio. It bypasses the telephone network. AI API usage still applies; there are
+no Twilio call charges. Confirmed changes are saved to the same local SQLite database.
 
-From `backend/`, run `uv run python -m app.demo.bot --host 127.0.0.1 --port 7860`
-and open <http://127.0.0.1:7860/demo/> in a browser with a microphone.
-Choose a role, allow microphone access, and use the facts on its card. You can interrupt,
-change your mind, change language, or ask something outside the clinic's remit.
-End the call with the microphone button, then open **Review call** under **Saved rehearsals**.
+Start the backend from `backend/`:
 
-The studio calls the same `app.voice.codex.run_call`, `CallSession`, prompt, and validated
-clinic tools used by the scored server. Its base is serving commit `571b7db` (PR #69),
-merged into studio commit `ad3e80f`. The brain is `gpt-5.6-luna`, low effort, with the
-Codex subscription voice connection. The studio branch also contains its existing voice
-reconnection recovery. It calls `CallSession.finish_demo()` and never submits to Prosper.
-The rehearsal also adds clinic-only scope instructions to the shared voice and back-office
-prompts: unrelated tasks are redirected, while ordinary clinic questions remain supported.
-These prompt changes are locally rehearsed; they have not been scored on the leaderboard.
+```sh
+make roleplay-demo PORT=18762
+```
 
-Prerequisites: `uv sync --frozen`, `codex login` with voice access, and `PLATFORM_API_KEY`
-in the ignored `.env`. The existing local `PROSPER_API` credential can be assigned to
-`PLATFORM_API_KEY`; never commit its value. The server binds only to `127.0.0.1` and
-needs no public tunnel or change to the team's scoring endpoint.
+Build and serve the frontend in another terminal:
+
+```sh
+cd frontend
+pnpm build
+ROSARIO_DEMO_API=http://127.0.0.1:18762 ROSARIO_CLINIC_API=http://127.0.0.1:8001 pnpm exec vite preview --host 127.0.0.1 --port 4180
+```
+
+Open <http://127.0.0.1:4180/demo/>, choose a scenario, press the microphone orb,
+and allow microphone access. The first scenario supplies synthetic details for
+registering and booking a new patient. On subsequent calls that profile already exists.
+Stop with the orb; Review call opens the recording and trace.
+
+The root `.env` must provide `OPENAI_API_KEY` and `PLATFORM_API_KEY`.
+Calls, transcripts, recordings and the calendar use the local console when
+`ROSARIO_CLINIC_API` is set (override calls separately with `ROSARIO_CALLS_API`).
+The console needs `make console CONSOLE_PORT=8001` in `backend/`.
+Both backend processes must use the same `LOCAL_CLINIC_DB` if overriding the default.
+No writes go to Prosper. Main’s optional Resend email/account flow remains available
+when configured, with caller-confirmed recipients; see [email setup](../../docs/appointment-email.md). The scored `/ws` flow is unchanged.
 
 Every rehearsal saves:
 

@@ -113,6 +113,9 @@ def _catalogue_names() -> dict[str, str]:
 
 def build_action_evidence(session: "CallSession") -> list[DemoActionEvidence]:
     """Explain staged actions using only records and slots observed by this call."""
+    from integrations.local_session import LocalCallSession
+
+    persistent = isinstance(session, LocalCallSession)
     names = _catalogue_names()
     evidence: list[DemoActionEvidence] = []
     for action in session.actions:
@@ -165,10 +168,13 @@ def build_action_evidence(session: "CallSession") -> list[DemoActionEvidence]:
         else:
             fields = [("Action", verb.replace("_", " ").title())]
             checks = ["Deterministic action validation passed"]
+        labels = {"BOOK": "Booking prepared", "CANCEL": "Cancellation prepared", "RESCHEDULE": "Change prepared", "ESCALATE": "Escalated safely", "NO_ACTION": "No action required"}
+        if persistent:
+            labels.update(BOOK="Booking saved", CANCEL="Cancellation saved", RESCHEDULE="Change saved", REGISTER="Patient registered")
         evidence.append(
             DemoActionEvidence(
                 action=verb,
-                label={"BOOK": "Booking prepared", "CANCEL": "Cancellation prepared", "RESCHEDULE": "Change prepared", "ESCALATE": "Escalated safely", "NO_ACTION": "No action required"}.get(verb, "Action prepared"),
+                label=labels.get(verb, "Action prepared"),
                 fields=fields,
                 checks=checks,
             )

@@ -60,7 +60,7 @@ def test_browser_account_disconnect_persists_then_sends_and_exposes_receipt(demo
 
     sender = AsyncMock(side_effect=send)
     monkeypatch.setattr(appointment_email, "send_message", sender)
-    monkeypatch.setattr(bot.codex, "run_call", conversation)
+    monkeypatch.setattr(bot.gptlive, "run_call", conversation)
     monkeypatch.setattr(bot, "create_transport", AsyncMock(return_value=object()))
     monkeypatch.setattr(
         bot, "DemoRecorder", lambda: SimpleNamespace(tap=Mock(), save=AsyncMock(return_value={}))

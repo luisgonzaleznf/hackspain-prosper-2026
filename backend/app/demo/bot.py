@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from integrations.local_session import LocalCallSession
 from pipecat.runner.run import app as runner_app
 from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
@@ -20,14 +21,13 @@ from app.demo.state import (
     log_event,
     update_outcome,
 )
-from app.session import CallSession
-from app.voice import codex
+from app.voice import gptlive
 
 register_demo_routes(runner_app)
 
 
-class DemoCallSession(CallSession):
-    """A normal call session whose observable events also feed the demo UI."""
+class DemoCallSession(LocalCallSession):
+    """The phone booking flow over browser audio, with events for the demo UI."""
 
     def log(self, kind: str, **data: Any) -> None:
         super().log(kind, **data)
@@ -37,7 +37,7 @@ class DemoCallSession(CallSession):
 
 
 async def bot(runner_args: RunnerArguments) -> None:
-    """Run one browser role-play without submitting its staged outcome."""
+    """Run GPT-Live with persistent local writes and no telephone connection."""
     request = DemoStartRequest.model_validate(runner_args.body)
     scenario = get_scenario(request.scenario_id)
     if scenario is None:
@@ -64,7 +64,7 @@ async def bot(runner_args: RunnerArguments) -> None:
             {"webrtc": lambda: TransportParams(audio_in_enabled=True, audio_out_enabled=True)},
         )
         recorder.tap(transport)
-        await codex.run_call(transport, session)
+        await gptlive.run_call(transport, session)
     except Exception as exc:
         if session:
             session.log("voice_error", error=repr(exc))

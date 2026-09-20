@@ -5,8 +5,9 @@ from dataclasses import dataclass
 from urllib.parse import parse_qs
 from xml.etree.ElementTree import Element, SubElement, tostring
 
-from app.session import CallSession
 from fastapi import APIRouter, HTTPException, Request, Response
+
+from integrations.local_session import LocalCallSession
 
 router = APIRouter(prefix="/integrations/twilio")
 PHONE_NUMBER = "+15717135999"
@@ -37,8 +38,8 @@ async def incoming_call(request: Request) -> Response:
 
 
 @dataclass
-class TwilioCallSession(CallSession):
-    """Use real clinic lookups, but don't submit foreign call IDs to Prosper's scorer."""
+class TwilioCallSession(LocalCallSession):
+    """Real clinic reads with persistent local patient/calendar writes."""
 
     demo_mode: bool = True
 
