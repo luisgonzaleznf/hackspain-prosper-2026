@@ -66,6 +66,33 @@ flowchart TD
 
 The backend checks identity, caller confirmation and availability before saving appointment changes in SQLite. A separate FastAPI server gives the console access to the local calendar, call logs and recordings. See the [integration docs](backend/integrations/README.md) for implementation details.
 
+## Scaling up
+
+The demo is one host on purpose for the scope of a hackathon: `app/server.py` takes calls, `app/dashboard.py` serves the console, and both read and write the same local files — SQLite for patients and appointments (`LOCAL_CLINIC_DB`), one JSONL per call in `CALLS_DIR` and WAVs in `AUDIO_DIR`. Serving more calls means separating the three things that are currently one process and one disk: call sessions, clinic records, and artifacts.
+
+| Layer | Today | Scalable future |
+| --- | --- | --- |
+| Records | SQLite file shared by the voice server and the console | Networked PostgreSQL behind a connection pool per process, with replicas only if the console reads hard |
+| Artifacts | WAVs and per-call JSONL on local disk | Object storage (S3 and equivalents), keyed by call, with a lifecycle rule that expires recordings; the console reads them over signed URLs |
+| Realtime | One uvicorn process, one WebSocket per call, WebRTC for the browser Studio | Several workers behind a load balancer that passes the WebSocket upgrade and keeps a call pinned to the worker holding it |
+| Model access | `OPENAI_API_KEY` for GPT-Live and the reasoning model | The same, with raised concurrency and token quotas, nothing server-side should depend on subscription-authenticated access |
+| Frontend | Built by `frontend/dist` and served by the server | Static build on a CDN, the backend exposes only its APIs |
+| Packaging | `uv run` from a checkout | A container image per service, one or several per host |
+
+Layer details worth knowing before moving any of them:
+
+- **Postgres is not only a driver swap.** The check that stops two calls booking the same slot is a read-then-write in Python (`overlaps()` in [local_store.py](backend/integrations/local_store.py)); concurrent calls need it enforced by a database constraint or a lock. Per-operation idempotency already lives in the `changes.operation_key` unique column and moves over as is.
+- **Object storage covers logs as much as audio.** The console's call list, timeline and player read `CALLS_DIR` and `AUDIO_DIR` directly, so the console cannot leave the call host before the artifacts do. 
+- **WebSocket affinity is per connection, and a call is one long connection,** so pinning holds for the telephony path. The browser Studio is different: WebRTC is not a sticky-cookie problem, it needs STUN/TURN and a media relay of its own.
+- **Capacity is concurrent calls, not requests.** Each call holds an audio pipeline and its recording buffers, a few megabytes at the five-minute cap in [recorder.py](backend/app/recorder.py), so hosts are sized on `active_calls` (already reported by `/health`) and audio CPU.
+- **The upstream clinic API is a shared bottleneck and a external dependency.** `PLATFORM_API_KEY` access is read-only, and the catalogue and the submissions list are cached per process; more workers means more copies of those caches against the same provider rate limit.
+- **Carrier limits come first.** Twilio's concurrent media streams on the number bound how many calls can exist at all.
+
+Future interesting improvements:
+- **In-flight state is per process.** `CallSession` stages actions in memory, `server.py` tracks `ACTIVE` in a set, and the Studio keeps its sessions in a process-local registry. Affinity makes that correct on one worker; it does not make it survivable. If a worker dies, its call dies with it unless session state moves to a shared store keyed by call id.
+- **Observability is files on the host.** With more than one host, logs, metrics and traces need shipping to a collector rather than reading a directory.
+- **Email goes through Resend for the PoC** with its own rate limits; the consent and verified-sender rules are unchanged by scale.
+
 ## Call review
 
 <p align="center">
