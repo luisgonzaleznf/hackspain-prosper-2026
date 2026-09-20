@@ -15,6 +15,8 @@
 
 Rosario is a voice receptionist for clinics. It answers phone and browser calls, identifies patients, searches available appointments and saves confirmed bookings, changes and cancellations. Powered by GPT-Live, it follows the caller's language and can switch languages during a call. A companion console lets staff review calls, inspect decisions and see the appointments Rosario saved.
 
+**Call our voice agent: [+1 571-713-5999](tel:+15717135999).**
+
 [Website](https://rosario.fyi) · [Quickstart](#run-locally) · [Architecture](#architecture) · [Call review](#call-review) · [GitHub](https://github.com/luisgonzaleznf/hackspain-prosper-2026)
 
 ## Handling a call
