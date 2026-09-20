@@ -124,6 +124,7 @@
   --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
   --dur-state: 150ms; --dur-popover: 200ms; --dur-overlay: 300ms;
   --dur-nav: 350ms; --dur-theme: 500ms; --dur-reveal: 350ms;
+  --dur-live-status: 1200ms;
 }
 
 /* Warm paper keeps the clinic's burgundy/red identity in daylight. */

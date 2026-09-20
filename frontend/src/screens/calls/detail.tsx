@@ -7,6 +7,7 @@ import { CaretRightIcon } from "@phosphor-icons/react/dist/csr/CaretRight";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
+import { CallInProgress } from "@/components/call-status";
 import { CallTimeline, type TimelineHandle } from "@/components/call-timeline";
 import { LoadingConversation, LoadingTimeline } from "@/components/loading";
 import { CopyButton, Empty, KeyValue, Label, Mono, Outcome, PillSelect, ReasonCode, VerdictMark } from "@/components/primitives";
@@ -100,7 +101,7 @@ export function CallDrawer({ record, onClose, prev, next, basePath }: { record: 
           <h2 className="truncate text-[18px] font-light text-fg">{timeline ? callerLabel(timeline) : detailError ? "Call unavailable" : "Loading call"}</h2>
           {!unknown ? <p className="mt-1 text-[12px] text-fg-3">{wallClockSeconds(summary.started_at)} <span className="ml-3 mono tabular"><CallDuration summary={summary} endedAt={timeline?.endedAt} />{live ? " elapsed" : ""}</span></p> : null}
         </div>
-        {!unknown ? live ? <span className="text-[13px] text-accent-ink">Live</span> : <Outcome verb={outcome.verb} reason={outcome.reason} status={outcome.status} /> : null}
+        {!unknown ? live ? <CallInProgress endedAt={timeline?.endedAt} /> : <Outcome verb={outcome.verb} reason={outcome.reason} status={outcome.status} /> : null}
         <button type="button" className="pill pill-quiet pill-sm pill-icon" onClick={onClose} aria-label="Close call">
           <XIcon size={14} />
         </button>

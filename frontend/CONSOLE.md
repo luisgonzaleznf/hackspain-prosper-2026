@@ -122,8 +122,8 @@ Rules:
 
 - Motion explains a state change: navigation selection, theme, chart series, incoming message or drawer.
 - Tokens cover 150ms feedback, 200ms popovers, 300ms overlays, 350ms selection/reveals and a 500ms theme reveal. Reduced motion collapses these. JavaScript reading CSS durations handles both `ms` and minified `s` units.
-- No decorative looping animation. Liveness comes from elapsed time and new transcript turns; status is an icon and text.
-- The one continuously moving element is the voice orb, and it moves only with real audio levels (section 7.5). When no audio flows it is still. Nava's 15s marquee and 50s ambient spin are not copied.
+- No decorative looping animation. Active calls use a small rotating CircleNotch beside “In progress”, with elapsed time and new transcript turns. The status rotation stops on hang-up and is disabled under reduced motion.
+- The voice orb moves only with real audio levels (section 7.5). When no audio flows it is still. Nava's 15s marquee and 50s ambient spin are not copied.
 - The hero dome texture is drawn once on a canvas (`brand/brand.js`) from the tokens and redrawn only on resize.
 
 ## 6. Components
@@ -170,6 +170,8 @@ Rehearsal (`/cases`) and the voice demo (`/talk`) live outside the dashboard in 
 Calls starts with actual active calls, followed by completed history. Call-ID search applies to both sections; outcome filters apply only to history. Recorded calls are never presented as live replays. Previous and Next follow the displayed order across both sections.
 
 Active rows show elapsed time, caller, conversation strip, stage and recorded per-call median response gap. Selecting a call opens its live transcript and decision cards, with Report, Patient and Raw tabs retained. Scrolling up pauses following; returning to the bottom resumes it. When the call completes, it moves into history once and the same open drawer switches to recording review.
+
+“In progress” has a small looping rotation in desktop, mobile and compact rows and in the drawer header. The indicator stops when a terminal event arrives, even before the next index poll; elapsed time stops at hang-up rather than including report/recording cleanup.
 
 Data comes from the calls index and per-call details. The index polls every four seconds; active details refresh every 1.5 seconds. Overlapping index requests share one response, and unchanged polls do not restart detail loading. The backend does not expose an event stream.
 
@@ -233,7 +235,7 @@ Only successful scheduling submissions appear. Identical retries within one call
 | `design/no-raw-font` | TS/TSX | `font-[…]`, font-serif, inline font-family |
 | `design/no-em-dash` | TS/TSX | U+2014 in strings and JSX text |
 | `design/no-inline-style-tokens` | TS/TSX | inline `style` color/font/shadow/animation values that are not `var(--…)` |
-| Stylelint | CSS | hex and named colors outside tokens.css, non-variable color/font-family/background, `infinite`, drop-shadow, box-shadow and backdrop-filter other than none/inset/var(), weights 800+, em dash in `content`, underline |
+| Stylelint | CSS | hex and named colors outside tokens.css, non-variable color/font-family/background, `infinite` except the approved `call-status-spin` declaration, drop-shadow, box-shadow and backdrop-filter other than none/inset/var(), weights 800+, em dash in `content`, underline |
 
 The linter does not check density, hierarchy or copy. Those are reviewed by eye against sections 6 to 8 before a screen is called done.
 

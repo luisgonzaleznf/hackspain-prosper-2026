@@ -382,6 +382,7 @@ export function project(detail: CallDetail): Timeline {
       }
       case "stop_received":
       case "socket_closed":
+      case "closed_by_agent":
         if (endedAt == null) endedAt = event.t;
         if (stage !== "ESCALATE") stage = "CLOSE";
         return;
@@ -489,6 +490,8 @@ export function outcomeOf(detail: CallDetail | null, summary: { action: string; 
   if (submit) return { verb: submit.action.action, reason: submit.action.reason ?? null, status: submit.status };
   const status = /submitted (\d+)/.exec(summary.status)?.[1];
   // The backend writes U+2014 as the action of a call that has not ended.
-  const verb = summary.action.codePointAt(0) === 0x2014 ? "in progress" : summary.action;
+  const verb = !summary.action || summary.action.codePointAt(0) === 0x2014
+    ? summary.status === "in progress" ? "in progress" : "Ended"
+    : summary.action;
   return { verb, reason: null, status: status ? Number(status) : null };
 }

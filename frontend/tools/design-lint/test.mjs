@@ -22,6 +22,7 @@ const expect = [
   ["bad.tsx", (oxByFile["bad.tsx"] ?? []).length >= 8, "oxlint flags bad.tsx"],
   ["good.tsx", (oxByFile["good.tsx"] ?? []).length === 0, "oxlint passes good.tsx"],
   ["bad.css", (stByFile["bad.css"] ?? []).length >= 7, "stylelint flags bad.css"],
+  ["bad.css", (stByFile["bad.css"] ?? []).some((warning) => warning.rule === "declaration-property-value-disallowed-list" && warning.text.includes("animation")), "stylelint still rejects decorative animation loops"],
   ["good.css", (stByFile["good.css"] ?? []).length === 0, "stylelint passes good.css"],
   ["tokens.css", (stByFile["tokens.css"] ?? []).length === 0, "stylelint allows raw values in tokens.css"],
 ];
