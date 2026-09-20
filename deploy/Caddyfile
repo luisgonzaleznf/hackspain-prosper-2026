@@ -14,6 +14,9 @@ rosario.fyi, demo.udarc.com {
 	handle /sessions/* {
 		reverse_proxy 127.0.0.1:7862
 	}
+	handle /integrations/twilio/ws* {
+		reverse_proxy 127.0.0.1:7860
+	}
 	handle /ws* {
 		reverse_proxy 127.0.0.1:7860
 	}
