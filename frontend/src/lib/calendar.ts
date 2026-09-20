@@ -20,6 +20,15 @@ export interface SchedulingRecord {
   supersededBy: SchedulingKind | null;
   practice: boolean;
   persisted?: boolean;
+  /** Set by the console server: "local" is a booking saved on this host, "prosper" an action Prosper accepted. */
+  source?: "local" | "prosper";
+  /** False when the source call was served from another host, so this console holds no log for it. */
+  callLogged?: boolean;
+}
+
+export interface CalendarSources {
+  local: number;
+  prosper: { ok: boolean; count: number; detail: string | null } | null;
 }
 
 const madridDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit" });

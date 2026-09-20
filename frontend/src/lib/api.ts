@@ -1,4 +1,4 @@
-import type { SchedulingRecord } from "./calendar.ts";
+import type { CalendarSources, SchedulingRecord } from "./calendar.ts";
 import type { CallDetail, CallsIndex } from "./types.ts";
 
 // Same-origin `/api/calls`: live local console when configured, otherwise imported recordings.
@@ -37,7 +37,7 @@ async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
 }
 
 export const api = {
-  calendar: (signal?: AbortSignal) => getJson<{ records: SchedulingRecord[] }>("/api/clinic/calendar", signal),
+  calendar: (signal?: AbortSignal) => getJson<{ records: SchedulingRecord[]; sources?: CalendarSources }>("/api/clinic/calendar", signal),
   calls: (signal?: AbortSignal) => getJson<CallsIndex>("/api/calls", signal),
   call: (id: string, signal?: AbortSignal) => getJson<CallDetail>(`/api/calls/${encodeURIComponent(id)}`, signal),
   audioUrl: (id: string) => `/api/calls/${encodeURIComponent(id)}/audio`,
