@@ -53,8 +53,8 @@ replay-call:  ## Replay a recorded caller (RECORD_CALLER_AUDIO=1): make replay-c
 	$(UVS) python scripts/fake_caller.py $(WAV) --captured --n $(or $(N),1)
 
 verify:  ## ruff + mypy + pytest against THIS package's copy
-	$(UV) ruff check app tests scripts
-	$(UV) mypy app
+	$(UV) ruff check app integrations tests scripts
+	$(UV) mypy app integrations
 	$(UVS) python -m pytest
 
 # ── after a Run All (see README, docs/private-calls/README.md) ──
