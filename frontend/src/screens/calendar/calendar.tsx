@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 import { ScreenHeader } from "@/app";
 import { ProgressStrip } from "@/components/loading";
 import { SelectionIndicator } from "@/components/selection-indicator";
-import { calendarDay, schedulingRecords, type SchedulingRecord } from "@/lib/calendar";
+import { calendarDay, schedulingRecords, type CalendarSources, type SchedulingRecord } from "@/lib/calendar";
 import { maskPhone, slotLabel, wallClock } from "@/lib/format";
 import { loadDetail, refreshNow, useCallsIndex } from "@/lib/store";
 import type { CallDetail } from "@/lib/types";
@@ -19,6 +19,17 @@ const monthFormat = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", month: "
 const dayFormat = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" });
 const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const actionLabels = { BOOK: "Booking reported", RESCHEDULE: "Reschedule reported", CANCEL: "Cancellation reported" };
+
+function eventLabel(event: SchedulingRecord): string {
+  const when = event.kind === "CANCEL" ? (event.persisted ? "Cancelled" : "Cancel report") : event.supersededBy ? "Changed" : event.slot ? wallClock(Date.parse(event.slot) / 1000) : "Time unknown";
+  return `${when} ${event.patient}`;
+}
+
+function sourceLabel(record: SchedulingRecord): string {
+  if (record.source === "prosper") return "Accepted by Prosper";
+  if (record.persisted) return "Saved locally";
+  return record.practice ? "Practice call" : "Recorded call";
+}
 
 function monthDays(month: string): string[] {
   const first = new Date(`${month}-01T12:00:00Z`);
@@ -37,6 +48,7 @@ export function CalendarScreen() {
   const { calls, byId, loading, error } = useCallsIndex();
   const [source, setSource] = useState<"local" | "reports">("local");
   const [localRecords, setLocalRecords] = useState<SchedulingRecord[]>([]);
+  const [sources, setSources] = useState<CalendarSources>({ local: 0, prosper: null });
   const [localLoading, setLocalLoading] = useState(true);
   const [localError, setLocalError] = useState(false);
   const loadLocal = useCallback(async (signal?: AbortSignal) => {
@@ -44,6 +56,7 @@ export function CalendarScreen() {
       const data = await api.calendar(signal);
       if (signal?.aborted) return;
       setLocalRecords(data.records);
+      setSources(data.sources ?? { local: data.records.length, prosper: null });
       setLocalError(false);
     } catch {
       if (!signal?.aborted) setLocalError(true);
@@ -197,14 +210,14 @@ export function CalendarScreen() {
           <section className="calendar-source" aria-labelledby="calendar-source-title">
             <CalendarDotsIcon size={20} aria-hidden="true" />
             <div>
-              <h2 id="calendar-source-title">{source === "local" ? "Local appointments" : "Call reports · Read-only clinic"}</h2>
-              <p>{source === "local" ? "Confirmed bookings saved here. Open the source call to review the conversation." : "Reports include practice calls and do not change the clinic diary."}</p>
+              <h2 id="calendar-source-title">{source === "local" ? "Appointments · Saved here and accepted by Prosper" : "Call reports · Read-only clinic"}</h2>
+              <p>{source === "local" ? "Bookings the receptionist saved on this server, plus every booking, change and cancellation Prosper accepted from the agent's calls. Prosper's own diary is read-only and never shows them." : "Reports include practice calls and do not change the clinic diary."}</p>
             </div>
           </section>
 
           <div className="calendar-loading">
-            {source === "local" ? <p className="calendar-status" role="status">{localLoading ? "Loading appointments…" : localError ? "Appointments unavailable. Start the local console server and refresh." : `${records.length} saved ${records.length === 1 ? "appointment" : "appointments"}`}</p> : loadingRecords && calls.length > 0 ? <ProgressStrip label={refreshing ? "Refreshing reports" : "Reading calls"} value={loaded + failed} max={calls.length} /> : <p className="calendar-status" role="status">{loadingRecords ? "Loading calls…" : `${records.length} accepted ${records.length === 1 ? "report" : "reports"}${incomplete ? " · Incomplete" : ""}`}</p>}
-            <p className="calendar-status-note" role="status">{source === "local" ? "" : error ? "Updates unavailable" : failed > 0 ? `${failed} unavailable` : ""}</p>
+            {source === "local" ? <p className="calendar-status" role="status">{localLoading ? "Loading appointments…" : localError ? "Appointments unavailable. Start the local console server and refresh." : `${records.length} ${records.length === 1 ? "appointment" : "appointments"} · ${sources.local} saved here · ${sources.prosper?.count ?? 0} accepted by Prosper`}</p> : loadingRecords && calls.length > 0 ? <ProgressStrip label={refreshing ? "Refreshing reports" : "Reading calls"} value={loaded + failed} max={calls.length} /> : <p className="calendar-status" role="status">{loadingRecords ? "Loading calls…" : `${records.length} accepted ${records.length === 1 ? "report" : "reports"}${incomplete ? " · Incomplete" : ""}`}</p>}
+            <p className="calendar-status-note" role="status">{source === "local" ? (sources.prosper && !sources.prosper.ok ? "Prosper feed unavailable · showing saved bookings only" : "") : error ? "Updates unavailable" : failed > 0 ? `${failed} unavailable` : ""}</p>
           </div>
 
           <div className="calendar-layout">
@@ -231,11 +244,13 @@ export function CalendarScreen() {
                         <div className="calendar-day" data-outside={outside} data-selected={day === selectedDay}>
                           <button type="button" className="calendar-day-select" aria-pressed={day === selectedDay} aria-current={day === today ? "date" : undefined} aria-label={`${dayFormat.format(new Date(`${day}T12:00:00Z`))}, ${reportCount(events.length)}`} onClick={() => selectDay(day)}>
                             <span className="calendar-date">{Number(day.slice(-2))}{day === today ? <span className="calendar-today-word">Today</span> : null}</span>
-                            {events.length > 0 ? <span className="calendar-day-count">{events.length}{incomplete ? "+" : ""}<span className="calendar-count-word"> {source === "local" ? "saved" : events.length === 1 ? "report" : "reports"}</span></span> : null}
+                            {events.length > 0 ? <span className="calendar-day-count">{events.length}{incomplete ? "+" : ""}<span className="calendar-count-word"> {source === "local" ? (events.length === 1 ? "record" : "records") : events.length === 1 ? "report" : "reports"}</span></span> : null}
                           </button>
                           {events.length > 0 ? <div className="calendar-day-preview">
-                            {events.slice(0, 1).map((event) => <Link key={event.id} to={`/calls/${encodeURIComponent(event.callId)}`} className="calendar-event-link" aria-label={`View call for ${event.patient}${event.slot ? `, ${slotLabel(event.slot)}` : ""}`}>
-                              <span className="calendar-event-label">{event.kind === "CANCEL" ? (event.persisted ? "Cancelled" : "Cancel report") : event.supersededBy ? "Changed" : event.slot ? wallClock(Date.parse(event.slot) / 1000) : "Time unknown"} {event.patient}</span>
+                            {events.slice(0, 1).map((event) => event.callLogged === false ? <span key={event.id} className="calendar-event-link" aria-label={`${event.patient}${event.slot ? `, ${slotLabel(event.slot)}` : ""}, call log not on this server`}>
+                              <span className="calendar-event-label">{eventLabel(event)}</span>
+                            </span> : <Link key={event.id} to={`/calls/${encodeURIComponent(event.callId)}`} className="calendar-event-link" aria-label={`View call for ${event.patient}${event.slot ? `, ${slotLabel(event.slot)}` : ""}`}>
+                              <span className="calendar-event-label">{eventLabel(event)}</span>
                               <span className="calendar-event-call"><span><span className="calendar-call-view-word">View </span>call</span><ArrowUpRightIcon size={12} aria-hidden="true" /></span>
                             </Link>)}
                             {events.length > 1 ? <button type="button" className="calendar-more" aria-label={`Show all ${events.length} ${source === "local" ? "appointments" : "reports"} for ${dayFormat.format(new Date(`${day}T12:00:00Z`))}`} onClick={() => selectDay(day)}>+{events.length - 1} more</button> : null}
@@ -262,7 +277,7 @@ export function CalendarScreen() {
                     <p className="calendar-caller"><span className="loading-skeleton calendar-placeholder-caller" /></p>
                     <div className="calendar-record-footer"><span className="loading-skeleton calendar-placeholder-kind" /><span className="calendar-call-link"><span className="loading-skeleton calendar-placeholder-link" /></span></div>
                   </div>
-                </div> : <div className="calendar-empty"><CalendarDotsIcon size={28} aria-hidden="true" /><h3>{incomplete ? "Records incomplete" : source === "local" ? "No local appointments for this date" : "No reports for this date"}</h3><p>{incomplete ? "Refresh to retry unavailable records." : "This does not mean the clinic is free."}</p></div>}
+                </div> : <div className="calendar-empty"><CalendarDotsIcon size={28} aria-hidden="true" /><h3>{incomplete ? "Records incomplete" : source === "local" ? "No appointments for this date" : "No reports for this date"}</h3><p>{incomplete ? "Refresh to retry unavailable records." : "This does not mean the clinic is free."}</p></div>}
               </div>
             </section>
           </div>
@@ -283,7 +298,7 @@ function AgendaRecord({ record }: { record: SchedulingRecord }) {
     {record.previousSlot && record.kind === "RESCHEDULE" ? <p className="calendar-change">Moved from {slotLabel(record.previousSlot)}</p> : null}
     {record.kind === "CANCEL" ? <p className="calendar-change">{record.persisted ? "This appointment is cancelled." : "Cancellation reported for this appointment, not an active booking."}</p> : null}
     {record.supersededBy ? <p className="calendar-change">{record.supersededBy === "CANCEL" ? "Cancellation" : "A later change"} was reported for this appointment in the same call.</p> : null}
-    {record.persisted && record.appointmentId ? <p className="mono break-all">{record.appointmentId}</p> : null}
-    <div className="calendar-record-footer"><span>{record.persisted ? "Saved locally" : record.practice ? "Practice call" : "Recorded call"}</span><Link to={`/calls/${encodeURIComponent(record.callId)}`} className="calendar-call-link">View call<ArrowUpRightIcon size={14} aria-hidden="true" /></Link></div>
+    {record.source && record.appointmentId ? <p className="mono break-all">{record.appointmentId}</p> : null}
+    <div className="calendar-record-footer"><span>{sourceLabel(record)}</span>{record.callLogged === false ? <span>Call log not on this server</span> : <Link to={`/calls/${encodeURIComponent(record.callId)}`} className="calendar-call-link">View call<ArrowUpRightIcon size={14} aria-hidden="true" /></Link>}</div>
   </li>;
 }

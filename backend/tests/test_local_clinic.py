@@ -1,4 +1,5 @@
 import asyncio
+import json
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from datetime import datetime
@@ -7,6 +8,7 @@ import pytest
 from app import clinic, config, prosper
 from app.session import CallSession
 from app.tools import TOOLS, call_tool
+from integrations import clinic_api
 from integrations.local_store import LocalStore
 from integrations.twilio import TwilioCallSession
 
@@ -70,6 +72,7 @@ class Remote:
         self.diary = []
         self.submits = []
         self.searches = []
+        self.submissions_feed = []
 
     async def directory(self, **query):
         if query.get("national_id") == REMOTE_PATIENT["national_id"] or query.get("phone") in {
@@ -95,6 +98,9 @@ class Remote:
         self.submits.append(payload)
         return 200, {}
 
+    async def submissions(self, limit=200):
+        return deepcopy(self.submissions_feed)
+
 
 @pytest.fixture
 def setup(tmp_path, monkeypatch):
@@ -103,6 +109,10 @@ def setup(tmp_path, monkeypatch):
     monkeypatch.setattr(clinic, "_catalogue", deepcopy(CATALOGUE))
     remote = Remote()
     monkeypatch.setattr(prosper, "client", lambda: remote)
+    # The console calendar caches Prosper's feed and the persona name directory per process.
+    monkeypatch.setattr(clinic_api, "_names", None)
+    monkeypatch.setattr(clinic_api, "_submissions", None)
+    monkeypatch.setattr(clinic_api, "PUBLIC_CASES", tmp_path / "public-cases.json")
     return remote
 
 
@@ -356,12 +366,159 @@ def test_console_exposes_saved_calendar_only_locally(setup):
     appointment = book(session, patient)["appointment_id"]
     response = TestClient(dashboard).get("/api/clinic/calendar")
     assert response.status_code == 200
-    record = response.json()["records"][0]
+    body = response.json()
+    record = body["records"][0]
     assert record["appointmentId"] == appointment
     assert record["persisted"] is True
+    assert record["source"] == "local"
     assert record["day"] == "2026-09-21"
     assert record["patient"] == "Ana García López"
+    assert record["site"] == "Arenal Sur"
+    assert record["callLogged"] is True
+    assert body["sources"] == {"local": 1, "prosper": {"ok": True, "count": 0, "detail": None}}
     assert TestClient(voice).get("/api/clinic/calendar").status_code == 404
+
+
+HARNESS_FEED = [
+    {
+        "call_id": "harness-book",
+        "received_at": "2026-09-20T03:23:20.697498Z",
+        "record": {
+            "actions": [
+                {
+                    "action": "BOOK",
+                    "patient_id": "P001",
+                    "provider_id": "PR03",
+                    "location_id": "sur",
+                    "appointment_type_id": "first_visit",
+                    "slot": "2026-09-22T09:00:00+02:00",
+                    "policy_id": "privado",
+                }
+            ]
+        },
+    },
+    {
+        "call_id": "harness-move",
+        "received_at": "2026-09-20T03:12:46.895273Z",
+        "record": {
+            "actions": [
+                {
+                    "action": "RESCHEDULE",
+                    "appointment_id": "A001498",
+                    "provider_id": "PR03",
+                    "location_id": "sur",
+                    "slot": "2026-10-13T13:15:00+02:00",
+                    "policy_id": "mapfre",
+                }
+            ]
+        },
+    },
+    {
+        "call_id": "harness-cancel",
+        "received_at": "2026-09-20T03:09:57.138786Z",
+        "record": {
+            "actions": [
+                {"action": "CANCEL", "appointment_id": "A001335"},
+                {"action": "NO_ACTION", "reason": "not_applicable"},
+            ]
+        },
+    },
+]
+MOVE_LOG = [
+    {
+        "t": 1.0,
+        "kind": "tool",
+        "name": "find_patient",
+        "args": {},
+        "result": {
+            "matches": [{"patient_id": "P00023", "name": "Sonia Vázquez Alonso"}],
+            "count": 1,
+        },
+    },
+    {
+        "t": 2.0,
+        "kind": "tool",
+        "name": "list_appointments",
+        "args": {},
+        "result": {
+            "appointments": [
+                {
+                    "appointment_id": "A001498",
+                    "patient_id": "P00023",
+                    "start_time": "2026-10-13T11:45:00+02:00",
+                    "provider_id": "PR07",
+                    "location_id": "norte",
+                }
+            ]
+        },
+    },
+]
+
+
+def test_console_calendar_merges_prosper_submissions(setup, tmp_path):
+    from app.dashboard import app as dashboard
+    from fastapi.testclient import TestClient
+
+    setup.submissions_feed = deepcopy(HARNESS_FEED)
+    # The persona directory: one practice case names the remote patient's DNI.
+    clinic_api.PUBLIC_CASES.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {"persona": {"data": {"patient_national_id": REMOTE_PATIENT["national_id"]}}}
+                ]
+            }
+        )
+    )
+    # Only the reschedule call was served from this host, so only its log is here.
+    config.CALLS_DIR.mkdir(parents=True)
+    (config.CALLS_DIR / "harness-move.jsonl").write_text(
+        "".join(json.dumps(event) + "\n" for event in MOVE_LOG)
+    )
+    session = TwilioCallSession("CAcalendar", started_at=NOW)
+    patient = register(session)
+    search(session, patient)
+    book(session, patient)
+
+    body = TestClient(dashboard).get("/api/clinic/calendar").json()
+    assert body["sources"] == {"local": 1, "prosper": {"ok": True, "count": 3, "detail": None}}
+    assert [r["source"] for r in body["records"]] == ["local", "prosper", "prosper", "prosper"]
+    by_call = {r["callId"]: r for r in body["records"]}
+    booked = by_call["harness-book"]
+    assert booked["kind"] == "BOOK" and booked["day"] == "2026-09-22"
+    assert booked["patient"] == "Ana García López"  # via the persona-seeded directory
+    assert (booked["provider"], booked["site"]) == ("Doctor Sáez", "Arenal Sur")
+    assert booked["persisted"] is False and booked["callLogged"] is False
+    moved = by_call["harness-move"]
+    assert moved["kind"] == "RESCHEDULE" and moved["day"] == "2026-10-13"
+    assert moved["patient"] == "Sonia Vázquez Alonso"  # from this host's call log
+    assert moved["previousSlot"] == "2026-10-13T11:45:00+02:00"
+    assert moved["callLogged"] is True
+    cancelled = by_call["harness-cancel"]
+    assert cancelled["kind"] == "CANCEL" and cancelled["day"] is None
+    assert cancelled["patient"] == "Appointment A001335"
+    assert cancelled["appointmentId"] == "A001335"
+
+
+def test_console_calendar_survives_prosper_outage(setup, monkeypatch):
+    from app.dashboard import app as dashboard
+    from fastapi.testclient import TestClient
+
+    async def down(limit=200):
+        raise prosper.ProsperError(503, "maintenance")
+
+    monkeypatch.setattr(setup, "submissions", down)
+    session = TwilioCallSession("CAcalendar", started_at=NOW)
+    patient = register(session)
+    search(session, patient)
+    book(session, patient)
+
+    response = TestClient(dashboard).get("/api/clinic/calendar")
+    assert response.status_code == 200
+    body = response.json()
+    assert [r["source"] for r in body["records"]] == ["local"]
+    assert body["sources"]["prosper"]["ok"] is False
+    assert "503" in body["sources"]["prosper"]["detail"]
 
 
 @pytest.mark.parametrize("cancel", [False, True])

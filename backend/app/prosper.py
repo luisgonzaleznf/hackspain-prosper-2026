@@ -100,6 +100,14 @@ class ProsperClient:
         data = await self._get(f"/api/v1/patients/{patient_id}/appointments", {"when": when})
         return data["appointments"]
 
+    async def submissions(self, limit: int = 200) -> list[dict]:
+        """Every action this key reported and Prosper accepted, newest first (`limit` <= 200).
+
+        The only Prosper-side record of what the agent did: the EHR is read-only, so a
+        patient's diary never shows a booking we submitted.
+        """
+        return (await self._get("/api/v1/submissions", {"limit": limit}))["submissions"]
+
     async def submit(self, action: dict) -> tuple[int, Any]:
         """POST one action to /api/v1/submit/<route>. `action` carries `action` + `call_id` + fields.
 
