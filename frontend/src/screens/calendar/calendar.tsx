@@ -8,6 +8,7 @@ import { Link } from "react-router";
 import { api } from "@/lib/api";
 import { ScreenHeader } from "@/app";
 import { ProgressStrip } from "@/components/loading";
+import { SelectionIndicator } from "@/components/selection-indicator";
 import { calendarDay, schedulingRecords, type SchedulingRecord } from "@/lib/calendar";
 import { maskPhone, slotLabel, wallClock } from "@/lib/format";
 import { loadDetail, refreshNow, useCallsIndex } from "@/lib/store";
@@ -22,7 +23,10 @@ const actionLabels = { BOOK: "Booking reported", RESCHEDULE: "Reschedule reporte
 function monthDays(month: string): string[] {
   const first = new Date(`${month}-01T12:00:00Z`);
   const offset = (first.getUTCDay() + 6) % 7;
-  return Array.from({ length: 42 }, (_, index) => {
+  const last = new Date(first);
+  last.setUTCMonth(last.getUTCMonth() + 1, 0);
+  const count = Math.ceil((offset + last.getUTCDate()) / 7) * 7;
+  return Array.from({ length: count }, (_, index) => {
     const date = new Date(first);
     date.setUTCDate(index - offset + 1);
     return date.toISOString().slice(0, 10);
@@ -185,9 +189,10 @@ export function CalendarScreen() {
       } />
       <div className="scroll-y calendar-scroll flex-1 px-4 pb-24 pt-5 md:px-8 md:pb-8">
         <div className="measure">
-          <div className="calendar-controls" role="group" aria-label="Calendar source">
-            <button type="button" className="pill pill-ghost" aria-pressed={source === "local"} onClick={() => { setSource("local"); initialized.current = false; }}>Appointments</button>
-            <button type="button" className="pill pill-ghost" aria-pressed={source === "reports"} onClick={() => { setSource("reports"); initialized.current = false; }}>Call reports</button>
+          <div className="relative isolate mb-4 flex gap-2" role="group" aria-label="Calendar source">
+            <SelectionIndicator activeKey={source} />
+            <button type="button" className="tab sliding-tab min-h-11" aria-pressed={source === "local"} onClick={() => { setSource("local"); initialized.current = false; }}>Appointments</button>
+            <button type="button" className="tab sliding-tab min-h-11" aria-pressed={source === "reports"} onClick={() => { setSource("reports"); initialized.current = false; }}>Call reports</button>
           </div>
           <section className="calendar-source" aria-labelledby="calendar-source-title">
             <CalendarDotsIcon size={20} aria-hidden="true" />
@@ -198,7 +203,7 @@ export function CalendarScreen() {
           </section>
 
           <div className="calendar-loading">
-            {source === "local" ? <p className="calendar-status" role="status">{localLoading ? "Loading appointments…" : localError ? "Appointments unavailable. Start the local console server and refresh." : `${records.length} saved appointments`}</p> : loadingRecords && calls.length > 0 ? <ProgressStrip label={refreshing ? "Refreshing reports" : "Reading calls"} value={loaded + failed} max={calls.length} /> : <p className="calendar-status" role="status">{loadingRecords ? "Loading calls…" : `${records.length} accepted ${records.length === 1 ? "report" : "reports"}${incomplete ? " · Incomplete" : ""}`}</p>}
+            {source === "local" ? <p className="calendar-status" role="status">{localLoading ? "Loading appointments…" : localError ? "Appointments unavailable. Start the local console server and refresh." : `${records.length} saved ${records.length === 1 ? "appointment" : "appointments"}`}</p> : loadingRecords && calls.length > 0 ? <ProgressStrip label={refreshing ? "Refreshing reports" : "Reading calls"} value={loaded + failed} max={calls.length} /> : <p className="calendar-status" role="status">{loadingRecords ? "Loading calls…" : `${records.length} accepted ${records.length === 1 ? "report" : "reports"}${incomplete ? " · Incomplete" : ""}`}</p>}
             <p className="calendar-status-note" role="status">{source === "local" ? "" : error ? "Updates unavailable" : failed > 0 ? `${failed} unavailable` : ""}</p>
           </div>
 
