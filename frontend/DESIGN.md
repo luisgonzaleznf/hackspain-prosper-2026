@@ -12,7 +12,7 @@ Text selection uses `--selection-bg`: Dusk Maroon in dark mode and rose `#e4c9cd
 
 The landing page's “Sign in” links and ROSARIO logos open Overview (`/metrics`), not an authentication flow. Above 1100px the bottom-center link stays available unless the header or footer “Sign in” link is visible; unrelated section actions do not hide it. Narrower layouts use the header and footer links. Preview tables fit their cards and stack their rows on small screens. They scroll with the page, with no nested scrollbar for row entrance animations.
 
-Settings uses idle orb portraits for the Rosario, Clara and Serena presets. Clara's blue and Serena's sage palettes are artwork-only `--voice-*` tokens; controls retain the shared clinic colors. Preset changes use an interruptible 200ms GSAP transition, skipped for keyboard input and reduced motion. Tool markers form compact stacks above the audiogram and spread horizontally on hover. Their lane never changes height; reduced motion exposes all markers without a spatial transition.
+Settings uses idle orb portraits for the Rosario, Clara and Serena presets. Clara's blue and Serena's sage palettes are artwork-only `--voice-*` tokens; controls retain the shared clinic colors. Preset changes use an interruptible 200ms GSAP transition, skipped for keyboard input and reduced motion. A speaker button beside the voice selector plays its local sample. Tool stacks show one square per decision, peeking and deploying on alternating sides of the first card. There is no background around the fan. The lane never changes height; reduced motion exposes all markers without a spatial transition.
 
 ---
 

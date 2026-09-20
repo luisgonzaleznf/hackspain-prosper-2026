@@ -80,12 +80,10 @@
 .review-marker-stack { position: absolute; top: 0; z-index: 0; height: 64px; pointer-events: none; }
 .review-marker-stack[data-open="true"] { z-index: 2; }
 .review-marker-stack:focus-within { z-index: 3; }
-.review-marker-spread { position: relative; height: 64px; overflow: hidden; pointer-events: none; border-radius: var(--radius-tags); }
-.review-marker-spread[data-open="true"] { overflow-x: auto; overflow-y: hidden; pointer-events: auto; background: var(--surface-1); outline: 1px solid var(--line-2); outline-offset: -1px; scrollbar-width: thin; scrollbar-color: var(--fg-2) var(--surface-1); overscroll-behavior-x: contain; }
+.review-marker-spread { position: relative; height: 64px; overflow: hidden; pointer-events: none; }
+.review-marker-spread[data-open="true"] { pointer-events: auto; }
+.review-marker-spread[data-open="true"][data-scroll="true"] { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: var(--fg-2) transparent; overscroll-behavior-x: contain; }
 .review-marker-members { position: relative; height: 56px; }
-.review-marker-backs { position: absolute; top: 6px; width: 44px; height: 44px; }
-.review-marker-backs > span { position: absolute; inset: 0; border: 1px solid var(--line-2); border-radius: var(--radius-tags); background: var(--surface-1); }
-.review-marker-count { position: absolute; right: -4px; top: -5px; display: grid; place-items: center; min-width: 18px; height: 18px; padding-inline: 4px; border: 1px solid var(--line-2); border-radius: var(--radius-buttons); background: var(--surface-1); color: var(--fg); font-family: var(--font-mono); font-size: 10px; font-variant-numeric: tabular-nums; }
 .review-marker {
   position: absolute;
   top: 6px;
@@ -99,8 +97,11 @@
   border-radius: var(--radius-tags);
   background: var(--surface-1);
   color: var(--tone, var(--fg-2));
-  transition: transform var(--dur-popover) var(--ease-smooth), opacity var(--dur-state) var(--ease), border-color var(--dur-state) var(--ease), background-color var(--dur-state) var(--ease);
+  transition: transform var(--dur-state) var(--ease-smooth), border-color var(--dur-state) var(--ease), background-color var(--dur-state) var(--ease);
 }
+.review-marker-stack[data-open="true"] .review-marker { transition-duration: var(--dur-popover), var(--dur-state), var(--dur-state); }
+.review-marker > svg { transition: opacity var(--dur-state) var(--ease); }
+.review-marker[data-hidden="true"] > svg { opacity: 0; }
 .review-marker[data-hidden="true"] { pointer-events: none; }
 .review-marker-stack[data-keyboard="true"] .review-marker { transition: border-color var(--dur-state) var(--ease), background-color var(--dur-state) var(--ease); }
 .review-marker[data-popup-open], .review-marker:focus-visible { border-color: var(--tone, var(--accent-ink)); }

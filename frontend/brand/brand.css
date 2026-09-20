@@ -219,12 +219,6 @@ strong { font-weight: var(--font-weight-regular); }
 .sw.on-light { color: var(--fg-on-light); }
 .sw.on-black { color: var(--color-nava-black); }
 .sw.on-coral { color: var(--color-nava-black); }
-.marks { margin-top: var(--spacing-64); display: flex; flex-wrap: wrap; justify-content: center; gap: var(--spacing-20); }
-.marks figure { margin: 0; display: grid; gap: var(--spacing-4); width: calc((100% - 5 * var(--spacing-20)) / 6); }
-.marks [data-mark] { aspect-ratio: 1; width: 100%; height: auto; color: var(--color-nava-red); padding: 18px; border-radius: var(--radius-tags); border: 1px solid var(--line-1); background: var(--surface-1); --logo-bg: var(--surface-1); }
-.marks figure.current [data-mark] { border-color: var(--color-nava-red); }
-.marks figcaption { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--fg-2); text-align: center; overflow-wrap: anywhere; display: grid; gap: 2px; }
-.marks .current-tag { font-family: var(--font-plain); font-size: var(--text-caption); color: var(--fg); }
 
 /* Closing CTA band */
 .cta-band { max-width: var(--page-max-width); margin: 0 auto; padding: var(--spacing-52) var(--gutter); display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-64); align-items: center; border-top: 1px solid var(--line-1); }
@@ -291,7 +285,6 @@ strong { font-weight: var(--font-weight-regular); }
   .t-mono { overflow-wrap: anywhere; }
   .cta-art { justify-self: center; }
   .swatches { grid-template-columns: repeat(3, 1fr); }
-  .marks figure { width: calc((100% - 2 * var(--spacing-20)) / 3); }
 }
 /* Phones: single-column tiles, stacked transcript turns, one row of preview tabs. */
 @media (max-width: 700px) {
@@ -299,7 +292,6 @@ strong { font-weight: var(--font-weight-regular); }
   .light { padding-bottom: var(--spacing-32); }
   .grid, .id-row, .imagery-row { grid-template-columns: 1fr; }
   .swatches { grid-template-columns: repeat(2, 1fr); }
-  .marks figure { width: calc((100% - var(--spacing-20)) / 2); }
   .ag-turns li { grid-template-columns: 1fr; gap: 4px; }
   .cta-art { max-width: 270px; }
   .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }

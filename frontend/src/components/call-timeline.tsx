@@ -19,7 +19,7 @@ import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/csr/PaperPlaneTil
 import { ShieldSlashIcon } from "@phosphor-icons/react/dist/csr/ShieldSlash";
 import { UserPlusIcon } from "@phosphor-icons/react/dist/csr/UserPlus";
 import { UserFocusIcon } from "@phosphor-icons/react/dist/csr/UserFocus";
-import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { offset as fmtOffset, playerClock } from "@/lib/format";
 import type { Decision, Turn } from "@/lib/timeline";
 import { useTheme } from "@/lib/theme";
@@ -40,7 +40,6 @@ const BUCKETS = 1200;
 const MARKER_SIZE = 44;
 const MARKER_GAP = 4;
 const MARKER_INSET = 6;
-const STACK_BACK_OFFSET = 4;
 const finiteSeconds = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;
 const clampSeconds = (value: number, total: number) => Math.min(total, finiteSeconds(value));
 
@@ -150,12 +149,33 @@ function TimelineDecisionStack({
   const pointerInside = useRef(false);
   const [expanded, setExpanded] = useState(false);
   const [keyboard, setKeyboard] = useState(false);
-  const multiple = stack.decisions.length > 1;
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const count = stack.decisions.length;
+  const multiple = count > 1;
   const open = reducedMotion || expanded;
-  const contentWidth = stack.decisions.length * (MARKER_SIZE + MARKER_GAP) - MARKER_GAP + MARKER_INSET * 2;
-  const spreadWidth = Math.min(contentWidth, Math.max(MARKER_SIZE + MARKER_INSET * 2, laneWidth));
-  const spreadLeft = Math.max(0, Math.min(stack.left - MARKER_INSET, laneWidth - spreadWidth));
-  const anchor = stack.left - spreadLeft;
+  const stride = MARKER_SIZE + MARKER_GAP;
+  const contentWidth = count * stride - MARKER_GAP + MARKER_INSET * 2;
+  const spreadWidth = Math.min(contentWidth, Math.max(0, laneWidth));
+  const leftCount = reducedMotion ? 0 : Math.floor((count - 1) / 2);
+  const firstPosition = MARKER_INSET + leftCount * stride;
+  const spreadLeft = Math.max(0, Math.min(stack.left - firstPosition, laneWidth - spreadWidth));
+  const collapsedWidth = Math.min(MARKER_SIZE + (count - 1) * MARKER_GAP, Math.max(MARKER_SIZE, spreadWidth - MARKER_INSET * 2));
+  const closedStep = multiple ? (collapsedWidth - MARKER_SIZE) / (count - 1) : 0;
+  const anchor = Math.max(leftCount * closedStep, Math.min(stack.left - spreadLeft, spreadWidth - MARKER_INSET - MARKER_SIZE - (count - 1 - leftCount) * closedStep));
+  const initialScroll = Math.max(0, Math.min(contentWidth - spreadWidth, firstPosition - anchor));
+  const spatialOrder = useMemo(() => {
+    if (reducedMotion) return stack.decisions.map((_, index) => index);
+    const order = [];
+    for (let index = (count - 1) - ((count - 1) % 2); index > 0; index -= 2) order.push(index);
+    order.push(0);
+    for (let index = 1; index < count; index += 2) order.push(index);
+    return order;
+  }, [count, reducedMotion, stack.decisions]);
+
+  useLayoutEffect(() => {
+    if (viewport.current) viewport.current.scrollLeft = initialScroll;
+    setScrollLeft(initialScroll);
+  }, [initialScroll, contentWidth]);
 
   const close = () => {
     setExpanded(false);
@@ -163,10 +183,7 @@ function TimelineDecisionStack({
   };
 
   useEffect(() => {
-    if (!expanded) {
-      if (viewport.current) viewport.current.scrollLeft = 0;
-      return;
-    }
+    if (!expanded) return;
     const outside = (event: PointerEvent) => {
       if (event.target instanceof Node && !group.current?.contains(event.target)) {
         const active = document.activeElement;
@@ -225,30 +242,35 @@ function TimelineDecisionStack({
         const index = buttons.current.indexOf(document.activeElement as HTMLButtonElement);
         if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
           event.preventDefault();
-          const next = event.key === "Home" ? 0 : event.key === "End" ? stack.decisions.length - 1
-            : Math.max(0, Math.min(stack.decisions.length - 1, index + (event.key === "ArrowLeft" ? -1 : 1)));
-          focusMember(next);
+          const position = spatialOrder.indexOf(index);
+          const next = event.key === "Home" ? 0 : event.key === "End" ? count - 1
+            : Math.max(0, Math.min(count - 1, position + (event.key === "ArrowLeft" ? -1 : 1)));
+          const nextIndex = spatialOrder[next];
+          if (nextIndex !== undefined) focusMember(nextIndex);
         } else if (!open && (event.key === "Enter" || event.key === " ")) {
           event.preventDefault();
           focusMember(0);
         }
       }}
     >
-      {!open && multiple ? (
-        <span className="review-marker-backs" aria-hidden="true" style={{ left: anchor }}>
-          {stack.decisions.length > 2 ? <span style={{ transform: `translate(${STACK_BACK_OFFSET * 2}px, ${STACK_BACK_OFFSET * 2}px)` }} /> : null}
-          <span style={{ transform: `translate(${STACK_BACK_OFFSET}px, ${STACK_BACK_OFFSET}px)` }} />
-        </span>
-      ) : null}
-      <div ref={viewport} className="review-marker-spread" data-open={open}>
-        <div className="review-marker-members" style={{ width: open ? contentWidth : spreadWidth }}>
+      <div
+        ref={viewport}
+        className="review-marker-spread"
+        data-open={open}
+        data-scroll={contentWidth > spreadWidth}
+        onScroll={(event) => setScrollLeft(event.currentTarget.scrollLeft)}
+      >
+        <div className="review-marker-members" style={{ width: contentWidth }}>
           {stack.decisions.map((decision, index) => {
             const { Icon, tone, title } = decisionGlyph(decision);
             const visible = open || index === 0;
+            const fanOffset = index % 2 === 1 ? (index + 1) / 2 : -index / 2;
+            const expandedPosition = reducedMotion ? MARKER_INSET + index * stride : firstPosition + fanOffset * stride;
             const style: CSSProperties = {
-              transform: `translateX(${open ? MARKER_INSET + index * (MARKER_SIZE + MARKER_GAP) : anchor}px)`,
-              opacity: visible ? 1 : 0,
-              zIndex: stack.decisions.length - index,
+              transform: open
+                ? `translate(${expandedPosition}px, 0px)`
+                : `translate(${anchor + scrollLeft + fanOffset * closedStep}px, ${multiple ? index / (count - 1) * MARKER_GAP * 2 : 0}px)`,
+              zIndex: count - index,
               ["--tone" as string]: `var(${TONE_VAR[tone]})`,
             };
             return (
@@ -277,7 +299,6 @@ function TimelineDecisionStack({
                   }}
                 >
                   <Icon size={17} aria-hidden="true" />
-                  {!open && index === 0 && stack.decisions.length > 3 ? <span className="review-marker-count" aria-hidden="true">{stack.decisions.length}</span> : null}
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
                   <Tooltip.Positioner side="top" sideOffset={8} collisionPadding={12} sticky className="review-tooltip-positioner">
@@ -692,21 +713,22 @@ export function CallTimeline({
     return out;
   }, [total, width]);
 
-  // Bundle collisions in chronological order, including the closed card backs.
+  // Bundle neighboring decisions in chronological order.
   const stacks = useMemo(() => {
     const ordered = [...decisions].sort((a, b) => a.offset - b.offset);
     if (reducedMotion) return ordered.length ? [{ decisions: ordered as DecisionStack["decisions"], left: MARKER_INSET }] : [];
     const stacks: DecisionStack[] = [];
     let previousRight = -Infinity;
     for (const decision of ordered) {
-      const left = Math.max(MARKER_INSET, Math.min(markerWidth - MARKER_INSET - MARKER_SIZE - STACK_BACK_OFFSET * 2, clampSeconds(decision.offset, total) / total * width - MARKER_SIZE / 2));
-      const previous = stacks[stacks.length - 1];
-      if (previous && left < previousRight + MARKER_GAP) {
-        previous.decisions.push(decision);
+      const left = Math.max(MARKER_INSET, Math.min(markerWidth - MARKER_INSET - MARKER_SIZE, clampSeconds(decision.offset, total) / total * width - MARKER_SIZE / 2));
+      let current = stacks[stacks.length - 1];
+      if (current && left < previousRight + MARKER_GAP) {
+        current.decisions.push(decision);
       } else {
-        stacks.push({ decisions: [decision], left });
+        current = { decisions: [decision], left };
+        stacks.push(current);
       }
-      previousRight = left + MARKER_SIZE + STACK_BACK_OFFSET * 2;
+      previousRight = Math.max(left + MARKER_SIZE, current.left + MARKER_SIZE + (current.decisions.length - 1) * MARKER_GAP);
     }
     return stacks;
   }, [decisions, total, markerWidth, width, reducedMotion]);

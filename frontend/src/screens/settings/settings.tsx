@@ -1,6 +1,7 @@
-import { ArrowUpRightIcon } from "@phosphor-icons/react/dist/csr/ArrowUpRight";
 import { CaretDownIcon } from "@phosphor-icons/react/dist/csr/CaretDown";
 import { CheckIcon } from "@phosphor-icons/react/dist/csr/Check";
+import { SpeakerHighIcon } from "@phosphor-icons/react/dist/csr/SpeakerHigh";
+import { StopIcon } from "@phosphor-icons/react/dist/csr/Stop";
 import { WarningIcon } from "@phosphor-icons/react/dist/csr/Warning";
 import gsap from "gsap";
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -9,7 +10,8 @@ import { Orb } from "@/components/orb";
 import { PillSelect } from "@/components/primitives";
 import { demo } from "@/demo/api";
 import { motionDurationMs, useRiseIn } from "@/lib/motion";
-import { sameVoiceSettings, type VoiceSettings, type VoiceSettingsDocument } from "@/lib/voice-settings";
+import { VOICE_SAMPLES } from "@/lib/voice-samples";
+import { sameVoiceSettings, type VoiceId, type VoiceSettings, type VoiceSettingsDocument } from "@/lib/voice-settings";
 import "./settings.css";
 
 type ReadySettings = {
@@ -87,6 +89,53 @@ function discardSettings() {
   publish({ ...state, draft: state.document.settings, save: "discarded" });
 }
 
+function VoiceSample({ voice, name }: { voice: VoiceId; name: string }) {
+  const audio = useRef<HTMLAudioElement>(null);
+  const request = useRef(0);
+  const [playback, setPlayback] = useState<"idle" | "loading" | "playing" | "error">("idle");
+  const active = playback === "loading" || playback === "playing";
+  const label = active ? `Stop ${name} sample` : playback === "error" ? `Retry ${name} sample` : `Play ${name} sample`;
+
+  useEffect(() => {
+    const player = audio.current;
+    return () => {
+      request.current++;
+      player?.pause();
+    };
+  }, []);
+
+  const toggle = async () => {
+    const player = audio.current;
+    if (!player) return;
+    const attempt = ++request.current;
+    if (active) {
+      player.pause();
+      player.currentTime = 0;
+      setPlayback("idle");
+      return;
+    }
+    if (playback === "error") player.load();
+    setPlayback("loading");
+    try {
+      await player.play();
+    } catch {
+      if (request.current === attempt) setPlayback("error");
+    }
+  };
+
+  return <>
+    <audio ref={audio} src={VOICE_SAMPLES[voice]} preload="none"
+      onPlaying={() => setPlayback("playing")}
+      onEnded={() => setPlayback("idle")}
+      onError={() => setPlayback("error")} />
+    <button type="button" className="pill pill-quiet settings-sample" aria-label={label} title={label}
+      aria-pressed={active} aria-busy={playback === "loading"} onClick={() => void toggle()}>
+      {active ? <StopIcon size={19} aria-hidden="true" /> : <SpeakerHighIcon size={19} aria-hidden="true" />}
+    </button>
+    {playback === "error" ? <p className="settings-sample-error" role="alert">The voice sample could not be played. Try again.</p> : null}
+  </>;
+}
+
 function SettingsForm({ value }: { value: ReadySettings }) {
   const { document, draft, save } = value;
   const root = useRef<HTMLFormElement>(null);
@@ -128,12 +177,11 @@ function SettingsForm({ value }: { value: ReadySettings }) {
     : save === "saved" ? "Settings saved. New Roleplay Studio calls will use these settings."
     : save === "discarded" ? "Changes discarded. The saved settings are shown."
     : dirty ? "Unsaved changes. Your draft stays here while you browse the dashboard."
-    : "No unsaved changes.";
+    : null;
 
   return <form ref={root} className="settings-form" onSubmit={(event) => { event.preventDefault(); void saveSettings(); }} aria-busy={pending}>
     <fieldset className="settings-presets settings-enter" disabled={pending}>
       <legend>Choose a receptionist</legend>
-      <p className="settings-section-note">ROSARIO presets for GPT-Live-1. Choose a starting style, then adjust the voice.</p>
       <div className="settings-preset-grid" onPointerDown={() => { pointerChoice.current = true; }} onKeyDown={() => { pointerChoice.current = false; }}>
         {document.presets.map((item) => <label key={item.id} className="settings-preset">
           <input type="radio" name="receptionist-preset" value={item.id} checked={draft.preset === item.id}
@@ -162,14 +210,16 @@ function SettingsForm({ value }: { value: ReadySettings }) {
 
       <fieldset className="settings-controls" disabled={pending}>
         <legend className="sr-only">Voice and conversation</legend>
-        <label className="settings-field">
-          <span className="settings-field-label">Voice</span>
-          <PillSelect value={draft.voice} onChange={(next) => updateDraft({ voice: next })} label="Voice"
-            options={document.voices.map((item) => ({ value: item.id, label: item.name }))} />
-        </label>
+        <div className="settings-voice-field">
+          <label className="settings-field">
+            <span className="settings-field-label">Voice</span>
+            <PillSelect value={draft.voice} onChange={(next) => updateDraft({ voice: next })} label="Voice"
+              options={document.voices.map((item) => ({ value: item.id, label: item.name }))} />
+          </label>
+          <VoiceSample key={draft.voice} voice={draft.voice} name={voice?.name ?? draft.voice} />
+        </div>
         <div className="settings-voice-note">
           <p>{voice?.description}</p>
-          {customVoice && preset ? <button type="button" className="settings-text-action" onClick={() => updateDraft({ voice: preset.voice })}>Use {defaultVoice?.name ?? preset.voice}, the {preset.name} default</button> : null}
         </div>
         <label className="settings-field settings-language">
           <span className="settings-field-label">Opening language</span>
@@ -193,15 +243,10 @@ function SettingsForm({ value }: { value: ReadySettings }) {
     </div>
 
     <footer className="settings-footer settings-enter">
-      <div className="settings-scope">
-        <h2>For your next practice call</h2>
-        <p>Saved settings apply only to new Roleplay Studio calls. They do not change active calls, recordings or the scored agent.</p>
-        <a className="settings-studio-link" href="/demo/">Try saved settings in Roleplay Studio <ArrowUpRightIcon size={16} aria-hidden="true" /></a>
-      </div>
       <div className="settings-save-area">
         {error ? <p className="settings-error" id="settings-validation" role="alert"><WarningIcon size={18} aria-hidden="true" />{error}</p> : null}
         {save === "error" ? <p className="settings-error" role="alert"><WarningIcon size={18} aria-hidden="true" />We could not confirm the save. Your draft is unchanged. Check the connection and retry.</p> : null}
-        <p className="settings-save-status" role="status" aria-atomic="true">{status}</p>
+        {status ? <p className="settings-save-status" role="status" aria-atomic="true">{status}</p> : null}
         <div className="settings-actions">
           <button type="button" className="pill pill-quiet" disabled={!dirty || pending} onClick={discardSettings}>Discard</button>
           <button type="submit" className="pill pill-primary" disabled={!dirty || pending || error != null}>{pending ? "Saving…" : save === "error" ? "Retry save" : "Save changes"}</button>
@@ -215,7 +260,7 @@ export function SettingsScreen() {
   const value = useSyncExternalStore(subscribe, snapshot);
   useEffect(() => { void loadSettings(); }, []);
   return <div className="settings-screen">
-    <ScreenHeader title="Settings" lede="Shape the voice for your next Roleplay Studio call." />
+    <ScreenHeader title="Settings" />
     <div className="scroll-y settings-scroll">
       <div className="measure">
         {value.status === "ready" ? <SettingsForm value={value} /> : value.status === "error" ? <section className="settings-load-error" aria-labelledby="settings-load-title">

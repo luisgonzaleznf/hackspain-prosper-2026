@@ -26,37 +26,7 @@ for (const el of document.querySelectorAll("[data-icon]")) {
 for (const el of document.querySelectorAll("[data-file]")) {
   pending.push(load(`/brand/logos/final/${el.dataset.file}.svg`).then((svg) => { el.innerHTML = svg; }));
 }
-const announceReady = () => Promise.all(pending).then(() => document.dispatchEvent(new CustomEvent("marks:ready")));
-
-// The mark gallery is built from logos/marks/index.json (written by scripts/index-marks.py)
-// so new candidate rounds appear without editing the page. Only identity.html has #marks.
-const gallery = document.getElementById("marks");
-if (gallery) {
-  fetch("/brand/logos/marks/index.json").then((r) => (r.ok ? r.json() : [])).then((names) => {
-    for (const name of names) {
-      const fig = document.createElement("figure");
-      const el = document.createElement("i");
-      el.dataset.mark = name;
-      const cap = document.createElement("figcaption");
-      // Captions read as words; the SVG lives at brand/logos/marks/<name>.svg.
-      cap.textContent = name.replace(/^r\d+-/, "").replace(/-/g, " ");
-      if (name === "dial-rose-ten") {
-        fig.classList.add("current");
-        const tag = document.createElement("span");
-        tag.className = "current-tag";
-        tag.textContent = "Current identity";
-        cap.prepend(tag);
-        fig.setAttribute("aria-current", "true");
-      }
-      fig.append(el, cap);
-      gallery.appendChild(fig);
-    }
-    inlineMarks(gallery);
-    announceReady();
-  });
-} else {
-  announceReady();
-}
+Promise.all(pending).then(() => document.dispatchEvent(new CustomEvent("marks:ready")));
 
 // Call bars: data-bars="c3 a5 s2" is who spoke (c caller, a ROSARIO, s silence) and for
 // how long, in relative units. One rounded rect per stretch, laid out across 100 units.

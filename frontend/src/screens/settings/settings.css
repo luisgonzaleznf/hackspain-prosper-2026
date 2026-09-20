@@ -16,8 +16,7 @@
 .settings-form { display: grid; gap: 36px; }
 .settings-form fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .settings-presets legend { padding: 0; font-size: var(--text-subheading); font-weight: var(--font-weight-thin); letter-spacing: var(--tracking-subheading); }
-.settings-section-note { max-width: 60ch; margin-block: 8px 20px; color: var(--fg-2); font-size: 14px; line-height: 1.6; }
-.settings-preset-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.settings-preset-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-block-start: 20px; }
 .settings-preset {
   position: relative;
   display: flex;
@@ -56,11 +55,12 @@
 .settings-field .select-trigger { min-height: 46px; font-size: 16px; }
 .settings-field .select-trigger > span:first-child { min-width: 0; overflow-wrap: anywhere; }
 .settings-controls:disabled .select-trigger { cursor: wait; opacity: 0.65; }
+.settings-voice-field { display: grid; grid-template-columns: minmax(0, 1fr) 46px; align-items: end; gap: 12px; }
+.settings-sample { width: 46px; height: 46px; padding: 0; }
+.settings-sample-error { grid-column: 1 / -1; color: var(--accent-ink); font-size: 14px; line-height: 1.5; }
 .settings-help, .settings-voice-note { color: var(--fg-2); font-size: 14px; line-height: 1.6; }
 .settings-help { margin-block-start: 10px; }
 .settings-voice-note { display: grid; gap: 4px; margin-block-start: 10px; }
-.settings-text-action { justify-self: start; min-height: 44px; padding-block: 8px; text-align: start; color: var(--fg); border-block-end: 1px solid var(--line-2); font-size: 14px; line-height: 1.5; }
-.settings-text-action:disabled { cursor: wait; }
 .settings-language { margin-block-start: 28px; }
 .settings-instructions { margin-block-start: 28px; border-block-start: 1px solid var(--line-1); }
 .settings-instructions summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 52px; padding-block: 12px; cursor: pointer; list-style: none; font-size: 15px; }
@@ -74,11 +74,7 @@
 .settings-textarea:disabled { cursor: wait; opacity: 0.65; }
 .settings-character-count { margin-block-start: 8px; color: var(--fg-3); font-size: 12px; text-align: end; font-variant-numeric: tabular-nums; }
 
-.settings-footer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: start; padding-block-start: 24px; border-block-start: 1px solid var(--line-1); }
-.settings-scope h2 { font-size: 20px; line-height: 1.4; font-weight: var(--font-weight-light); }
-.settings-scope p { max-width: 52ch; margin-block-start: 8px; color: var(--fg-2); font-size: 14px; line-height: 1.6; }
-.settings-studio-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-block-start: 8px; padding-block: 8px; border-block-end: 1px solid var(--line-2); color: var(--fg); font-size: 14px; line-height: 1.5; }
-.settings-studio-link svg { flex: none; }
+.settings-footer { display: grid; padding-block-start: 24px; border-block-start: 1px solid var(--line-1); }
 .settings-save-area { display: grid; gap: 16px; }
 .settings-save-status { color: var(--fg-2); font-size: 14px; line-height: 1.6; }
 .settings-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
@@ -97,7 +93,6 @@
 
 @media (hover: hover) and (pointer: fine) {
   .settings-preset:hover:not(:has(input:disabled)) { background: var(--surface-1); border-color: var(--fg-3); }
-  .settings-text-action:hover, .settings-studio-link:hover { color: var(--fg-2); border-color: var(--fg-2); }
 }
 
 @container settings (max-width: 44rem) {
@@ -108,7 +103,6 @@
   .settings-profile-art { width: 132px; height: 132px; }
   .settings-profile-art > .rosario-orb { transform: scale(0.66); transform-origin: top left; }
   .settings-profile h2 { font-size: 32px; }
-  .settings-footer { grid-template-columns: minmax(0, 1fr); gap: 24px; }
   .settings-preset { padding: 16px 12px; }
 }
 
