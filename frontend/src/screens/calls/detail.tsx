@@ -311,7 +311,8 @@ function PatientTab({ timeline }: { timeline: Timeline }) {
   const find = timeline.decisions.find((d) => d.kind === "tool" && d.label === "find_patient");
   const matches = ((find?.raw as { result?: { matches?: Record<string, unknown>[] } } | undefined)?.result?.matches ?? []) as Record<string, unknown>[];
   const validate = timeline.decisions.filter((d) => d.kind === "tool" && d.label === "validate_registration_details");
-  const registered = timeline.submitted.find((s) => s.action.action === "REGISTER")?.action;
+  const localRegistration = timeline.decisions.findLast((d) => d.kind === "tool" && d.label === "record_registration" && (d.raw.result as { persisted?: boolean } | undefined)?.persisted === true);
+  const registered = (localRegistration?.raw.result as { recorded?: ClinicAction } | undefined)?.recorded ?? timeline.submitted.find((s) => s.action.action === "REGISTER")?.action;
   return (
     <div className="grid gap-4">
       <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-[13px]">

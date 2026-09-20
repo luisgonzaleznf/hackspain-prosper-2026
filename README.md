@@ -32,7 +32,7 @@ Rosario can also handle a relative calling for someone else, explain that no eli
 - **Patient registration:** Save new patient profiles during a call and use them to book immediately. Profiles remain available on later calls.
 - **Appointment management:** Book, move and cancel confirmed appointments, with a shared calendar that persists across calls and restarts.
 - **Audio and transcription tracking:** Save recordings, transcripts, tool inputs and results, and a decision timeline for each call. Staff can replay conversations and inspect how Rosario reached an outcome.
-- **Email and customer records:** With Resend enabled, send final appointment summaries after hang-up to an address the caller spells and confirms. Callers can also consent to a saved customer record and welcome email; this record is separate from the clinic patient profile and does not create a login.
+- **Email and customer records:** With Resend enabled, automatically send final appointment summaries after hang-up to the identified patient's email on file, read directly from the backend record. Only patients without a usable email on file need to spell and confirm an address; callers can decline email. Callers can also consent to a saved customer record and welcome email; this record is separate from the clinic patient profile and does not create a login.
 
 Email is off by default and needs a verified sender domain. The [email setup](backend/docs/appointment-email.md) covers configuration, consent and delivery status. Demo messages are labelled as such.
 

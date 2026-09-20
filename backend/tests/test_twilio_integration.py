@@ -80,7 +80,7 @@ def test_twilio_start_enables_human_tools_for_gptlive_only_when_configured(monke
 
     session = asyncio.run(TwilioCallSession.start(call_id="CA123"))
     assert session.demo_mode is True
-    assert "OPTIONAL APPOINTMENT EMAIL" in session.instructions()
+    assert "APPOINTMENT EMAIL" in session.instructions()
     assert "HUMAN DEMO CUSTOMER ACCOUNTS" in session.instructions()
     registered = {}
 

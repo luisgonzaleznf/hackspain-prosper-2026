@@ -108,7 +108,9 @@ EMAIL_TOOLS: list[dict] = [
     {
         "name": "set_appointment_email",
         "description": (
-            "Capture the caller's dictated email for ONE identified patient's staged booking or move. "
+            "Only when an identified patient has no usable email on file, capture the caller's "
+            "dictated email for that patient's booking or move. Otherwise the backend automatically "
+            "uses the patient record and ignores any supplied replacement address. "
             "Read the returned address back and wait for explicit confirmation before calling "
             "confirm_appointment_email. Every correction resets confirmation. Pass an empty "
             "email to withdraw consent. This does not send anything or update the patient record."
@@ -127,7 +129,8 @@ EMAIL_TOOLS: list[dict] = [
     {
         "name": "confirm_appointment_email",
         "description": (
-            "Use ONLY after reading back the full address from set_appointment_email and hearing "
+            "Only for a patient with no usable email on file. Use after reading back the full "
+            "address from set_appointment_email and hearing "
             "the caller explicitly confirm it. Pass that exact address. Sending waits until the "
             "call ends and uses only the final successful booking or move. Never claim it is sent yet."
         ),
@@ -652,11 +655,29 @@ def _check_phone(session: CallSession, raw: str) -> dict | str:
 def _staged(session: CallSession, action: dict) -> dict:
     staged = session.stage(action)
     session.log("action_staged", action=action, all_staged=staged)
-    return {
+    result: dict[str, Any] = {
         "recorded": action,
         "everything_recorded": staged,
         "note": "Recorded. It is reported when the call ends; confirm it to the caller.",
     }
+    patient_id = appointment_email.patient_for_action(session, action)
+    if (
+        session.demo_mode
+        and appointment_email.enabled()
+        and patient_id is not None
+        and patient_id in session.patients
+    ):
+        recipient = session.appointment_emails.get(patient_id)
+        if recipient is not None and not recipient.address:
+            status = "declined"
+        elif appointment_email.address_on_file(session, patient_id):
+            status = "on_file"
+        elif recipient and recipient.confirmed:
+            status = "confirmed"
+        else:
+            status = "needs_address"
+        result["appointment_email"] = {"patient_id": patient_id, "status": status}
+    return result
 
 
 # ── handlers ────────────────────────────────────────────────────────

@@ -78,7 +78,7 @@ class LocalCallSession(CallSession):
         if self.demo_mode and appointment_email.enabled():
             rules = rules.replace(
                 "Never promise email:\nemail sending is not connected yet.",
-                "Email is optional: follow the email consent instructions and never claim delivery before the sender reports success.",
+                "Follow the appointment email instructions: the backend uses the identified patient's email on file automatically after hang-up. Only request an address if the booking tool reports needs_address. Never claim delivery before the sender reports success.",
             )
         return instructions + "\n\n" + rules
 

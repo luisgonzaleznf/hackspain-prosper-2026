@@ -89,10 +89,9 @@ async def smoke(address: str, national_id: str, move: bool) -> None:
                 "appointment_type_id": slot["appointment_type_id"],
             },
         )
-    # The operator supplied this test recipient; voice calls use the spoken read-back.
-    recipient = {"patient_id": patient_id, "email": address}
-    await tool("set_appointment_email", recipient)
-    await tool("confirm_appointment_email", recipient)
+    # This explicit smoke-test inbox replaces only the in-memory synthetic chart.
+    # Voice calls always use the real looked-up record; no stored profile is changed here.
+    session.remember_patients([patient | {"email": address}])
     results = await session.finish_demo()
     trace = config.CALLS_DIR / f"{session.call_id}.jsonl"
     if not results or results[0]["status"] != "accepted":

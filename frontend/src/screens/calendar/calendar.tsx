@@ -193,7 +193,7 @@ export function CalendarScreen() {
             <CalendarDotsIcon size={20} aria-hidden="true" />
             <div>
               <h2 id="calendar-source-title">{source === "local" ? "Local appointments" : "Call reports · Read-only clinic"}</h2>
-              <p>{source === "local" ? "Confirmed telephone bookings saved here. Prosper’s clinic diary is separate; email is not sent." : "Reports include practice calls and do not change the clinic diary."}</p>
+              <p>{source === "local" ? "Confirmed bookings saved here. Open the source call to review the conversation." : "Reports include practice calls and do not change the clinic diary."}</p>
             </div>
           </section>
 
@@ -272,6 +272,7 @@ function AgendaRecord({ record }: { record: SchedulingRecord }) {
     {record.previousSlot && record.kind === "RESCHEDULE" ? <p className="calendar-change">Moved from {slotLabel(record.previousSlot)}</p> : null}
     {record.kind === "CANCEL" ? <p className="calendar-change">{record.persisted ? "This appointment is cancelled." : "Cancellation reported for this appointment, not an active booking."}</p> : null}
     {record.supersededBy ? <p className="calendar-change">{record.supersededBy === "CANCEL" ? "Cancellation" : "A later change"} was reported for this appointment in the same call.</p> : null}
-    <div className="calendar-record-footer"><span>{record.persisted ? "Saved locally" : record.practice ? "Practice call" : "Recorded call"}</span>{record.persisted ? <span className="mono">{record.appointmentId}</span> : <Link to={`/calls/${encodeURIComponent(record.callId)}`} className="calendar-call-link">View call<ArrowUpRightIcon size={14} aria-hidden="true" /></Link>}</div>
+    {record.persisted && record.appointmentId ? <p className="mono break-all">{record.appointmentId}</p> : null}
+    <div className="calendar-record-footer"><span>{record.persisted ? "Saved locally" : record.practice ? "Practice call" : "Recorded call"}</span><Link to={`/calls/${encodeURIComponent(record.callId)}`} className="calendar-call-link">View call<ArrowUpRightIcon size={14} aria-hidden="true" /></Link></div>
   </li>;
 }

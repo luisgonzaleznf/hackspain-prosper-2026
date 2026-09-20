@@ -30,6 +30,27 @@ const base: RawEvent[] = [
   { t: 105, kind: "transcript", role: "agent", text: "One moment while I check.", _line: 6 },
 ];
 
+test("a persisted local registration identifies the caller without a scored submission", () => {
+  const registration = {
+    t: 107, kind: "tool", name: "record_registration", args: {}, _line: 8,
+    result: { persisted: true, patient: { patient_id: "LP1", given_name: "Ana", first_surname: "García", second_surname: "López", insurer: "privado", note: "" } },
+  };
+  const events = [...base,
+    { t: 106, kind: "tool", name: "find_patient", args: {}, result: { matches: [], count: 0 }, _line: 7 },
+    registration,
+    { t: 109, kind: "call_ended", _line: 9 },
+  ];
+  const timeline = project(detail(events));
+  assert.equal(timeline.identified?.name, "Ana García López");
+  assert.equal(timeline.identified?.patient_id, "LP1");
+  assert.equal(timeline.matchCount, 1);
+  assert.equal(timeline.submitted.length, 0);
+  const correction = { ...registration, t: 108, _line: 10, result: { ...registration.result, patient: { ...registration.result.patient, given_name: "María" } } };
+  assert.equal(project(detail([...events, correction])).identified?.name, "María García López");
+  assert.equal(project(detail([...base, { ...registration, result: { error: "Not saved" } }])).identified, null);
+  assert.equal(project(detail([...base, { ...registration, result: { ...registration.result, persisted: false } }])).identified, null);
+});
+
 test("a finished call without an action is not labelled in progress", () => {
   for (const action of ["", String.fromCodePoint(0x2014)]) {
     assert.equal(outcomeOf(null, { status: "in progress", action }).verb, "in progress");
