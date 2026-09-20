@@ -13,7 +13,7 @@
 
 ---
 
-Rosario is a voice receptionist for clinics. It answers phone and browser calls, identifies patients, searches available appointments and saves confirmed bookings, changes and cancellations. It speaks Spanish, Catalan, Galician, Basque and English. A companion console lets staff review calls, inspect decisions and see the appointments Rosario saved.
+Rosario is a voice receptionist for clinics. It answers phone and browser calls, identifies patients, searches available appointments and saves confirmed bookings, changes and cancellations. Powered by GPT-Live, it follows the caller's language and can switch languages during a call. A companion console lets staff review calls, inspect decisions and see the appointments Rosario saved.
 
 [Website](https://rosario.fyi) · [Quickstart](#run-locally) · [Architecture](#architecture) · [Call review](#call-review) · [GitHub](https://github.com/luisgonzaleznf/hackspain-prosper-2026)
 
@@ -25,7 +25,24 @@ Confirmed registrations and appointment changes persist locally during the call.
 
 Rosario can also handle a relative calling for someone else, explain that no eligible slot is available or record that a medical request needs human attention. It does not diagnose or provide treatment advice.
 
+## Functionalities
+
+- **Patient registration:** Save new patient profiles during a call and use them to book immediately. Profiles remain available on later calls.
+- **Appointment management:** Book, move and cancel confirmed appointments, with a shared calendar that persists across calls and restarts.
+- **Audio and transcription tracking:** Save recordings, transcripts, tool inputs and results, and a decision timeline for each call. Staff can replay conversations and inspect how Rosario reached an outcome.
+- **Email and customer records:** With Resend enabled, send final appointment summaries after hang-up to an address the caller spells and confirms. Callers can also consent to a saved customer record and welcome email; this record is separate from the clinic patient profile and does not create a login.
+
+Email is off by default and needs a verified sender domain. The [email setup](backend/docs/appointment-email.md) covers configuration, consent and delivery status. Demo messages are labelled as such.
+
 ## Architecture
+
+The repository has three main parts:
+
+| Folder | Responsibility |
+| --- | --- |
+| [frontend/](frontend/) | React console, landing page and browser Studio: calendar, call review and voice settings. |
+| [backend/](backend/) | Phone and browser voice sessions, clinic integration, persistent patient and appointment records, email and call artifacts. |
+| [leaderboard/](leaderboard/) | The scored agent and evaluation harness we used to win the HackSpain Prosper track against 11 other teams. |
 
 The backend separates speech from clinic operations. Pipecat carries audio between the caller and GPT-Live. The voice model delegates clinic requests to a reasoning model, which calls the patient, availability and appointment tools. Both the Twilio and browser entry points use the same local session and clinic logic.
 
@@ -45,20 +62,7 @@ flowchart TD
   recordings -->|Playback|console
 ```
 
-`LocalCallSession` checks identity and confirmation before a write. It requires a full name plus a matching second identifier before using a patient's calendar, rejects appointments outside the call's lookup evidence and rechecks availability before booking or moving a slot. A successful write returns `persisted=true`; the agent must wait for that result before saying the change is saved.
-
-`LocalClinic` combines live clinic API responses with local patient and appointment records. `LocalStore` persists those changes in SQLite, so they survive a restart. Local writes do not modify the upstream clinic. Cancelling an upstream appointment locally does not release its upstream availability, and insurance authorization for a newly registered patient's specialist visit may need staff verification.
-
-Each call also produces JSONL events and a stereo recording, with the caller and agent on separate channels. A separate FastAPI console server exposes the call records and local calendar. The React frontend reads those APIs through Vite proxies and derives the transcript and decision timeline from the events.
-
-| Code | Responsibility |
-| --- | --- |
-| [backend/app/server.py](backend/app/server.py) and [backend/integrations/twilio.py](backend/integrations/twilio.py) | Phone webhook, media connection and call lifecycle. |
-| [backend/app/demo/](backend/app/demo/) | Browser audio sessions, saved rehearsals and voice settings. |
-| [backend/app/voice/gptlive/](backend/app/voice/gptlive/) | Speech connection and delegation to the reasoning model. |
-| [backend/integrations/local_session.py](backend/integrations/local_session.py) | Per-call identity checks, confirmation and validated writes. |
-| [backend/integrations/local_clinic.py](backend/integrations/local_clinic.py) and [local_store.py](backend/integrations/local_store.py) | Clinic reads, local patients and persistent appointments. |
-| [backend/app/dashboard.py](backend/app/dashboard.py) and [frontend/](frontend/) | Call-review API, calendar and console UI. |
+The backend checks identity, caller confirmation and availability before saving appointment changes in SQLite. A separate FastAPI server gives the console access to the local calendar, call logs and recordings. See the [integration docs](backend/integrations/README.md) for implementation details.
 
 ## Call review
 
@@ -111,14 +115,6 @@ The frontend proxies voice sessions to port 7860 by default. Set `ROSARIO_DEMO_A
 
 For inbound phone calls, follow the [Twilio setup](backend/integrations/README.md). The [browser demo documentation](backend/app/demo/README.md) covers saved recordings and session review.
 
-## Email
+## Demo
 
-With Resend enabled, Rosario can send an appointment summary after the caller spells and confirms an email address. It sends the final appointment details after hang-up, excluding bookings that were moved or cancelled earlier in the call. Callers can also consent to a customer record and a welcome email. That customer record is separate from the clinic patient profile and does not create a login.
-
-Email is off by default and needs a verified sender domain. The [email setup](backend/docs/appointment-email.md) covers configuration, consent and delivery status. Demo messages are labelled as such.
-
-## Current limits
-
-The included clinic integration uses synthetic data, and saved appointments belong to Rosario's local database. This is a supervised demo, not a deployed medical service. Identity checks do not replace a complete authorization system, and a recorded escalation does not connect the caller to a clinician.
-
-The demo endpoints and review URLs do not require a login, and the Twilio integration does not validate request signatures. Keep tunnels limited to supervised calls; an exposed endpoint can incur model and email charges. Use only volunteered demo email addresses, and keep credentials, databases and call recordings out of Git.
+This is a hackathon demo. The included clinic integration uses synthetic data, and saved patients and appointments stay in Rosario's local database without changing the upstream clinic. It is intended for supervised demonstrations; appointments are not real medical bookings, and recorded escalations do not connect callers to a clinician.
