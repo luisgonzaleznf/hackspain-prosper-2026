@@ -11,7 +11,7 @@ class DemoPersona(BaseModel):
     facts: list[tuple[str, str]]
     objective: str
     opening_hint: str
-    expected_outcome: Literal["BOOK", "CANCEL", "ESCALATE"]
+    expected_outcome: Literal["BOOK", "CANCEL", "ESCALATE", "REGISTER"]
 
 
 class DemoStartRequest(BaseModel):

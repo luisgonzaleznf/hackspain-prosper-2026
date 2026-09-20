@@ -17,7 +17,7 @@ from difflib import SequenceMatcher
 from math import asin, cos, isfinite, radians, sin, sqrt
 from typing import Any
 
-from app import clinic, directions, prosper
+from app import appointment_email, clinic, customer_accounts, directions, prosper
 from app.session import CallSession
 
 REASONS = [
@@ -103,6 +103,44 @@ _POLICY = _str(
     "told you about. It must be in the slot's payable_with.",
     enum=INSURERS,
 )
+
+EMAIL_TOOLS: list[dict] = [
+    {
+        "name": "set_appointment_email",
+        "description": (
+            "Capture the caller's dictated email for ONE identified patient's staged booking or move. "
+            "Read the returned address back and wait for explicit confirmation before calling "
+            "confirm_appointment_email. Every correction resets confirmation. Pass an empty "
+            "email to withdraw consent. This does not send anything or update the patient record."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "patient_id": _str("Identified patient whose booking or move this email covers."),
+                "email": _str(
+                    "Exact dictated address using @ and dots; empty string to decline email."
+                ),
+            },
+            "required": ["patient_id", "email"],
+        },
+    },
+    {
+        "name": "confirm_appointment_email",
+        "description": (
+            "Use ONLY after reading back the full address from set_appointment_email and hearing "
+            "the caller explicitly confirm it. Pass that exact address. Sending waits until the "
+            "call ends and uses only the final successful booking or move. Never claim it is sent yet."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "patient_id": _str("The patient specified in set_appointment_email."),
+                "email": _str("The exact address the caller just confirmed after the read-back."),
+            },
+            "required": ["patient_id", "email"],
+        },
+    },
+]
 
 TOOLS: list[dict] = [
     {
@@ -360,6 +398,37 @@ TOOLS: list[dict] = [
         },
     },
 ]
+
+
+CUSTOMER_TOOLS = [
+    {
+        "name": "prepare_customer_account",
+        "description": "Human demos only: capture the caller's name and dictated email for a local customer account. Read the returned values back and wait for explicit consent before confirm_customer_account. Corrections reset consent. An empty email withdraws the request. This is not clinic patient registration.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": _str("Caller-provided name."),
+                "email": _str("Spelled email using @ and dots, or empty to withdraw."),
+            },
+            "required": ["name", "email"],
+        },
+    },
+    {
+        "name": "confirm_customer_account",
+        "description": "Only after reading back the name and entire email from prepare_customer_account and hearing explicit consent in a later turn, confirm creation of the local demo customer account and its welcome email after hang-up.",
+        "parameters": {
+            "type": "object",
+            "properties": {"email": _str("Exact email the caller just confirmed.")},
+            "required": ["email"],
+        },
+    },
+]
+
+
+def tools_for_session(session: CallSession) -> list[dict]:
+    if session.demo_mode and appointment_email.enabled():
+        return [*TOOLS, *EMAIL_TOOLS, *CUSTOMER_TOOLS]
+    return TOOLS
 
 
 # ── helpers ─────────────────────────────────────────────────────────
@@ -1052,12 +1121,24 @@ async def _clear(session: CallSession, args: dict) -> dict:
         ]
     else:
         session.clear_actions()
+    remaining = {
+        appointment_email.patient_for_action(session, action) for action in session.actions
+    }
+    session.appointment_emails = {
+        patient_id: recipient
+        for patient_id, recipient in session.appointment_emails.items()
+        if patient_id in remaining
+    }
     session.log("actions_cleared", **selectors)
     return {"everything_recorded": session.actions}
 
 
 _HANDLERS = {
+    "prepare_customer_account": customer_accounts.prepare,
+    "confirm_customer_account": customer_accounts.confirm,
     "get_site_directions": _get_site_directions,
+    "set_appointment_email": appointment_email.set_recipient,
+    "confirm_appointment_email": appointment_email.confirm_recipient,
     "rank_sites_by_distance": _rank_sites_by_distance,
     "resolve_names": _resolve_names,
     "find_patient": _find_patient,
@@ -1105,7 +1186,7 @@ def register_pipecat_tools(llm: Any, session: CallSession) -> Any:
         )
 
     schemas = []
-    for spec in TOOLS:
+    for spec in tools_for_session(session):
         llm.register_function(spec["name"], handler)
         schemas.append(
             FunctionSchema(

@@ -30,6 +30,15 @@ stored in `backend/logs/calls/<Twilio CallSid>.jsonl`; they are **demo actions**
 persisted appointments: Twilio call IDs aren't registered with Prosper's scorer.
 Audio is stored in `backend/logs/audio/`, as with the existing voice server.
 
+Optional [Resend emails](../docs/appointment-email.md) send a clearly labelled demo
+summary after hang-up when the caller spells and confirms an address. Callers can
+also request a local customer account and welcome email. Set `APPOINTMENT_EMAILS_ENABLED=1`,
+`RESEND_API_KEY` and `RESEND_FROM_EMAIL` in the ignored `.env`, then restart this same
+server. `TwilioCallSession` enables the human-only tools and finalizes them locally;
+the scored `/ws` endpoint never sends email. No Twilio webhook changes are needed.
+
 This demo inherits the existing public WebSocket setup. Account/destination checks
 catch misconfiguration but do not authenticate Twilio signatures. Keep this a
-short-lived demo tunnel: anyone with its URL can invoke the model and incur usage.
+short-lived demo tunnel: anyone with its URL can invoke the model and, when enabled,
+email sending, incurring usage. Call traces and recordings can contain volunteered
+names and email addresses; keep the tunnel and its review URLs within the rehearsal.

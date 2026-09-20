@@ -35,6 +35,12 @@ make fake-call WAV=x.wav N=10 # fake Prosper calls at the local server (8 kHz mo
 Every call writes `logs/calls/<call_id>.jsonl`: caller-ID lookup, transcript, each tool call
 with its result, staged actions, and what Prosper answered on submit.
 
+Optional [Resend appointment emails](../docs/appointment-email.md) let human callers spell
+and confirm their address, then receive the final booking/move summary after hang-up.
+Disabled by default. Twilio and browser handlers use `session.finish_demo()` to save
+local outcomes and send requested emails. Customer enrollment also saves a local
+SQLite record before sending a welcome email. Scored calls never offer or send email.
+
 Every call is also recorded off the wire by `recorder.py`, below the voice layer:
 `logs/audio/<call_id>.wav` (stereo, caller left, agent right, one timeline) and `.timing.json`
 (per-frame arrival/send times), both gitignored. The JSONL gets `first_agent_audio` live and an
@@ -47,7 +53,7 @@ clipping, plus a `flags` list. Scored calls have no Prosper audio until Monday's
 `app/voice/<name>.py` exposes `async def run_call(transport, session) -> None`:
 
 - speak `session.greeting` first; use `session.instructions()` as the system prompt;
-- give the model `app.tools.TOOLS` (flat `{"name","description","parameters"}` specs) and route
+- give the model `app.tools.tools_for_session(session)` (flat `{"name","description","parameters"}` specs) and route
   every call through `await app.tools.call_tool(session, name, args)`, which never raises.
   Pipecat services can use `register_pipecat_tools(llm, session)`;
 - log speech with `session.log("transcript", role="user" | "agent", text=...)`;

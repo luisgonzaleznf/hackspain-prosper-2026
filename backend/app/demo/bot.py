@@ -56,7 +56,8 @@ async def bot(runner_args: RunnerArguments) -> None:
         session = await DemoCallSession.start(
             call_id=session_id,
             stream_sid=session_id,
-            from_number=scenario.phone,
+            from_number=scenario.phone or None,
+            demo_mode=True,
         )
         transport = await create_transport(
             runner_args,
@@ -78,7 +79,7 @@ async def bot(runner_args: RunnerArguments) -> None:
                 session.log("recording.saved", **await recorder.save(session_id, config.AUDIO_DIR))
             except Exception as exc:
                 session.log("recording.error", error=repr(exc))
-            session.log("call_ended", actions=session.actions, submitted=False)
+            await session.finish_demo()
             end_session(session_id, session.actions, build_action_evidence(session))
 
 

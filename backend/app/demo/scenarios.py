@@ -1,6 +1,19 @@
+from app import appointment_email
 from app.demo.models import DemoPersona
 
 _SCENARIOS = (
+    DemoPersona(
+        id="account",
+        title="Create your customer account",
+        name="You",
+        phone="",
+        facts=[
+            ("Your details", "Use your name and the personal inbox you want to receive the email.")
+        ],
+        objective="Create a local demo customer account and receive a welcome email after hanging up.",
+        opening_hint="I'd like to create a customer account.",
+        expected_outcome="REGISTER",
+    ),
     DemoPersona(
         id="booking",
         title="Book the earliest GP visit",
@@ -54,8 +67,12 @@ _SCENARIOS = (
 
 
 def list_scenarios() -> list[DemoPersona]:
-    return list(_SCENARIOS)
+    return [
+        scenario
+        for scenario in _SCENARIOS
+        if scenario.id != "account" or appointment_email.enabled()
+    ]
 
 
 def get_scenario(scenario_id: str) -> DemoPersona | None:
-    return next((scenario for scenario in _SCENARIOS if scenario.id == scenario_id), None)
+    return next((scenario for scenario in list_scenarios() if scenario.id == scenario_id), None)

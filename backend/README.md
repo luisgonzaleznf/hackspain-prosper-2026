@@ -13,6 +13,11 @@ and the repo root at `main@f7a7787`), with two differences:
 
 This is where extra tools and the HTTP surface the frontend needs will land.
 
+The public phone and browser demos support opt-in [Resend appointment and welcome
+emails](docs/appointment-email.md) from a verified custom domain. The
+[Twilio integration](integrations/README.md) finalizes these locally at hang-up;
+scored calls and the separate `leaderboard/` package never send email.
+
 ## Layout
 
 | Path | Role |
