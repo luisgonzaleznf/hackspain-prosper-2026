@@ -33,7 +33,7 @@ Two models per call, both on the subscription:
   aiortc's default STUN lookup adds ~5s to every call.
 - **`-c mcp_servers={}`** when spawning: otherwise the operator's MCP servers start on every call.
 - **Strip `OPENAI_API_KEY` / `CODEX_API_KEY`** from the child env or it leaves subscription auth.
-- **Real-time relay only**: the input track keeps ≤200ms of backlog. Audio queued while the
+- **Live relay only**: the input track keeps ≤200ms of backlog. Audio queued while the
   session connects would otherwise delay every later turn by the same amount.
 - **Tools**: `thread/start` takes them as `dynamicTools`; the thread agent calls back with
   `item/tool/call` (answered with `{"contentItems": [{"type": "inputText", …}], "success": …}`).
@@ -51,4 +51,4 @@ Two models per call, both on the subscription:
 
 - The subscription is meant for the account holder's own use; the scorer and jury calling it
   is a grey area. It shares the weekly allowance with Codex coding on the same account.
-- Codex realtime is marked experimental in the CLI; a CLI update can change the protocol.
+- The CLI's `realtime_conversation` feature is experimental; a CLI update can change the protocol.

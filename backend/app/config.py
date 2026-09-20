@@ -29,5 +29,11 @@ RECORD_CALLER_AUDIO = os.getenv("RECORD_CALLER_AUDIO") == "1"
 # Every call's audio, both legs on one timeline (app/recorder.py). Gitignored, like every WAV.
 AUDIO_DIR = Path(os.getenv("AUDIO_DIR", "logs/audio"))
 
+# Opt in for human demos only. Local evaluations never send email (see appointment_email.py).
+APPOINTMENT_EMAILS_ENABLED = os.getenv("APPOINTMENT_EMAILS_ENABLED") == "1"
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "")
+CUSTOMER_DB_PATH = Path(os.getenv("CUSTOMER_DB_PATH", "logs/demo/customers.sqlite3"))
+
 # Every date in the clinic is Europe/Madrid; "tomorrow" resolves against the call's connect time.
 TZ = ZoneInfo("Europe/Madrid")

@@ -15,6 +15,8 @@ from datetime import datetime
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
+from integrations.twilio import TwilioCallSession
+from integrations.twilio import router as twilio_router
 from loguru import logger
 from pipecat.runner.utils import parse_telephony_websocket
 from pipecat.serializers.twilio import TwilioFrameSerializer
@@ -106,6 +108,7 @@ app = FastAPI(lifespan=lifespan)
 # prompt and clinic tools, but never submits to Prosper, so it is safe to leave mounted:
 # the scored call path is /ws and is untouched by it.
 register_demo_routes(app)
+app.include_router(twilio_router)
 
 
 @app.get("/health")
@@ -120,6 +123,15 @@ async def health():
 
 @app.websocket("/ws")
 async def ws(websocket: WebSocket):
+    await run_telephony_call(websocket)
+
+
+@app.websocket("/integrations/twilio/ws")
+async def twilio_ws(websocket: WebSocket):
+    await run_telephony_call(websocket, session_type=TwilioCallSession)
+
+
+async def run_telephony_call(websocket: WebSocket, session_type: type[CallSession] = CallSession):
     await websocket.accept()
     transport_type, call = await parse_telephony_websocket(websocket)
     recorder = WireRecorder()  # the call's clock starts once the handshake is in
@@ -130,7 +142,8 @@ async def ws(websocket: WebSocket):
     serializer = TwilioFrameSerializer(
         stream_sid=call.stream_id,
         call_sid=call.call_id,
-        # No Twilio account on our side: Prosper plays the carrier and hangs up itself.
+        # Closing the socket returns real Twilio calls to the webhook's <Hangup>.
+        # Prosper likewise owns hang-up; neither path needs Twilio API credentials.
         params=TwilioFrameSerializer.InputParams(auto_hang_up=False),
     )
     transport = FastAPIWebsocketTransport(
@@ -142,7 +155,7 @@ async def ws(websocket: WebSocket):
             serializer=serializer,
         ),
     )
-    session = await CallSession.start(
+    session = await session_type.start(
         call_id=call.call_id,
         stream_sid=call.stream_id or "",
         from_number=call.from_number,
@@ -165,7 +178,7 @@ async def ws(websocket: WebSocket):
         results = await session.finish()
         if caller_ulaw:
             await asyncio.to_thread(save_caller_audio, session, caller_ulaw)
-        logger.info(f"call {session.call_id} ended; submitted {[r['status'] for r in results]}")
+        logger.info(f"call {session.call_id} ended; outcome statuses {[r['status'] for r in results]}")
         # Only after the submit: the audio can wait, the 30 s window cannot.
         try:
             session.log("audio.timeline", **await recorder.save(session.call_id, config.AUDIO_DIR))

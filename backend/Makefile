@@ -16,7 +16,7 @@ help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
-serve:  ## Prosper call server on ws://0.0.0.0:$(PORT)/ws (VOICE=codex|gptlive|gemini|none)
+serve:  ## Prosper call server on ws://0.0.0.0:$(PORT)/ws (VOICE=codex|gptlive|none)
 	VOICE=$(VOICE) PORT=$(PORT) $(UV) python -m app.server
 
 roleplay-demo:  ## Role-play Studio: serve, then open http://127.0.0.1:$(PORT)/demo/
@@ -53,8 +53,8 @@ replay-call:  ## Replay a recorded caller (RECORD_CALLER_AUDIO=1): make replay-c
 	$(UVS) python scripts/fake_caller.py $(WAV) --captured --n $(or $(N),1)
 
 verify:  ## ruff + mypy + pytest against THIS package's copy
-	$(UV) ruff check app tests scripts
-	$(UV) mypy app
+	$(UV) ruff check app integrations tests scripts
+	$(UV) mypy app integrations
 	$(UVS) python -m pytest
 
 # ── after a Run All (see README, docs/private-calls/README.md) ──

@@ -7,8 +7,8 @@
 #   scripts/endpoint.sh down    [--all]          # disconnect: close our tunnel (--all: every tunnel + our server)
 #   scripts/endpoint.sh status                   # what is running and whether Prosper can reach it
 #
-# VOICE is REQUIRED (codex|gemini|gptlive|none): no default, so nobody opens the line on a voice
-# that cannot talk (Gemini out of credits, GPT-Live refusing sessions). PORT defaults to 7860.
+# VOICE is REQUIRED (codex|gptlive|none): no default, so nobody opens the line on a voice
+# that cannot talk (GPT-Live refusing sessions, Codex signed out). PORT defaults to 7860.
 #   NGROK_DOMAIN=<name>.ngrok-free.app   stable address: save wss://<domain>/ws on the dashboard ONCE.
 #   Without it: a cloudflared quick tunnel, whose address is NEW on every `up`, so it has to be saved
 #   in Settings → Integration before each run (a run snapshots the endpoint when it is admitted).
@@ -66,10 +66,10 @@ other_tunnels() {  # processes whose program IS cloudflared/ngrok, not shells th
 
 require_voice() {  # $1 voice, $2 command name
   case "${1:-}" in
-    codex|gemini|gptlive|none) return 0 ;;
-    "") say "ERROR: name the voice: scripts/endpoint.sh $2 codex|gemini [PORT]. There is no default:" \
+    codex|gptlive|none) return 0 ;;
+    "") say "ERROR: name the voice: scripts/endpoint.sh $2 codex|gptlive [PORT]. There is no default:" \
           "check that voice's access/credits first." ;;
-    *) say "ERROR: unknown voice '$1' (codex|gemini|gptlive|none)." ;;
+    *) say "ERROR: unknown voice '$1' (codex|gptlive|none)." ;;
   esac
   return 2
 }

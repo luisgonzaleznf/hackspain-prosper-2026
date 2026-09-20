@@ -33,7 +33,7 @@ class CodexRpcError(RuntimeError):
 # (6 + up to 4 to close + 6 = 16 s). Over 57 scored calls thread/realtime/start answered in a
 # median 1.1 s, p90 1.4 s, max 5.1 s (bc8cabf6, which went on to work), so 4 s would have torn
 # down a slow but healthy start; c6fc2af7 never answered at all.
-REALTIME_START_TIMEOUT = 6.0
+LIVE_START_TIMEOUT = 6.0
 
 
 def _child_env() -> dict[str, str]:
@@ -68,7 +68,7 @@ _DISABLED_FEATURES = (
 
 
 def _lean_args() -> list[str]:
-    """Flags that keep the per-call app-server to realtime + our dynamic tools only.
+    """Flags that keep the per-call app-server to GPT-Live + our dynamic tools only.
 
     `-c mcp_servers={}` merges instead of replacing, so every MCP server in the operator's
     ~/.codex/config.toml is disabled by name.
@@ -210,7 +210,7 @@ class CodexAppServer:
             self._reader_task.cancel()
 
 
-async def start_realtime(
+async def start_live(
     srv: CodexAppServer,
     *,
     prompt: str,
@@ -219,7 +219,7 @@ async def start_realtime(
     brain_instructions: str | None = None,
     tools: list[dict] | None = None,
     brain_model: str = "gpt-5.6-luna",
-    timeout: float = REALTIME_START_TIMEOUT,
+    timeout: float = LIVE_START_TIMEOUT,
 ) -> str:
     """thread/start + thread/realtime/start (WebRTC). Returns the thread id.
 
