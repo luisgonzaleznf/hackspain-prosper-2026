@@ -69,6 +69,17 @@
   /* Orb color ramp (black -> dark -> light -> white), read by the shader */
   --orb-dark: var(--color-nava-fire);
   --orb-light: var(--color-ember-glow);
+  /* Voice-profile artwork only; controls keep the shared clinic palette. */
+  --voice-clara-deep: #101a2e;
+  --voice-clara-base: #476cba;
+  --voice-clara-light: #8db7d8;
+  --voice-clara-pale: #ddeaf6;
+  --voice-clara-membrane: #7091bb;
+  --voice-serena-deep: #14231e;
+  --voice-serena-base: #52745f;
+  --voice-serena-light: #a7b989;
+  --voice-serena-pale: #e8efdf;
+  --voice-serena-membrane: #809b80;
   /* Timeline event lanes */
   --event-lookup: var(--color-ash-rose);
   --event-availability: var(--color-pure-white);

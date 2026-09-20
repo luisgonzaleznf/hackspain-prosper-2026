@@ -3,22 +3,76 @@
 import asyncio
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 
-from fastapi import APIRouter, FastAPI, Header, HTTPException
+from fastapi import APIRouter, FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import ValidationError
 
 from app import config
 from app.demo.events import call_log_path, read_projected
 from app.demo.models import DemoLedgerEntry, DemoPersona, DemoSnapshot, DemoStartRequest
 from app.demo.scenarios import list_scenarios
+from app.demo.settings import load_settings, save_settings
 from app.demo.state import create_session, registry
+from app.voice.codex.settings import SettingsCatalogue, VoiceSettings
 
 _STATIC_DIR = Path(__file__).with_name("static")
 
 
+def _origin(url: str) -> tuple[str, str, int]:
+    parsed = urlsplit(url)
+    if (
+        parsed.scheme not in {"http", "https"} or not parsed.hostname
+        or parsed.username is not None or parsed.password is not None
+        or parsed.path or parsed.query or parsed.fragment
+    ):
+        raise ValueError("Invalid origin")
+    return parsed.scheme, parsed.hostname, parsed.port or (443 if parsed.scheme == "https" else 80)
+
+
+def _check_settings_origin(request: Request) -> None:
+    origin = request.headers.get("origin")
+    fetch_site = request.headers.get("sec-fetch-site")
+    allowed = fetch_site != "cross-site"
+    if origin:
+        # The same-origin development proxy forwards the browser-facing host and scheme.
+        host = request.headers.get("x-forwarded-host", request.headers.get("host", "")).split(",")[0].strip()
+        scheme = request.headers.get("x-forwarded-proto", request.url.scheme).split(",")[0].strip()
+        try:
+            allowed = allowed and _origin(origin) == _origin(f"{scheme}://{host}")
+        except ValueError:
+            allowed = False
+    elif fetch_site not in {None, "none", "same-origin"}:
+        allowed = False
+    if not allowed:
+        raise HTTPException(status_code=403, detail="Save settings from the Studio's own page")
+
+
 def _router() -> APIRouter:
     router = APIRouter(prefix="/api/demo", tags=["demo"])
+
+    @router.get("/settings", response_model=SettingsCatalogue)
+    def settings() -> SettingsCatalogue:
+        try:
+            return SettingsCatalogue(settings=load_settings())
+        except (OSError, ValidationError) as error:
+            raise HTTPException(
+                status_code=503,
+                detail="Saved voice settings could not be loaded. Check the server's settings file.",
+            ) from error
+
+    @router.put("/settings", response_model=VoiceSettings)
+    def update_settings(settings: VoiceSettings, request: Request) -> VoiceSettings:
+        _check_settings_origin(request)
+        try:
+            return save_settings(settings)
+        except OSError as error:
+            raise HTTPException(
+                status_code=503,
+                detail="Voice settings could not be saved. Check server storage and try again.",
+            ) from error
 
     @router.get("/scenarios", response_model=list[DemoPersona])
     def scenarios() -> list[DemoPersona]:
@@ -109,6 +163,13 @@ def register_demo_routes(app: FastAPI) -> None:
     """Mount demo APIs and UI on an existing Pipecat runner FastAPI application."""
     if getattr(app.state, "demo_routes_registered", False):
         return
+
+    @app.middleware("http")
+    async def no_cache_settings(request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path.rstrip("/") == "/api/demo/settings":
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
     app.include_router(_router())
 

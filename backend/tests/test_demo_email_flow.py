@@ -9,6 +9,7 @@ import pytest
 from app import appointment_email, clinic, config, prosper
 from app.demo import app as demo_app
 from app.demo import bot, state
+from app.demo import settings as store
 from app.demo.app import register_demo_routes
 from app.demo.scenarios import get_scenario
 from app.tools import call_tool
@@ -19,6 +20,7 @@ from fastapi.testclient import TestClient
 @pytest.fixture
 def demo(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "CALLS_DIR", tmp_path / "calls")
+    monkeypatch.setattr(store, "SETTINGS_PATH", tmp_path / "voice-settings.json")
     monkeypatch.setattr(config, "CUSTOMER_DB_PATH", tmp_path / "customers.sqlite3")
     monkeypatch.setattr(config, "APPOINTMENT_EMAILS_ENABLED", True)
     monkeypatch.setattr(config, "RESEND_API_KEY", "test-secret")
@@ -41,7 +43,7 @@ def test_browser_account_disconnect_persists_then_sends_and_exposes_receipt(demo
     call_id = "11111111-1111-4111-8111-111111111111"
     name, email = "Alex Test", "alex@example.org"
 
-    async def conversation(transport, session):
+    async def conversation(transport, session, *, settings):
         assert session.demo_mode is True
         assert session.from_number is None
         captured = await call_tool(

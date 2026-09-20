@@ -38,8 +38,9 @@ from pipecat.workers.runner import WorkerRunner
 
 from app.session import CallSession
 from app.tools import register_pipecat_tools
-from app.voice.codex import BRAIN_PREAMBLE, VOICE_PROMPT
+from app.voice.codex import BRAIN_PREAMBLE, VOICE_PROMPT, voice_prompt
 from app.voice.codex.service import MAX_RECOVERIES, RECOVERY_PROMPT
+from app.voice.codex.settings import VoiceSettings, spanish_greeting
 
 LIVE_MODEL = os.getenv("GPTLIVE_MODEL", "gpt-live-1")
 BRAIN_MODEL = os.getenv("GPTLIVE_BRAIN_MODEL", "gpt-5.6-luna")
@@ -217,12 +218,23 @@ class MeteredLive(OpenAILiveLLMService):
             )
 
 
-async def run_call(transport: BaseTransport, session: CallSession) -> None:
+async def run_call(
+    transport: BaseTransport,
+    session: CallSession,
+    *,
+    settings: VoiceSettings | None = None,
+) -> None:
+    prompt = voice_prompt(settings) if settings is not None else VOICE_PROMPT
+    voice = settings.voice if settings is not None else VOICE
+    greeting = session.greeting
+    if settings is not None and settings.opening_language == "es":
+        greeting = spanish_greeting(session.started_at)
+
     llm = MeteredLive(
         call=session,
         api_key=os.environ["OPENAI_API_KEY"],
         settings=MeteredLive.Settings(
-            model=LIVE_MODEL, system_instruction=VOICE_PROMPT + HANDOFF_RULES, voice=VOICE
+            model=LIVE_MODEL, system_instruction=prompt + HANDOFF_RULES, voice=voice
         ),
         delegation=MeteredLive.ResponsesDelegation(
             settings=OpenAIResponsesLLMService.Settings(
@@ -237,7 +249,7 @@ async def run_call(transport: BaseTransport, session: CallSession) -> None:
         messages=[
             {
                 "role": "developer",
-                "content": f'The call has just connected. Say exactly: "{session.greeting}"',
+                "content": f'The call has just connected. Say exactly: "{greeting}"',
             }
         ],
         tools=register_pipecat_tools(llm, session),

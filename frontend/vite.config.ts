@@ -17,10 +17,11 @@ const callsApi = process.env.ROSARIO_CALLS_API ?? process.env.ROSARIO_CLINIC_API
 const proxy = {
   ...(callsApi ? { "/api/calls": { target: callsApi, changeOrigin: true } } : {}),
   "/api/clinic": { target: process.env.ROSARIO_CLINIC_API ?? "http://127.0.0.1:8000", changeOrigin: true },
-  "/api/demo": { target: demoApi, changeOrigin: true },
-  "/sessions": { target: demoApi, changeOrigin: true },
+  "/api/demo": { target: demoApi, changeOrigin: true, xfwd: true },
   "/api/offer": { target: demoApi, changeOrigin: true },
   "/start": { target: demoApi, changeOrigin: true },
+  // Pipecat returns session-scoped WebRTC signaling URLs after /start.
+  "/sessions": { target: demoApi, changeOrigin: true },
 };
 
 // Two pages share one origin: the brand landing page is `index.html` at `/`,
@@ -30,7 +31,7 @@ const proxy = {
 // static HTML: it and /brand/identity.html read brand/, tokens/ and fonts/
 // directly (classic scripts, runtime-fetched SVGs), so only the console is
 // bundled and those files are copied into dist as they are.
-const CONSOLE_ROUTES = /^\/(dashboard|calls|calendar|cases|metrics|talk)(\/|\?|$)/;
+const CONSOLE_ROUTES = /^\/(dashboard|calls|calendar|cases|metrics|talk|settings)(\/|\?|$)/;
 // The roleplay studio is its own bundled page at /demo; everything else under
 // /demo/ (the review page, its script and the stylesheet) is served statically.
 const DEMO_ROUTE = /^\/demo\/?(\?|$)/;
