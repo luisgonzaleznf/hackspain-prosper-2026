@@ -1,95 +1,90 @@
 <p align="center">
-  <img src=".github/assets/rosario-logo.svg" width="640" alt="Rosario">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/rosario-logo-dark.svg">
+    <img src=".github/assets/rosario-logo.svg" width="640" alt="Rosario">
+  </picture>
 </p>
 
 <p align="center">
-  <a href="#results"><img src="https://img.shields.io/badge/HackSpain-2026-000000?style=flat-square" alt="HackSpain 2026"></a>
-  <a href="#results"><img src="https://img.shields.io/badge/Prosper-172%20points-BC0400?style=flat-square" alt="Prosper: 172 recorded points"></a>
-  <a href="#how-it-works"><img src="https://img.shields.io/badge/Python%20%2B%20React-000000?style=flat-square" alt="Built with Python and React"></a>
+  <a href="#architecture"><img src="https://img.shields.io/badge/Python-000000?style=flat-square" alt="Python"></a>
+  <a href="#architecture"><img src="https://img.shields.io/badge/React-000000?style=flat-square" alt="React"></a>
+  <a href="#architecture"><img src="https://img.shields.io/badge/GPT--Live-BC0400?style=flat-square" alt="GPT-Live"></a>
 </p>
 
 ---
 
-Rosario is a voice receptionist for clinics. It answers scheduling calls, looks up patients and available appointments, and records bookings, changes, cancellations or a reason it cannot help. It speaks Spanish, Catalan, Galician, Basque and English, with a console for listening back to calls and inspecting the decisions behind them.
+Rosario is a voice receptionist for clinics. It answers phone and browser calls, identifies patients, searches available appointments and saves confirmed bookings, changes and cancellations. It speaks Spanish, Catalan, Galician, Basque and English. A companion console lets staff review calls, inspect decisions and see the appointments Rosario saved.
 
-The project uses Clínica Arenal's synthetic records for the Prosper track at HackSpain 2026.
+[Website](https://rosario.fyi) · [Quickstart](#run-locally) · [Architecture](#architecture) · [Call review](#call-review) · [GitHub](https://github.com/luisgonzaleznf/hackspain-prosper-2026)
 
-[Quickstart](#run-locally) · [Results](#results) · [Public repository](https://github.com/luisgonzaleznf/hackspain-prosper-2026) · [Private repository](https://github.com/luisgonzaleznf/hackspain-prosper-2026-private)
+## Handling a call
 
-## Why
+A caller can ask for a particular doctor, choose a clinic site, describe a time in ordinary language or request several appointments. Rosario looks up the patient and searches the clinic's availability before offering a slot. When details match several people, it asks follow-up questions. When a clinic rule prevents the booking, it explains the restriction instead of inventing an appointment.
 
-A scheduling call can change halfway through. A caller corrects their insurer, asks for another doctor, switches language or calls on behalf of a parent. Rosario keeps the lookup results and appointment actions for each call, so it can handle a changed request without starting the conversation over.
+Confirmed registrations and appointment changes persist locally during the call. A new patient can register and book in the same conversation. If the caller changes their mind, Rosario uses the saved appointment to move or cancel it. Later calls see those changes, and local bookings block overlapping slots.
 
-The console pairs each transcript with the call's tool results and reported outcomes. You can listen to the call recording and inspect the records behind a decision.
+Rosario can also handle a relative calling for someone else, explain that no eligible slot is available or record that a medical request needs human attention. It does not diagnose or provide treatment advice.
 
-## What happens on a call
+## Architecture
 
-Rosario asks for identifying details and looks up the patient before handling their request. It searches the clinic's availability with the requested specialty, doctor, site and time constraints. The action tools reject slots and appointments that do not match the call's lookup evidence.
+The backend separates speech from clinic operations. Pipecat carries audio between the caller and GPT-Live. The voice model delegates clinic requests to a reasoning model, which calls the patient, availability and appointment tools. Both the Twilio and browser entry points use the same local session and clinic logic.
 
-A caller can request several appointments, move or cancel an existing one, or start a new-patient registration. Rosario can ask follow-up questions when several records match, explain a policy refusal, report that no eligible slot is available or escalate a medical request. Identity confirmation and consent still depend partly on the conversation; the tool checks are not a complete authorization system.
+```mermaid
+flowchart TD
+  phone["Phone call"] -->|Twilio Media Streams|audio["Pipecat audio pipeline"]
+  browser["Browser microphone"] -->|WebRTC|audio
+  audio <--> voice["GPT-Live speech"]
+  voice <-->|Delegated clinic requests|brain["Reasoning model and tools"]
+  brain --> session["Per-call validation and state"]
+  session -->|Read records and availability|clinic["Clinic API"]
+  session <-->|Patients and appointments|db[("SQLite")]
+  session -->|Log decisions|events["JSONL call logs"]
+  audio -->|Record audio|recordings["Stereo recordings"]
+  db -->|Calendar|console["React console"]
+  events -->|Transcript and tool results|console
+  recordings -->|Playback|console
+```
 
-The scored agent keeps actions pending while the caller is talking, then submits the final outcomes after hang-up, including refusals and escalations. Browser and Twilio calls instead save confirmed patient registrations and appointment changes immediately to a local SQLite database. Later calls can find those records, and local bookings block overlapping slots.
+`LocalCallSession` checks identity and confirmation before a write. It requires a full name plus a matching second identifier before using a patient's calendar, rejects appointments outside the call's lookup evidence and rechecks availability before booking or moving a slot. A successful write returns `persisted=true`; the agent must wait for that result before saying the change is saved.
 
-Prosper's clinic API remains read-only. Scored booking reports and local demo appointments do not change its records. The calendar shows saved local appointments by default, with a separate Call reports view for scored scheduling reports.
+`LocalClinic` combines live clinic API responses with local patient and appointment records. `LocalStore` persists those changes in SQLite, so they survive a restart. Local writes do not modify the upstream clinic. Cancelling an upstream appointment locally does not release its upstream availability, and insurance authorization for a newly registered patient's specialist visit may need staff verification.
 
-## The console
+Each call also produces JSONL events and a stereo recording, with the caller and agent on separate channels. A separate FastAPI console server exposes the call records and local calendar. The React frontend reads those APIs through Vite proxies and derives the transcript and decision timeline from the events.
+
+| Code | Responsibility |
+| --- | --- |
+| [backend/app/server.py](backend/app/server.py) and [backend/integrations/twilio.py](backend/integrations/twilio.py) | Phone webhook, media connection and call lifecycle. |
+| [backend/app/demo/](backend/app/demo/) | Browser audio sessions, saved rehearsals and voice settings. |
+| [backend/app/voice/gptlive/](backend/app/voice/gptlive/) | Speech connection and delegation to the reasoning model. |
+| [backend/integrations/local_session.py](backend/integrations/local_session.py) | Per-call identity checks, confirmation and validated writes. |
+| [backend/integrations/local_clinic.py](backend/integrations/local_clinic.py) and [local_store.py](backend/integrations/local_store.py) | Clinic reads, local patients and persistent appointments. |
+| [backend/app/dashboard.py](backend/app/dashboard.py) and [frontend/](frontend/) | Call-review API, calendar and console UI. |
+
+## Call review
 
 <p align="center">
-  <img src=".github/assets/rosario-console.png" width="1024" alt="Rosario's overview with call counts, reported bookings, response gaps and a chart of reception activity">
+  <img src=".github/assets/rosario-console.png" width="1024" alt="Rosario's overview with call counts, reported bookings, response gaps and reception activity">
 </p>
 
-The overview shows call volume, reported bookings, call duration and measured response gaps. Calls open into a transcript, stereo recording and decision timeline. Selecting a message seeks the recording; selecting a tool marker opens its inputs and result. Raw events remain available when the summary is not enough.
+The overview shows call volume, booking reports, call duration and measured response gaps. Open a call for its transcript, recording and tool results. Selecting a message seeks the recording; selecting a tool marker opens its inputs and result. Raw events remain available when the summary is not enough.
 
-Without a local call server configured, the call library reads an imported snapshot of private rehearsal logs. It contains 469 call logs and 139 playable recordings. These are archived calls, not simulated live activity. Rehearsal verdicts in the console are local comparisons against the published cases, not official leaderboard results.
+The calendar shows saved appointments. The browser Studio at `/demo/` lets you choose a caller role, speak to Rosario through a microphone and review the call afterward. Voice settings offer nine samples, an English or Spanish opening and optional tone guidance. Saved settings apply to new Studio calls without changing active calls or earlier recordings.
 
-The Roleplay Studio at `/demo/` starts a real browser conversation with the voice backend. Choose a caller role, allow microphone access and review the recording after hanging up. The separate `/talk` page plays recordings or previews the local microphone; it does not place a call.
-
-Voice settings offer nine voice samples, an English or Spanish opening and optional tone guidance. The backend saves them through `/api/demo/settings` and applies them to new Studio calls. They do not change active calls, existing recordings or the scored agent.
-
-## Phone calls and email
-
-The public backend accepts inbound Twilio calls through the same clinic tools. With Resend enabled, callers can spell and confirm an email address to receive a labelled demo appointment summary after hang-up. They can also consent to a local customer record and a welcome email. That customer record does not create a clinic patient or a login.
-
-Email is off by default. In the public backend, scored calls never send it, and browser and Twilio demo calls do not submit outcomes to Prosper. See the [Twilio setup](https://github.com/luisgonzaleznf/hackspain-prosper-2026/blob/main/backend/integrations/README.md) and [email setup](https://github.com/luisgonzaleznf/hackspain-prosper-2026/blob/main/backend/docs/appointment-email.md).
-
-## Results
-
-Rosario recorded **172 points** on 19 September 2026. The final evidence records all four cases passing in each of the 17 scored groups after the nearest-site and clinician-question fixes. The [private evidence commit](https://github.com/luisgonzaleznf/hackspain-prosper-2026-private/commit/75dfa5e18d9822e34e89f2855d875f5ccf9d0d0e) includes the final runs and their recordings.
-
-That result covers the competition's scripted cases. It does not establish clinical readiness. The same evidence notes that short caller acknowledgements can still split an answer mid-sentence. The console's pinned recording snapshot predates those final runs, so its statistics are not a breakdown of the 172-point result.
+The console can also browse an imported recording archive. The screenshot shows archived development calls, not live activity. The separate `/talk` page plays recordings or previews the microphone; it does not place a call.
 
 ## Run locally
 
-### Frontend and recorded calls
-
-Use Node.js 24, pnpm and Python 3. Start from this checkout's root:
+Use Python 3.12 or newer, `uv`, Node.js 24 and pnpm. Clone the repository and create the ignored environment file:
 
 ```sh
-cd frontend
-pnpm install --frozen-lockfile
-pnpm dev --host 127.0.0.1
-```
-
-Open [localhost:5173](http://localhost:5173) for the landing page or [localhost:5173/calls](http://localhost:5173/calls) for the console. The landing page works without credentials. The call library needs the private recording dataset.
-
-To import it, install `gh`, `ffmpeg` and `ffprobe`, then authenticate a GitHub account with access to the private repository. In another terminal, from `frontend/`:
-
-```sh
-gh auth login
-pnpm recordings:import
-```
-
-Reload the console after the import. Files stay in the ignored `frontend/.recordings/` directory. The importer uses a pinned revision; pass `--revision <full-commit-sha>` to select another one. Without private-repository access, the historical call library is unavailable. See the [console notes](frontend/CONSOLE.md) for call review behavior.
-
-### Voice backend
-
-The public repository contains the packaged backend and scored agent. If this checkout does not contain `backend/`, clone the public repository into a separate directory. From that repository's root, create the ignored environment file:
-
-```sh
+git clone https://github.com/luisgonzaleznf/hackspain-prosper-2026.git rosario
+cd rosario
 cp backend/.env.example .env
 ```
 
-Set `PLATFORM_API_KEY` and `OPENAI_API_KEY` in that file. Browser and Twilio calls need Python 3.12 or newer, `uv`, and API access to the configured GPT-Live and reasoning models.
+Set `PLATFORM_API_KEY` for clinic access and `OPENAI_API_KEY` for the configured GPT-Live and reasoning models. Keep both on the server.
+
+Start the browser voice backend:
 
 ```sh
 cd backend
@@ -97,25 +92,33 @@ uv sync --frozen
 uv run --project . --env-file ../.env python -m app.demo.bot --host 127.0.0.1 --port 7860
 ```
 
-With the frontend running, open [localhost:5173/demo/](http://localhost:5173/demo/). It proxies the Studio requests to port 7860. Set `ROSARIO_DEMO_API` when starting the frontend if the backend runs elsewhere. The backend's [Studio documentation](https://github.com/luisgonzaleznf/hackspain-prosper-2026/blob/main/backend/app/demo/README.md) covers the rehearsal and saved call files.
+In another terminal, from `backend/`, start the call and calendar API:
 
-To show live calls and saved appointments, run `make console CONSOLE_PORT=8001` from `backend/` in another terminal. Restart the frontend with `ROSARIO_CLINIC_API=http://127.0.0.1:8001 pnpm dev --host 127.0.0.1`. Both backend processes must use the same `LOCAL_CLINIC_DB` if you override its default path. This mode does not need the private recording import.
+```sh
+make console CONSOLE_PORT=8001
+```
 
-## How it works
+Then start the frontend from `frontend/`:
 
-Python, FastAPI and Pipecat handle the call transport. GPT-Live handles speech and delegates clinic work to a reasoning model with patient, availability and action tools. Each call keeps its own lookup evidence and action history. JSONL logs record transcripts, tool results and outcomes, with stereo audio for review. The scored agent also supports a Codex subscription voice connection through an experimental protocol.
+```sh
+pnpm install --frozen-lockfile
+ROSARIO_CLINIC_API=http://127.0.0.1:8001 pnpm dev --host 127.0.0.1
+```
 
-The console uses React, TypeScript and Vite. Its recording middleware serves imported logs and audio locally, or the frontend can connect to the local call and calendar server. The browser derives the transcript and decision timeline from recorded events. The landing page and brand assets share the frontend directory.
+Open [localhost:5173/demo/](http://localhost:5173/demo/) to speak to Rosario, [localhost:5173/calls](http://localhost:5173/calls) to review calls or [localhost:5173/calendar](http://localhost:5173/calendar) to see saved appointments. Allow microphone access when the browser asks.
 
-| Code | Purpose |
-| --- | --- |
-| [frontend/](frontend/) | Landing page, console, Roleplay Studio and recording importer. |
-| [backend/](https://github.com/luisgonzaleznf/hackspain-prosper-2026/tree/main/backend) | Voice runtime, clinic tools, call logs, Twilio and optional email. |
-| [leaderboard/](https://github.com/luisgonzaleznf/hackspain-prosper-2026/tree/main/leaderboard) | Scored agent and Prosper endpoint tooling, separate from demo email. |
-| [frontend/CONSOLE.md](frontend/CONSOLE.md) | Console behavior and call review notes. |
+The frontend proxies voice sessions to port 7860 by default. Set `ROSARIO_DEMO_API` if the voice backend runs elsewhere. `ROSARIO_CLINIC_API` selects the calendar and call server; `ROSARIO_CALLS_API` can override the call server separately. Both backend processes must use the same `LOCAL_CLINIC_DB` if you override its default path. Keep that database to retain patients and appointments across restarts.
 
-The public and private repositories are not identical. The private repository retains call evidence and rehearsal tooling; the public repository omits private call material. Public `main` combines live Prosper reads with local patient and appointment storage. It does not ship a frozen clinic database or write appointments back to Prosper.
+For inbound phone calls, follow the [Twilio setup](backend/integrations/README.md). The [browser demo documentation](backend/app/demo/README.md) covers saved recordings and session review.
 
-## Demo boundaries
+## Email
 
-Use synthetic clinic data and email addresses volunteered for the demo. The public demo endpoints and review URLs do not have a production login, and the Twilio integration does not validate request signatures. Keep tunnels limited to supervised calls; an exposed endpoint can incur model and email charges. Keep credentials, local databases and call recordings out of the public repository.
+With Resend enabled, Rosario can send an appointment summary after the caller spells and confirms an email address. It sends the final appointment details after hang-up, excluding bookings that were moved or cancelled earlier in the call. Callers can also consent to a customer record and a welcome email. That customer record is separate from the clinic patient profile and does not create a login.
+
+Email is off by default and needs a verified sender domain. The [email setup](backend/docs/appointment-email.md) covers configuration, consent and delivery status. Demo messages are labelled as such.
+
+## Current limits
+
+The included clinic integration uses synthetic data, and saved appointments belong to Rosario's local database. This is a supervised demo, not a deployed medical service. Identity checks do not replace a complete authorization system, and a recorded escalation does not connect the caller to a clinician.
+
+The demo endpoints and review URLs do not require a login, and the Twilio integration does not validate request signatures. Keep tunnels limited to supervised calls; an exposed endpoint can incur model and email charges. Use only volunteered demo email addresses, and keep credentials, databases and call recordings out of Git.
