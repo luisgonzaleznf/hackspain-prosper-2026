@@ -6,6 +6,7 @@ import { clsx } from "clsx";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ScreenHeader } from "@/app";
+import { CallInProgress } from "@/components/call-status";
 import { CallStrip } from "@/components/call-strip";
 import { LoadingCall, LoadingRows } from "@/components/loading";
 import { Empty, Label, Mono, Outcome } from "@/components/primitives";
@@ -176,14 +177,15 @@ const CallRow = memo(function CallRow({ summary, live = false, selected, compact
             </span>
           </span>
           <span className="min-w-0 justify-self-end md:hidden">
-            {live ? <span className="text-[12px] text-accent-ink">Live</span> : <Outcome verb={outcome.verb} status={outcome.status} size="sm" />}
+            {live ? <CallInProgress endedAt={timeline?.endedAt} /> : <Outcome verb={outcome.verb} status={outcome.status} size="sm" />}
           </span>
           <span className="col-span-3 min-w-0 md:col-span-1">
+            {live && compact ? <span className="mb-1 hidden md:flex"><CallInProgress endedAt={timeline?.endedAt} /></span> : null}
             <CallStrip timeline={timeline} />
           </span>
           {!compact ? (
             <span className="hidden min-w-0 items-center gap-3 md:flex">
-              {live ? <span className="text-[13px] text-accent-ink">Live</span> : <Outcome verb={outcome.verb} reason={outcome.reason} status={outcome.status} size="sm" />}
+              {live ? <CallInProgress endedAt={timeline?.endedAt} /> : <Outcome verb={outcome.verb} reason={outcome.reason} status={outcome.status} size="sm" />}
             </span>
           ) : null}
           {!compact ? (

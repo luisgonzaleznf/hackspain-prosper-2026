@@ -66,6 +66,41 @@ def test_a_half_written_line_does_not_break_the_index(client):
     assert partial["status"] == "in progress"
 
 
+@pytest.mark.parametrize("kind", ["call_ended", "stop_received", "socket_closed", "closed_by_agent"])
+def test_hangup_stops_the_live_call_clock_before_cleanup_finishes(client, tmp_path, kind):
+    path = tmp_path / "calls" / f"{CALL}.jsonl"
+    lines = [
+        LINES[0],
+        {"t": 130.0, "kind": kind},
+        {"t": 140.0, "kind": "recording.saved"},
+    ]
+    path.write_text("".join(json.dumps(line) + "\n" for line in lines))
+    summary = client.get(f"/api/calls/{CALL}").json()["summary"]
+    assert summary["status"] == "ended"
+    assert summary["duration_seconds"] == 30.0
+
+
+def test_new_call_appears_immediately_and_keeps_its_identity_after_hangup(client, tmp_path):
+    call_id = "live-call"
+    path = tmp_path / "calls" / f"{call_id}.jsonl"
+    path.write_text(json.dumps({"t": 200.0, "kind": "call_started"}) + "\n")
+    calls = client.get("/api/calls").json()["calls"]
+    assert calls[0]["call_id"] == call_id
+    assert calls[0]["status"] == "in progress"
+    assert calls[0]["duration_seconds"] == 0.0
+
+    with path.open("a") as log:
+        log.write(json.dumps({"t": 230.0, "kind": "stop_received"}) + "\n")
+        log.write(json.dumps({**LINES[-2], "t": 240.0}) + "\n")
+        log.write(json.dumps({"t": 241.0, "kind": "call_ended"}) + "\n")
+    calls = client.get("/api/calls").json()["calls"]
+    completed = [call for call in calls if call["call_id"] == call_id]
+    assert len(completed) == 1
+    assert completed[0]["status"] == "submitted"
+    assert completed[0]["duration_seconds"] == 30.0
+    assert completed[0]["action"] == "BOOK"
+
+
 def test_detail_splits_the_log_the_way_the_console_reads_it(client):
     body = client.get(f"/api/calls/{CALL}").json()
     assert [t["text"] for t in body["transcript"]] == ["Clínica Arenal."]

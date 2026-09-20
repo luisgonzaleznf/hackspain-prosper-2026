@@ -1,0 +1,11 @@
+.call-status-spinner {
+  animation: call-status-spin var(--dur-live-status) linear infinite;
+}
+
+@keyframes call-status-spin {
+  to { transform: rotate(1turn); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .call-status-spinner { animation: none; }
+}
