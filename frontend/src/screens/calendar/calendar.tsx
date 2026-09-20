@@ -228,13 +228,19 @@ export function CalendarScreen() {
                     const outside = !day.startsWith(month);
                     return (
                       <td key={day}>
-                        <button type="button" className="calendar-day" data-outside={outside} data-selected={day === selectedDay} aria-pressed={day === selectedDay} aria-current={day === today ? "date" : undefined} aria-label={`${dayFormat.format(new Date(`${day}T12:00:00Z`))}, ${reportCount(events.length)}`} onClick={() => selectDay(day)}>
-                          <span className="calendar-date">{Number(day.slice(-2))}{day === today ? <span className="calendar-today-word">Today</span> : null}</span>
-                          {events.length > 0 ? <>
-                            <span className="calendar-day-count">{events.length}{incomplete ? "+" : ""}<span className="calendar-count-word"> {source === "local" ? "saved" : events.length === 1 ? "report" : "reports"}</span></span>
-                            <span className="calendar-day-preview">{events.slice(0, 2).map((event) => <span key={event.id}>{event.kind === "CANCEL" ? (event.persisted ? "Cancelled" : "Cancel report") : event.supersededBy ? "Changed" : event.slot ? wallClock(Date.parse(event.slot) / 1000) : "Time unknown"} {event.patient}</span>)}{events.length > 2 ? <span className="calendar-more">+{events.length - 2} more</span> : null}</span>
-                          </> : null}
-                        </button>
+                        <div className="calendar-day" data-outside={outside} data-selected={day === selectedDay}>
+                          <button type="button" className="calendar-day-select" aria-pressed={day === selectedDay} aria-current={day === today ? "date" : undefined} aria-label={`${dayFormat.format(new Date(`${day}T12:00:00Z`))}, ${reportCount(events.length)}`} onClick={() => selectDay(day)}>
+                            <span className="calendar-date">{Number(day.slice(-2))}{day === today ? <span className="calendar-today-word">Today</span> : null}</span>
+                            {events.length > 0 ? <span className="calendar-day-count">{events.length}{incomplete ? "+" : ""}<span className="calendar-count-word"> {source === "local" ? "saved" : events.length === 1 ? "report" : "reports"}</span></span> : null}
+                          </button>
+                          {events.length > 0 ? <div className="calendar-day-preview">
+                            {events.slice(0, 1).map((event) => <Link key={event.id} to={`/calls/${encodeURIComponent(event.callId)}`} className="calendar-event-link" aria-label={`View call for ${event.patient}${event.slot ? `, ${slotLabel(event.slot)}` : ""}`}>
+                              <span className="calendar-event-label">{event.kind === "CANCEL" ? (event.persisted ? "Cancelled" : "Cancel report") : event.supersededBy ? "Changed" : event.slot ? wallClock(Date.parse(event.slot) / 1000) : "Time unknown"} {event.patient}</span>
+                              <span className="calendar-event-call"><span><span className="calendar-call-view-word">View </span>call</span><ArrowUpRightIcon size={12} aria-hidden="true" /></span>
+                            </Link>)}
+                            {events.length > 1 ? <button type="button" className="calendar-more" aria-label={`Show all ${events.length} ${source === "local" ? "appointments" : "reports"} for ${dayFormat.format(new Date(`${day}T12:00:00Z`))}`} onClick={() => selectDay(day)}>+{events.length - 1} more</button> : null}
+                          </div> : null}
+                        </div>
                       </td>
                     );
                   })}</tr>
