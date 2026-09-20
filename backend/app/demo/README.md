@@ -29,7 +29,8 @@ Calls, transcripts, recordings and the calendar use the local console when
 The console needs `make console CONSOLE_PORT=8001` in `backend/`.
 Both backend processes must use the same `LOCAL_CLINIC_DB` if overriding the default.
 No writes go to Prosper. Main’s optional Resend email/account flow remains available
-when configured, with caller-confirmed recipients; see [email setup](../../docs/appointment-email.md). The scored `/ws` flow is unchanged.
+when configured. Appointment confirmations use the identified patient's email on file;
+see [email setup](../../docs/appointment-email.md). The scored `/ws` flow is unchanged.
 
 Every rehearsal saves:
 

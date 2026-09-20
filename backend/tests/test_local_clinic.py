@@ -365,7 +365,10 @@ def test_console_exposes_saved_calendar_only_locally(setup):
 
 
 @pytest.mark.parametrize("cancel", [False, True])
-def test_persisted_booking_emails_only_if_still_active(setup, monkeypatch, cancel):
+@pytest.mark.parametrize("existing_patient", [False, True])
+def test_persisted_booking_emails_only_if_still_active(
+    setup, monkeypatch, cancel, existing_patient
+):
     from unittest.mock import AsyncMock
 
     from app import appointment_email
@@ -377,19 +380,23 @@ def test_persisted_booking_emails_only_if_still_active(setup, monkeypatch, cance
     sender = AsyncMock(return_value="test-email-id")
     monkeypatch.setattr(appointment_email, "send_message", sender)
     session = TwilioCallSession("CApersisted-email", started_at=NOW)
-    patient = register(session)
+    if existing_patient:
+        patient = register(TwilioCallSession("CAearlier-registration", started_at=NOW))
+        found = identify(session)
+        assert found["verified_patient_ids"] == [patient]
+    else:
+        patient = register(session)
     search(session, patient)
-    appointment = book(session, patient)["appointment_id"]
-    assert "error" not in run(
-        session, "set_appointment_email", patient_id=patient, email="qa@example.test"
-    )
-    assert "error" not in run(
-        session, "confirm_appointment_email", patient_id=patient, email="qa@example.test"
-    )
+    booked = book(session, patient)
+    appointment = booked["appointment_id"]
+    assert booked["appointment_email"] == {"patient_id": patient, "status": "on_file"}
+    assert session.appointment_emails == {}  # No model-supplied recipient or confirmation.
     if cancel:
         run(session, "record_cancellation", appointment_id=appointment, confirmed=True)
     asyncio.run(session.finish())
     assert sender.await_count == (0 if cancel else 1)
+    if not cancel:
+        assert sender.call_args.args[0]["to"] == [PROFILE["email"]]
     assert len(LocalStore().appointments()) == (0 if cancel else 1)
 
 

@@ -425,6 +425,15 @@ export function project(detail: CallDetail): Timeline {
         }
       } else if (tool.name === "search_availability") {
         stage = "OFFER";
+      } else if (tool.name === "record_registration") {
+        stage = "WRITE";
+        const patient = object(result?.patient);
+        const patientId = patient && str(patient.patient_id);
+        const name = patient && [patient.given_name, patient.first_surname, patient.second_surname].map(str).filter(Boolean).join(" ");
+        if (result?.persisted === true && patientId && name) {
+          identified = { patient_id: patientId, name, plan: str(patient.insurer), note: str(patient.note) };
+          matchCount = 1;
+        }
       } else if (tool.name in WRITE_TOOLS) {
         stage = "WRITE";
       } else if (tool.name === "validate_registration_details") {

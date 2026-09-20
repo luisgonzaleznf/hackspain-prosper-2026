@@ -1,7 +1,7 @@
-"""Caller-confirmed appointment summaries, sent through Resend after the final outcome.
+"""Appointment summaries, sent through Resend after the final outcome.
 
-Recipients belong to a patient in this call, never to the entire call or a chart's email.
-The model can capture/confirm an address; only call finalization can send a message.
+Use each patient's looked-up chart email automatically. A caller-confirmed address is
+only needed when the chart has none; only call finalization can send a message.
 """
 
 import hashlib
@@ -66,6 +66,14 @@ def _has_appointment(session: "CallSession", patient_id: str) -> bool:
     return any(patient_for_action(session, action) == patient_id for action in session.actions)
 
 
+def address_on_file(session: "CallSession", patient_id: str) -> str | None:
+    """Read lookup evidence held by the backend, never an address supplied by the model."""
+    try:
+        return normalize_address(session.patients.get(patient_id, {}).get("email", ""))
+    except ValueError:
+        return None
+
+
 async def set_recipient(session: "CallSession", args: dict) -> dict:
     if not session.demo_mode or not enabled():
         return {"error": "Email confirmations are unavailable. Do not promise an email."}
@@ -77,10 +85,17 @@ async def set_recipient(session: "CallSession", args: dict) -> dict:
     # Even an invalid correction invalidates the previous address: never send to a stale one.
     session.appointment_emails.pop(patient_id, None)
     if args["email"] == "":
+        # Keep an explicit opt-out so finalization cannot fall back to the chart.
+        session.appointment_emails[patient_id] = Recipient("")
         session.log("appointment_email.declined", patient_id=patient_id)
         return {"status": "declined", "note": "No email will be sent for this patient."}
     if not _has_appointment(session, patient_id):
         return {"error": "Record this patient's agreed booking or move before requesting email."}
+    if address_on_file(session, patient_id):
+        return {
+            "status": "on_file",
+            "note": "The backend will use this patient's email on file after hang-up. No address or email confirmation is needed; the supplied address was not used.",
+        }
     try:
         address = normalize_address(args["email"])
     except ValueError as exc:
@@ -97,6 +112,10 @@ async def confirm_recipient(session: "CallSession", args: dict) -> dict:
     if not session.demo_mode or not enabled() or session.finished:
         return {"error": "Email confirmations are unavailable. Do not promise an email."}
     patient_id = args["patient_id"]
+    if address_on_file(session, patient_id):
+        return {
+            "error": "This patient's email on file is selected automatically by the backend. Do not supply or confirm a replacement address."
+        }
     recipient = session.appointment_emails.get(patient_id)
     if recipient:
         # A mismatching confirmation may be a correction sent to the wrong tool.
@@ -217,9 +236,14 @@ async def send_for_actions(session: "CallSession", actions: list[dict]) -> list[
     results = []
     for action in actions:
         patient_id = patient_for_action(session, action)
-        if patient_id is None:
+        if patient_id is None or patient_id not in session.patients:
             continue
         recipient = session.appointment_emails.get(patient_id)
+        if recipient is not None and not recipient.address:
+            continue  # Caller explicitly declined email, including to their chart address.
+        on_file = address_on_file(session, patient_id)
+        if on_file:
+            recipient = Recipient(on_file, confirmed=True)
         if not recipient or not recipient.confirmed:
             continue
         try:
@@ -239,6 +263,7 @@ async def send_for_actions(session: "CallSession", actions: list[dict]) -> list[
                 "patient_id": patient_id,
                 "action": action["action"],
                 "email_id": email_id,
+                "recipient_source": "patient_record" if on_file else "caller_confirmed",
             }
             session.log("appointment_email.accepted", **result)
         except Exception as exc:

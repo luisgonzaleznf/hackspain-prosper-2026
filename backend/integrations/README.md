@@ -35,7 +35,7 @@ the same database. Keep this file to retain the diary across restarts.
 These writes are local only: Prosper's read-only records remain unchanged. Cancelling
 an upstream appointment locally does not release its upstream availability. For new
 local patients, insured specialist care needs staff verification because Prosper cannot
-verify their patient-specific authorization. Optional emails follow the consent flow below.
+verify their patient-specific authorization. Appointment emails follow the flow below.
 
 The local console's `/calendar` defaults to saved appointments; the Call reports view
 retains the scored practice reports. Start it with `make console CONSOLE_PORT=8001`
@@ -49,7 +49,8 @@ Prosper's scorer; the original `/ws` endpoint retains the scored report workflow
 Audio is stored in `backend/logs/audio/`, as with the existing voice server.
 
 Optional [Resend emails](../docs/appointment-email.md) send a clearly labelled demo
-summary after hang-up when the caller spells and confirms an address. Callers can
+summary after hang-up to the identified patient's email on file, read directly by the backend.
+Only if no usable email is on file does the caller need to spell and confirm an address. Callers can
 also request a local customer account and welcome email. Set `APPOINTMENT_EMAILS_ENABLED=1`,
 `RESEND_API_KEY` and `RESEND_FROM_EMAIL` in the ignored `.env`, then restart this same
 server. `TwilioCallSession` enables the human-only tools and finalizes them locally;

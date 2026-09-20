@@ -1,8 +1,12 @@
 # Resend emails for the public demo
 
-The receptionist offers a real email after a caller agrees to a booking or move.
-The caller spells an address; the agent captures it, reads it back, and waits for an
-explicit yes before confirming it. At hang-up, Resend receives one message per final
+After a caller agrees to a booking or move, the backend automatically selects the
+identified patient's email from the record returned by the clinic lookup or a saved
+registration in this call. GPT-Live does not supply or recall the recipient. The booking
+tool returns `appointment_email.status=on_file` so the agent can explain that confirmation
+will go to the address on file without asking for it again. If no usable address is on
+file, the status is `needs_address`: the caller spells an address, the agent reads it back,
+and waits for an explicit yes before confirming it. At hang-up, Resend receives one message per final
 appointment, with the patient, doctor, date/time in Europe/Madrid, site and address.
 Moves include the previous time. HTML and plain text are supplied.
 
@@ -87,8 +91,10 @@ running from `backend/`. Keep any custom database location private as well.
    `make serve VOICE=gptlive PORT=18761` from `backend/`, or the browser runner with
    `uv run python -m app.demo.bot --host 127.0.0.1 --port 7860` and open `/demo/`.
 2. Use a synthetic patient on file and agree to a real returned slot.
-3. Accept email, spell your own address, hear the complete read-back, then say yes.
-4. For a correction, correct the address and confirm the new read-back. To decline,
+3. With your own demo inbox saved on the patient profile, hear that confirmation will
+   go to the email on file. There is no second email dictation or confirmation.
+4. With no usable email on file, accept email, spell your address and confirm the read-back.
+   Corrections to this fallback address need a fresh confirmation. To decline either path,
    say you do not want email. The appointment remains recorded either way.
 5. Hang up and check the inbox. Only the final settled booking or move is emailed.
 
@@ -109,15 +115,17 @@ exposure to the supervised rehearsal and keep these artifacts out of Git.
 
 ## Delivery evidence and failure behavior
 
-`appointment_email.confirmed` records consent. `appointment_email.accepted` records the
-Resend email ID, patient ID and action. It means the provider accepted the send; check
+`appointment_email.confirmed` records confirmation of a fallback address.
+`appointment_email.accepted` records the Resend email ID, patient ID, action and
+`recipient_source` (`patient_record` or `caller_confirmed`). It means the provider accepted the send; check
 Resend's email dashboard and the phone inbox for actual delivery. `appointment_email.failed`
 records the error class and HTTP status without logging provider bodies or credentials.
 
-Corrections invalidate the previous address, including incomplete/invalid corrections.
-Each patient's recipient is separate; chart and registration emails are never reused.
-Unconfirmed addresses, withdrawals, cancellations, clinic registrations and refusals
-receive no appointment email. Customer enrollment has its own consent and welcome
+The sender reads each patient's own email on file at finalization, even if the model supplied
+a different address. For patients without a usable address on file, corrections invalidate
+the fallback address, including incomplete/invalid corrections. An explicit withdrawal
+suppresses both paths. Unconfirmed fallback addresses, cancellations, registrations without
+a booking, and refusals receive no appointment email. Customer enrollment has its own consent and welcome
 message. Content comes from lookup evidence and the final staged action, not
 free-form model text. Resend idempotency keys and per-session tracking suppress repeated
 sends. A provider error never erases the appointment; there is no background retry queue.
