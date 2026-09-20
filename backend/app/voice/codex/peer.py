@@ -6,7 +6,7 @@
     ...                         # on_audio(pcm16 at out_rate) with the agent's voice
     await peer.close()
 
-on_event receives both the realtime data-channel events ("oai-events") and the
+on_event receives both the GPT-Live data-channel events ("oai-events") and the
 app-server notifications, each as a dict with a "source" key added.
 """
 
@@ -27,10 +27,10 @@ from aiortc import MediaStreamTrack, RTCConfiguration, RTCPeerConnection, RTCSes
 from aiortc.mediastreams import MediaStreamError
 
 from app.voice.codex.rpc import (
-    REALTIME_START_TIMEOUT,
+    LIVE_START_TIMEOUT,
     CodexAppServer,
     CodexRpcError,
-    start_realtime,
+    start_live,
 )
 
 FRAME_MS = 20
@@ -257,17 +257,17 @@ class CodexLivePeer:
         for attempt in range(2):
             self._answer = asyncio.get_running_loop().create_future()
             try:
-                await asyncio.wait_for(self._srv.start(), REALTIME_START_TIMEOUT)
-                self.thread_id = await start_realtime(
+                await asyncio.wait_for(self._srv.start(), LIVE_START_TIMEOUT)
+                self.thread_id = await start_live(
                     self._srv,
                     prompt=self.prompt,
                     sdp_offer=self._pc.localDescription.sdp,
                     voice=self.voice,
                     brain_instructions=self.brain_instructions,
                     tools=self.tools,
-                    timeout=REALTIME_START_TIMEOUT,
+                    timeout=LIVE_START_TIMEOUT,
                 )
-                sdp = await asyncio.wait_for(self._answer, REALTIME_START_TIMEOUT)
+                sdp = await asyncio.wait_for(self._answer, LIVE_START_TIMEOUT)
                 await self._pc.setRemoteDescription(RTCSessionDescription(sdp=sdp, type="answer"))
                 return
             except TimeoutError:
@@ -305,7 +305,7 @@ class CodexLivePeer:
         }
 
     def send_event(self, event: dict) -> None:
-        """Send a realtime client event over the data channel (e.g. delegation results)."""
+        """Send a GPT-Live client event over the data channel (e.g. delegation results)."""
         if self._dc.readyState == "open":
             self._dc.send(json.dumps(event))
 

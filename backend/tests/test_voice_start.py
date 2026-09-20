@@ -88,8 +88,8 @@ def run(coro):
     return asyncio.run(coro)
 
 
-def test_voice_start_retries_a_hung_realtime_start(monkeypatch):
-    monkeypatch.setattr("app.voice.codex.peer.REALTIME_START_TIMEOUT", 0.01)
+def test_voice_start_retries_a_hung_live_start(monkeypatch):
+    monkeypatch.setattr("app.voice.codex.peer.LIVE_START_TIMEOUT", 0.01)
     events = []
     peer, servers = make_peer(monkeypatch, ["hang", "ok"], events)
 
@@ -98,19 +98,19 @@ def test_voice_start_retries_a_hung_realtime_start(monkeypatch):
     assert peer.thread_id == "thread-2"
     assert peer._pc.remote.sdp == "answer"
     assert [server.closed for server in servers] == [True, False]
-    realtime_calls = [
+    live_calls = [
         (server, timeout)
         for server in servers
         for method, timeout in server.requests
         if method == "thread/realtime/start"
     ]
-    assert len(realtime_calls) == 2
-    assert all(timeout == 0.01 for _, timeout in realtime_calls)
+    assert len(live_calls) == 2
+    assert all(timeout == 0.01 for _, timeout in live_calls)
     assert [event["type"] for event in events if "type" in event] == ["voice.start_retry"]
 
 
 def test_voice_start_raises_after_one_retry_also_times_out(monkeypatch):
-    monkeypatch.setattr("app.voice.codex.peer.REALTIME_START_TIMEOUT", 0.01)
+    monkeypatch.setattr("app.voice.codex.peer.LIVE_START_TIMEOUT", 0.01)
     events = []
     peer, servers = make_peer(monkeypatch, ["hang", "hang"], events)
 
@@ -118,18 +118,18 @@ def test_voice_start_raises_after_one_retry_also_times_out(monkeypatch):
         run(peer.start())
 
     assert [server.closed for server in servers] == [True, True]
-    realtime_calls = [
+    live_calls = [
         method
         for server in servers
         for method, timeout in server.requests
         if method == "thread/realtime/start"
     ]
-    assert len(realtime_calls) == 2
+    assert len(live_calls) == 2
     assert [event["type"] for event in events if "type" in event] == ["voice.start_retry"]
 
 
 def test_voice_start_healthy_path_does_not_retry(monkeypatch):
-    monkeypatch.setattr("app.voice.codex.peer.REALTIME_START_TIMEOUT", 0.01)
+    monkeypatch.setattr("app.voice.codex.peer.LIVE_START_TIMEOUT", 0.01)
     events = []
     peer, servers = make_peer(monkeypatch, ["ok"], events)
 
