@@ -1,10 +1,4 @@
-"""Prosper wire: Twilio Media Streams over a plain WebSocket at /ws (docs/prosper/pages/04-call-contract.md).
-
-    VOICE=codex uv run python -m app.server     # ws://localhost:7860/ws ; expose with scripts/tunnel.sh
-
-Every connection is its own call: fresh transport, fresh CallSession, fresh voice pipeline.
-When the socket closes, the session POSTs what the call staged (window: 30 s after hang-up).
-"""
+"""Standalone ROSARIO call server: Twilio/WebRTC media, SQLite clinic, and console APIs."""
 
 import asyncio
 import base64
@@ -15,7 +9,6 @@ from datetime import datetime
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
-from integrations.twilio import TwilioCallSession
 from integrations.twilio import router as twilio_router
 from loguru import logger
 from pipecat.runner.utils import parse_telephony_websocket
@@ -24,7 +17,9 @@ from pipecat.transports.websocket.fastapi import FastAPIWebsocketParams, FastAPI
 from starlette.types import Message
 from starlette.websockets import WebSocketState
 
-from app import audio, clinic, config, voice
+from app import audio, clinic, config, database, voice
+from app.calendar_api import router as calendar_router
+from app.calls_api import router as calls_router
 from app.demo.app import register_demo_routes
 from app.recorder import WireRecorder
 from app.session import CallSession
@@ -98,7 +93,7 @@ async def lifespan(app: FastAPI):
         await clinic.catalogue()
         logger.info("clinic catalogue loaded")
     except Exception as e:
-        logger.error(f"clinic catalogue not loaded (check PLATFORM_API_KEY): {e!r}")
+        logger.error(f"clinic catalogue not loaded (initialize {config.DATABASE_PATH}): {e!r}")
     yield
 
 
@@ -109,6 +104,8 @@ app = FastAPI(lifespan=lifespan)
 # the scored call path is /ws and is untouched by it.
 register_demo_routes(app)
 app.include_router(twilio_router)
+app.include_router(calls_router)
+app.include_router(calendar_router)
 
 
 @app.get("/health")
@@ -128,7 +125,7 @@ async def ws(websocket: WebSocket):
 
 @app.websocket("/integrations/twilio/ws")
 async def twilio_ws(websocket: WebSocket):
-    await run_telephony_call(websocket, session_type=TwilioCallSession)
+    await run_telephony_call(websocket)
 
 
 async def run_telephony_call(websocket: WebSocket, session_type: type[CallSession] = CallSession):
@@ -161,6 +158,12 @@ async def run_telephony_call(websocket: WebSocket, session_type: type[CallSessio
         from_number=call.from_number,
         started_at=_eval_reference_time(call.body),
     )
+    database.open_call(
+        session.call_id,
+        session.stream_sid,
+        session.from_number,
+        session.started_at.timestamp(),
+    )
     caller_ulaw = bytearray() if config.RECORD_CALLER_AUDIO else None
     instrument_inbound_events(websocket, session, caller_ulaw)
     recorder.tap(websocket, session)
@@ -176,6 +179,7 @@ async def run_telephony_call(websocket: WebSocket, session_type: type[CallSessio
             session.log("closed_by_agent")  # returning closes the socket: we hung up first
         ACTIVE.discard(session.call_id)
         results = await session.finish()
+        database.close_call(session.call_id)
         if caller_ulaw:
             await asyncio.to_thread(save_caller_audio, session, caller_ulaw)
         logger.info(f"call {session.call_id} ended; submitted {[r['status'] for r in results]}")

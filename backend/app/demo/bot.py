@@ -7,7 +7,7 @@ from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
 from pipecat.transports.base_transport import TransportParams
 
-from app import config
+from app import config, database
 from app.demo.app import register_demo_routes
 from app.demo.models import DemoStartRequest
 from app.demo.recording import DemoRecorder
@@ -37,7 +37,7 @@ class DemoCallSession(CallSession):
 
 
 async def bot(runner_args: RunnerArguments) -> None:
-    """Run one browser role-play without submitting its staged outcome."""
+    """Run one browser call with caller ID and the writable clinic backend."""
     request = DemoStartRequest.model_validate(runner_args.body)
     scenario = get_scenario(request.scenario_id)
     if scenario is None:
@@ -53,10 +53,19 @@ async def bot(runner_args: RunnerArguments) -> None:
     session: DemoCallSession | None = None
     recorder = DemoRecorder()
     try:
+        from_number = request.from_number or scenario.phone
+        if not from_number.startswith("+"):
+            from_number = "+34" + from_number
         session = await DemoCallSession.start(
             call_id=session_id,
             stream_sid=session_id,
-            from_number=scenario.phone,
+            from_number=from_number,
+        )
+        database.open_call(
+            session.call_id,
+            session.stream_sid,
+            session.from_number,
+            session.started_at.timestamp(),
         )
         transport = await create_transport(
             runner_args,
@@ -78,7 +87,14 @@ async def bot(runner_args: RunnerArguments) -> None:
                 session.log("recording.saved", **await recorder.save(session_id, config.AUDIO_DIR))
             except Exception as exc:
                 session.log("recording.error", error=repr(exc))
-            session.log("call_ended", actions=session.actions, submitted=False)
+            results = await session.finish()
+            database.close_call(session.call_id)
+            session.log(
+                "call_ended",
+                actions=session.actions,
+                submitted=True,
+                statuses=[result["status"] for result in results],
+            )
             end_session(session_id, session.actions, build_action_evidence(session))
 
 

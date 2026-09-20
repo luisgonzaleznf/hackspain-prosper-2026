@@ -14,6 +14,7 @@ const POLL_MS = 900;
 export function Studio() {
   const [roles, setRoles] = useState<Persona[]>([]);
   const [picked, setPicked] = useState<Persona | null>(null);
+  const [fromNumber, setFromNumber] = useState("+34711330529");
   const [phase, setPhase] = useState<Phase>("idle");
   const [alert, setAlert] = useState("");
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -124,6 +125,11 @@ export function Studio() {
   }, [apply]);
 
   const start = async () => {
+    const normalizedNumber = fromNumber.replace(/[\s()-]/g, "");
+    if (!/^\+?[0-9]{9,15}$/.test(normalizedNumber)) {
+      setAlert("Enter a phone number with 9 to 15 digits, optionally starting with +.");
+      return;
+    }
     if (!picked) return;
     setAlert(""); setSnapshot(null);
     sessionId.current = null; ready.current = false;
@@ -164,11 +170,11 @@ export function Studio() {
       await pipecat.initDevices();
       const started = await pipecat.startBotAndConnect({
         endpoint: "/start",
-        requestData: { transport: "webrtc", enableDefaultIceServers: true, body: { scenario_id: picked.id } },
+        requestData: { transport: "webrtc", enableDefaultIceServers: true, body: { scenario_id: picked.id, from_number: normalizedNumber } },
       });
       sessionId.current = sessionIdOf(started) ?? sessionId.current;
       if (!sessionId.current) throw new Error("The server did not return a session id.");
-      apply(await demo.open(sessionId.current, picked.id));
+      apply(await demo.open(sessionId.current, picked.id, normalizedNumber));
       openStream(sessionId.current);
       ready.current = true;
       setPhase("live");
@@ -242,6 +248,20 @@ export function Studio() {
     <main id="main" tabIndex={-1}>
       <h1 className="lead" ref={headline}>Rehearse the call.</h1>
       {alert && phase !== "error" ? <p className="alert" role="alert">{alert}</p> : null}
+      <section className="phone-setup" aria-labelledby="simulated-phone">
+        <div>
+          <h2 id="simulated-phone">Call from a simulated phone.</h2>
+          <p>The number is sent as caller ID. Use a synthetic clinic number to test recognition.</p>
+        </div>
+        <label>
+          <span>Caller number</span>
+          <input type="tel" inputMode="tel" autoComplete="tel" value={fromNumber}
+            onChange={(event) => setFromNumber(event.target.value)}
+            disabled={phase === "live" || phase === "connecting" || phase === "ending"}
+            placeholder="+34 711 330 529" />
+        </label>
+        <p className="phone-examples"><button type="button" onClick={() => setFromNumber("+34711330529")}>Josefa</button><button type="button" onClick={() => setFromNumber("+34731169716")}>Ignacio</button><button type="button" onClick={() => setFromNumber("+34708629566")}>Chloe</button></p>
+      </section>
 
       <section className="roles-wrap" aria-labelledby="who">
         <h2 id="who">Who are you calling as?</h2>

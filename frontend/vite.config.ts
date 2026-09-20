@@ -6,13 +6,15 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import { recordings } from "./tools/recordings-server.ts";
 
-// The roleplay studio at /demo/ talks to the local voice backend, not the call log.
-// Override with ROSARIO_DEMO_API=http://host:port.
-const demoApi = process.env.ROSARIO_DEMO_API ?? "http://127.0.0.1:7860";
-
+// One public origin fronts the compiled UI, WebRTC runner, Twilio media, and clinic APIs.
+const api = process.env.ROSARIO_API ?? "http://127.0.0.1:7860";
 const proxy = {
-  "/api/demo": { target: demoApi, changeOrigin: true },
-  "/start": { target: demoApi, changeOrigin: true },
+  "/api": { target: api, changeOrigin: true },
+  "/start": { target: api, changeOrigin: true },
+  "/sessions": { target: api, changeOrigin: true },
+  "/ws": { target: api, changeOrigin: true, ws: true },
+  "/twiml": { target: api, changeOrigin: true },
+  "/health": { target: api, changeOrigin: true },
 };
 
 // Two pages share one origin: the brand landing page is `index.html` at `/`,

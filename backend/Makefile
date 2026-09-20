@@ -10,7 +10,7 @@ PORT  ?= 7860
 CONSOLE_PORT ?= 8000
 
 .DEFAULT_GOAL := help
-.PHONY: help serve roleplay-demo console session up down endpoint-status tunnel smoke fake-call replay-call dash verify collect run-audio ledger
+.PHONY: help serve roleplay-demo console session up down endpoint-status tunnel smoke fake-call replay-call dash verify collect run-audio ledger standalone-smoke frontend-build frontend-typecheck frontend-test frontend-lint check deploy
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
@@ -21,6 +21,41 @@ serve:  ## Prosper call server on ws://0.0.0.0:$(PORT)/ws (VOICE=codex|gptlive|g
 
 roleplay-demo:  ## Role-play Studio: serve, then open http://127.0.0.1:$(PORT)/demo/
 	VOICE=$(VOICE) PORT=$(PORT) $(UV) python -m app.server
+
+standalone-smoke:  ## Exercise lookup, availability, booking, and SQLite persistence
+	$(UVS) python scripts/smoke_standalone.py
+
+frontend-build:  ## Build the ROSARIO frontend
+	cd ../frontend && pnpm build
+
+frontend-typecheck:  ## Typecheck the ROSARIO frontend
+	cd ../frontend && pnpm typecheck
+
+frontend-test:  ## Run ROSARIO frontend tests
+	cd ../frontend && pnpm test
+
+frontend-lint:  ## Run ROSARIO frontend lint
+	cd ../frontend && pnpm lint
+
+check:  ## Run backend, SQLite, and frontend verification
+	$(UV) ruff check app integrations tests scripts
+	$(UVS) python -m pytest
+	$(MAKE) standalone-smoke
+	$(MAKE) frontend-typecheck
+	$(MAKE) frontend-test
+	$(MAKE) frontend-lint
+	$(MAKE) frontend-build
+
+deploy: frontend-build  ## Install frontend, backend services, and Caddy routing
+	sudo mkdir -p /var/www/rosario
+	sudo cp -a ../frontend/dist/. /var/www/rosario/
+	sudo cp ../deploy/rosario.service /etc/systemd/system/rosario.service
+	sudo cp ../deploy/rosario-demo.service /etc/systemd/system/rosario-demo.service
+	sudo cp ../deploy/Caddyfile /etc/caddy/Caddyfile
+	sudo systemctl daemon-reload
+	sudo systemctl enable --now rosario.service rosario-demo.service
+	sudo caddy validate --config /etc/caddy/Caddyfile
+	sudo systemctl reload caddy
 
 console:  ## ROSARIO console (call log API + built frontend) on http://127.0.0.1:$(CONSOLE_PORT)
 	$(UV) uvicorn app.dashboard:app --port $(CONSOLE_PORT) --reload

@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 from dotenv import find_dotenv, load_dotenv
 
-load_dotenv(find_dotenv(usecwd=True))
+load_dotenv(find_dotenv(usecwd=True), override=False)
 
 PLATFORM_API_KEY = os.getenv("PLATFORM_API_KEY", "")
 PLATFORM_API_BASE_URL = os.getenv(
@@ -23,6 +23,8 @@ VOICE = os.getenv("VOICE", "codex")
 # sends it, and it is ignored unless this is set.
 EVAL_MODE = os.getenv("EVAL_MODE") == "1"
 PORT = int(os.getenv("PORT", "7860"))
+DATABASE_PATH = Path(os.getenv("DATABASE_PATH", "data/clinic.sqlite3"))
+PUBLIC_WEBSOCKET_URL = os.getenv("PUBLIC_WEBSOCKET_URL", "wss://example.invalid/ws")
 CALLS_DIR = Path(os.getenv("CALLS_DIR", "logs/calls"))
 # Debug only: also save the caller alone as logs/calls/<call_id>.caller.wav for `make replay-call`.
 RECORD_CALLER_AUDIO = os.getenv("RECORD_CALLER_AUDIO") == "1"

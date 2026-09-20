@@ -1,4 +1,4 @@
-import type { CallDetail, CallsIndex } from "./types.ts";
+import type { CalendarAppointment, CallDetail, CallsIndex } from "./types.ts";
 
 // Same-origin `/api/calls`, served from the imported recording dataset by Vite.
 // Errors carry the HTTP status so screens can say what happened.
@@ -38,5 +38,6 @@ async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
 export const api = {
   calls: (signal?: AbortSignal) => getJson<CallsIndex>("/api/calls", signal),
   call: (id: string, signal?: AbortSignal) => getJson<CallDetail>(`/api/calls/${encodeURIComponent(id)}`, signal),
+  calendar: (signal?: AbortSignal) => getJson<{ appointments: CalendarAppointment[] }>("/api/calendar", signal),
   audioUrl: (id: string) => `/api/calls/${encodeURIComponent(id)}/audio`,
 };

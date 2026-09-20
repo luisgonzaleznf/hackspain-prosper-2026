@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.calendar_api import router as calendar_router
 from app.calls_api import router as calls_router
 
 DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
@@ -35,6 +36,7 @@ app.add_middleware(
 )
 
 app.include_router(calls_router)
+app.include_router(calendar_router)
 
 
 @app.get("/health")

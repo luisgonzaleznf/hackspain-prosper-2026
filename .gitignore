@@ -32,6 +32,8 @@ env/
 .coverage
 htmlcov/
 .hypothesis/
+*.sqlite3-shm
+*.sqlite3-wal
 
 # Node
 node_modules/
