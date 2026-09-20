@@ -1,4 +1,8 @@
-import { ChevronLeft, ChevronRight, ArrowUpRight, CalendarDays, RefreshCw } from "lucide-react";
+import { CaretLeftIcon } from "@phosphor-icons/react/dist/csr/CaretLeft";
+import { CaretRightIcon } from "@phosphor-icons/react/dist/csr/CaretRight";
+import { ArrowUpRightIcon } from "@phosphor-icons/react/dist/csr/ArrowUpRight";
+import { CalendarDotsIcon } from "@phosphor-icons/react/dist/csr/CalendarDots";
+import { ArrowsClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowsClockwise";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { ScreenHeader } from "@/app";
@@ -146,12 +150,12 @@ export function CalendarScreen() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ScreenHeader title="Calendar" action={
-        <button type="button" className="pill pill-ghost calendar-refresh" onClick={refresh} disabled={refreshing} aria-busy={refreshing}><RefreshCw size={14} aria-hidden="true" />{refreshing ? "Refreshing…" : "Refresh"}</button>
+        <button type="button" className="pill pill-ghost calendar-refresh" onClick={refresh} disabled={refreshing} aria-busy={refreshing}><ArrowsClockwiseIcon size={14} aria-hidden="true" />{refreshing ? "Refreshing…" : "Refresh"}</button>
       } />
       <div className="scroll-y calendar-scroll flex-1 px-4 pb-24 pt-5 md:px-8 md:pb-8">
         <div className="measure">
           <section className="calendar-source" aria-labelledby="calendar-source-title">
-            <CalendarDays size={20} strokeWidth={1.5} aria-hidden="true" />
+            <CalendarDotsIcon size={20} aria-hidden="true" />
             <div>
               <h2 id="calendar-source-title">Call reports · Read-only clinic</h2>
               <p>Reports include practice calls and do not change the clinic diary.</p>
@@ -172,8 +176,8 @@ export function CalendarScreen() {
                 </div>
                 <div className="calendar-controls">
                   <button type="button" className="pill pill-ghost" onClick={() => selectDay(today)}>Today</button>
-                  <button type="button" className="calendar-arrow" aria-label="Previous month" onClick={() => changeMonth(-1)}><ChevronLeft size={18} aria-hidden="true" /></button>
-                  <button type="button" className="calendar-arrow" aria-label="Next month" onClick={() => changeMonth(1)}><ChevronRight size={18} aria-hidden="true" /></button>
+                  <button type="button" className="calendar-arrow" aria-label="Previous month" onClick={() => changeMonth(-1)}><CaretLeftIcon size={18} aria-hidden="true" /></button>
+                  <button type="button" className="calendar-arrow" aria-label="Next month" onClick={() => changeMonth(1)}><CaretRightIcon size={18} aria-hidden="true" /></button>
                 </div>
               </div>
               <table className="calendar-table" aria-label={monthTitle}>
@@ -212,7 +216,7 @@ export function CalendarScreen() {
                     <p className="calendar-caller"><span className="loading-skeleton calendar-placeholder-caller" /></p>
                     <div className="calendar-record-footer"><span className="loading-skeleton calendar-placeholder-kind" /><span className="calendar-call-link"><span className="loading-skeleton calendar-placeholder-link" /></span></div>
                   </div>
-                </div> : <div className="calendar-empty"><CalendarDays size={28} strokeWidth={1} aria-hidden="true" /><h3>{incomplete ? "Records incomplete" : "No reports for this date"}</h3><p>{incomplete ? "Refresh to retry unavailable calls." : "This does not mean the clinic is free."}</p></div>}
+                </div> : <div className="calendar-empty"><CalendarDotsIcon size={28} aria-hidden="true" /><h3>{incomplete ? "Records incomplete" : "No reports for this date"}</h3><p>{incomplete ? "Refresh to retry unavailable calls." : "This does not mean the clinic is free."}</p></div>}
               </div>
             </section>
           </div>
@@ -233,6 +237,6 @@ function AgendaRecord({ record }: { record: SchedulingRecord }) {
     {record.previousSlot && record.kind === "RESCHEDULE" ? <p className="calendar-change">Moved from {slotLabel(record.previousSlot)}</p> : null}
     {record.kind === "CANCEL" ? <p className="calendar-change">Cancellation reported for this appointment, not an active booking.</p> : null}
     {record.supersededBy ? <p className="calendar-change">{record.supersededBy === "CANCEL" ? "Cancellation" : "A later change"} was reported for this appointment in the same call.</p> : null}
-    <div className="calendar-record-footer"><span>{record.practice ? "Practice call" : "Recorded call"}</span><Link to={`/calls/${encodeURIComponent(record.callId)}`} className="calendar-call-link">View call<ArrowUpRight size={14} aria-hidden="true" /></Link></div>
+    <div className="calendar-record-footer"><span>{record.practice ? "Practice call" : "Recorded call"}</span><Link to={`/calls/${encodeURIComponent(record.callId)}`} className="calendar-call-link">View call<ArrowUpRightIcon size={14} aria-hidden="true" /></Link></div>
   </li>;
 }

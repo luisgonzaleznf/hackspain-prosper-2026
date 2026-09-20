@@ -55,8 +55,8 @@
   --focus: var(--color-pure-white);
   --fill-hover: #ffffff14;      /* white 8%: ghost control hover */
   --fill-chip: #ffffff0a;       /* white 4%: mono chips, code blocks */
-  --fill-row-live: #0a0405;     /* between canvas-deep and surface-1: the row whose agent is speaking */
   --chat-caller-bg: var(--color-dusk-maroon);
+  --selection-bg: var(--color-dusk-maroon);
   --scrim: #000000a6;           /* white-on-black overlay behind a sheet on narrow screens */
   --lane-caller: var(--color-ash-rose);
   --lane-agent: var(--color-nava-red);
@@ -141,8 +141,8 @@
   --focus: var(--color-inkline-crimson);
   --fill-hover: #2d10120a;
   --fill-chip: #2d101206;
-  --fill-row-live: #ede5e2;
   --chat-caller-bg: #e4c9cd;
+  --selection-bg: #e4c9cd;
   --lane-caller: #976b73;
   --lane-agent: var(--color-nava-fire);
   --marker-decision: var(--color-inkline-crimson);

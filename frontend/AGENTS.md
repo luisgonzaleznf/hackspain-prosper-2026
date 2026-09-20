@@ -8,7 +8,7 @@ ROSARIO is the brand and the web console for the team's voice agent in the HackS
 
 Three surfaces, in priority order:
 
-1. **Live board.** Every open socket as a row: caller, identified patient, current stage, pending actions, elapsed, engine seconds. Click a row for the live transcript with decision cards streaming in. Ten to twenty concurrent calls must stay readable.
+1. **Calls.** Actual active calls above completed history: caller, current stage, elapsed time and transcript updates. Click a row for the conversation and decision cards. Ten to twenty concurrent calls must stay readable. Completed recordings stay in history, never in a simulated live board.
 2. **Call detail.** Table on the left, drawer on the right: transcript with inline decision cards (lookups, availability queries, refusals with the stated reason, submissions), two-lane waveform with markers, context panel (patient, actions, report sent, platform verdict), raw event log.
 3. **Cases board.** The 18 problems and their public cases as a test grid: pass/fail per case, last run, failure signal, "Run All" status, per-problem weight. Plus a "Talk to ROSARIO" web-call page with the orb for the jury.
 
@@ -17,8 +17,8 @@ Secondary: analytics strip (calls, pass rate, p50/p90 turn latency, spend), pati
 ## Stack
 
 - Vite, React 19, TypeScript strict. pnpm is the package manager here (the rest of the repo is `uv`). Never mix.
-- Tailwind v4 with tokens from `tokens/tokens.css`, generated from `DESIGN.md` (the only file where raw colors live; the app theme maps them to utilities). shadcn/ui for primitives (table, sheet, tabs, command, resizable, tooltip, badge). Charts through shadcn's Recharts wrappers. `wavesurfer.js` for the waveform. `lucide-react` icons.
-- Routing: `react-router`. Data: `fetch` + one `EventSource` on `/api/events` for live updates; TanStack Query only if polling gets messy. No global store until two screens need the same live state, then a single `useSyncExternalStore` event buffer.
+- Tailwind v4 with tokens from `tokens/tokens.css`, mapped to utilities in the app theme. Base UI for interactive primitives, Recharts for charts, native audio and Web Audio for playback. Phosphor regular icons with direct per-icon imports from `@phosphor-icons/react/dist/csr/*`.
+- Routing: `react-router`. Data: `fetch` and the `useSyncExternalStore` polling store in `src/lib/store.ts`; index every 4 seconds, active details every 1.5 seconds. Keep per-row subscriptions for detail updates.
 - Fonts are self-hosted from `fonts/`: Plain (Hairline 100 to Medium 500, the face `DESIGN.md` names; commercial, license before public use) and Iosevka Fixed 400/500/600 (OFL, Latin subset, no ligatures) for machine text. The Vite scaffold serves that folder as static assets. No Google Fonts requests at runtime.
 - Motion: GSAP 3.15 (vendored in `brand/vendor/`, ScrollTrigger and SplitText) for orchestrated entrances, scroll-scrubbed motion and pointer parallax; CSS transitions for hover and state. Nothing loops: every tween is one-shot, scrub-bound or pointer-bound, and `gsap.from()` keeps the page fully readable with JS off. `prefers-reduced-motion` collapses everything to opacity via `gsap.matchMedia`. The voice orb in the console is the one continuously animated element and it is driven by real audio levels. `brand/motion.js` is the reference implementation.
 
@@ -32,7 +32,7 @@ frontend/
   package.json         dev / build / typecheck / lint scripts
   vite.config.ts       Vite + Tailwind; proxies /api to the call backend (ROSARIO_API, default calls.udarc.com)
   index.html           the brand landing page, served at / (static HTML + brand/)
-  console.html         console app entry; /live, /calls, /cases, /metrics and /talk are rewritten to it (vite.config.ts)
+  console.html         console app entry; /dashboard, /calls, /calendar, /cases, /metrics and /talk are rewritten to it (vite.config.ts)
   demo/                roleplay studio at /demo/, unlisted (noindex, linked from nowhere). Talks to the voice backend from the
                        demo branch through the /api/demo and /start proxies (ROSARIO_DEMO_API, default http://127.0.0.1:7860)
                        To run the backend: git worktree add <dir> origin/demo/roleplay-studio-recordings, link the repo .env into
@@ -64,21 +64,20 @@ src/
   lib/score.ts        port of scripts/prosper_cases.py (normalization, verdict, leak check); keep in lockstep
   lib/cases.ts        roster helpers, call -> case attribution (run reference, else unique persona phone), verdictFor
   lib/store.ts        polling store: index every 4s, active-call detail every 1.5s; per-row subscriptions (useCallRecord)
-  lib/replay.ts       shared replay clock per call id, used when no socket is open
+  lib/replay.ts       transcript bounds for recorded playback
   lib/format.ts       Europe/Madrid clocks, durations, latencies, masked phone and DNI
   lib/motion.ts       GSAP entrances (rise-in, slide-in, count-up), reduced motion via matchMedia
   components/primitives.tsx   Chip, ReasonCode, ToolName, CopyButton, Label, SwapText, KeyValue, Empty
   components/orb.tsx          the voice orb (ElevenLabs widget rule) + useLevelMeter
   components/transcript.tsx   Transcript, TranscriptTurn, DecisionCard
-  components/waveform.tsx     two-lane wavesurfer.js player with decision/submit markers and a stereo level meter
-  screens/live/       board + live drawer (live sockets, replay of recent calls otherwise)
-  screens/calls/      table + detail drawer (Transcript, Report, Patient, Raw; waveform footer)
+  components/call-timeline.tsx   stereo audiogram, stacked decision icons and recording transport
+  screens/calls/      active calls above history + detail drawer (Transcript, Report, Patient, Raw)
   screens/cases/      17 problems grid, glyph per public case, case drawer with accepted answers and last verdict
   screens/metrics/    stat strip, hourly area chart, verdicts by problem
   screens/talk/       orb page: listen to a recording (stereo drives the orb) or the visitor's microphone
 ```
 
-What is real and what is not, as of the first scaffold: everything on screen is computed from the call backend's JSONL and the public roster. The Live board replays finished calls against a clock when no socket is open and says "replay" in the header and on every row. "Run All" and "Call" are disabled until the backend has `POST /api/runs` and `POST /api/cases/{id}/call`. Talk does not carry a browser call; it plays recordings (the stereo WAV drives the orb, caller lane on the disc, ROSARIO lane on the ring) or meters the visitor's microphone.
+Calls renders actual active records above completed history. It does not replay finished calls as live activity. “Run All” and “Call” remain disabled until the backend supports them. Talk does not carry a browser call; it plays recordings or meters the visitor's microphone.
 
 ## Contract with the backend
 
@@ -111,7 +110,7 @@ Anything not in the contract is mocked in `src/lib/mock/` with fixtures generate
 - **Reason codes are the closed vocabulary from the contract.** Render them verbatim in mono plus a short human gloss from one lookup table; never rephrase them into the mono chip.
 - **Live view budget.** Twenty rows, each updating several times per second, must not re-render the whole board. Per-row subscriptions to the event buffer; virtualise the transcript past 200 turns.
 - **Copy.** Spanish-first UI labels are fine where the domain is Spanish (Centro, Norte, Sur, DNI); everything else in plain English. No marketing tone, no exclamation marks, no em dashes.
-- **Scope.** No settings pages, no auth, no theme switcher, no light mode, no dashboard builder. The list above is the product.
+- **Scope.** Overview, Calls and Calendar form the dashboard; Cases and Talk are separate tools. “Sign in” opens Overview. Authentication is not implemented.
 - **Verification.** Run `pnpm lint:design`, `pnpm typecheck` (once scaffolded) and walk the three surfaces with fixture data before claiming done. Screenshots go to `demo/`.
 
 ## Scripts
@@ -123,7 +122,7 @@ Anything not in the contract is mocked in `src/lib/mock/` with fixtures generate
 | `pnpm typecheck` | `tsc --noEmit`, strict |
 | `pnpm lint:design` | Oxlint design rules on TS/TSX + Stylelint on CSS |
 | `pnpm test:design-lint` | Fixture test for the linter (bad fails, good passes) |
-| `pnpm serve` | Build and serve landing + console on http://0.0.0.0:4174 (landing at `/`, console at `/live`) |
+| `pnpm serve` | Build and serve landing + console on http://0.0.0.0:4174 (landing at `/`, console at `/metrics`) |
 | `pnpm brand` | Serve `frontend/` raw on http://127.0.0.1:4173 for brand QA (landing at `/`, identity at `/brand/identity.html`) |
 | `brand/scripts/quiver-logos.sh <variants> [out]` | Generate logo SVGs with QuiverAI; always `MODEL=arrow-2-telos` (the top model); reads `QUIVER_API_KEY` from the repo `.env` |
 | `brand/scripts/normalize-logo.py <in> <out>` | Turn a generated SVG into a CSS-colorable mark |

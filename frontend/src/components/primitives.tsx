@@ -3,7 +3,17 @@
 
 import { Select } from "@base-ui/react/select";
 import { clsx } from "clsx";
-import { AlertTriangle, Ban, CalendarCheck, CalendarX, Check, ChevronDown, Copy, PhoneForwarded, RefreshCw, UserPlus, type LucideIcon } from "lucide-react";
+import type { Icon } from "@phosphor-icons/react";
+import { WarningIcon } from "@phosphor-icons/react/dist/csr/Warning";
+import { ProhibitIcon } from "@phosphor-icons/react/dist/csr/Prohibit";
+import { CalendarCheckIcon } from "@phosphor-icons/react/dist/csr/CalendarCheck";
+import { CalendarXIcon } from "@phosphor-icons/react/dist/csr/CalendarX";
+import { CheckIcon } from "@phosphor-icons/react/dist/csr/Check";
+import { CaretDownIcon } from "@phosphor-icons/react/dist/csr/CaretDown";
+import { CopyIcon } from "@phosphor-icons/react/dist/csr/Copy";
+import { PhoneTransferIcon } from "@phosphor-icons/react/dist/csr/PhoneTransfer";
+import { ArrowsClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowsClockwise";
+import { UserPlusIcon } from "@phosphor-icons/react/dist/csr/UserPlus";
 import { useEffect, useState, type ReactNode } from "react";
 import { REASON_GLOSS, TOOL_GLOSS } from "@/lib/timeline";
 
@@ -37,17 +47,17 @@ export function ToolName({ name }: { name: string }) {
   );
 }
 
-const OUTCOME_ICON: Record<string, LucideIcon> = { BOOK: CalendarCheck, RESCHEDULE: RefreshCw, CANCEL: CalendarX, REGISTER: UserPlus, NO_ACTION: Ban, ESCALATE: PhoneForwarded };
+const OUTCOME_ICON: Record<string, Icon> = { BOOK: CalendarCheckIcon, RESCHEDULE: ArrowsClockwiseIcon, CANCEL: CalendarXIcon, REGISTER: UserPlusIcon, NO_ACTION: ProhibitIcon, ESCALATE: PhoneTransferIcon };
 const OUTCOME_LABEL: Record<string, string> = { BOOK: "Booked", RESCHEDULE: "Moved", CANCEL: "Cancelled", REGISTER: "Registered", NO_ACTION: "Declined", ESCALATE: "Escalated" };
 
 /** Outcome as icon + word; the reason code follows in mono when there is one. */
 export function Outcome({ verb, reason, status, size = "md", className }: { verb: string; reason?: string | null; status?: number | null; size?: "sm" | "md"; className?: string }) {
-  const Icon = OUTCOME_ICON[verb] ?? AlertTriangle;
+  const Icon = OUTCOME_ICON[verb] ?? WarningIcon;
   const failed = status != null && status >= 400;
   const attention = failed || verb === "NO_ACTION" || verb === "ESCALATE";
   return (
     <span className={clsx("inline-flex min-w-0 items-center gap-2", size === "sm" ? "text-[13px]" : "text-[14px]", className)} title={status != null ? `submitted ${status}` : undefined}>
-      <Icon size={size === "sm" ? 14 : 16} strokeWidth={1.75} className={clsx("shrink-0", attention ? "text-accent-ink" : "text-fg-2")} />
+      <Icon size={size === "sm" ? 14 : 16} className={clsx("shrink-0", attention ? "text-accent-ink" : "text-fg-2")} />
       <span className={clsx("truncate", failed ? "text-accent-ink" : "text-fg")}>
         {OUTCOME_LABEL[verb] ?? verb}
         {failed ? ` (${status})` : ""}
@@ -61,7 +71,7 @@ export function Outcome({ verb, reason, status, size = "md", className }: { verb
 export function VerdictMark({ passed, signal, className }: { passed: boolean; signal?: string; className?: string }) {
   return (
     <span className={clsx("inline-flex items-center gap-1.5 text-[12px]", passed ? "text-fg-2" : "text-accent-ink", className)} title={signal}>
-      {passed ? <Check size={14} strokeWidth={2} className="text-accent-ink" /> : <AlertTriangle size={14} strokeWidth={1.75} />}
+      {passed ? <CheckIcon size={14} className="text-accent-ink" /> : <WarningIcon size={14} />}
       <span className="mono">{passed ? "pass" : signal}</span>
     </span>
   );
@@ -84,7 +94,7 @@ export function CopyButton({ value, label = "Copy" }: { value: string; label?: s
         void navigator.clipboard?.writeText(value).then(() => setCopied(true));
       }}
     >
-      {copied ? <Check size={14} strokeWidth={1.75} /> : <Copy size={14} strokeWidth={1.75} />}
+      {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
     </button>
   );
 }
@@ -130,7 +140,7 @@ export function PillSelect<T extends string>({ value, onChange, options, label, 
       <Select.Trigger className={clsx("select-trigger", className)} aria-label={label}>
         <Select.Value>{(v: T) => options.find((o) => o.value === v)?.label ?? String(v)}</Select.Value>
         <Select.Icon>
-          <ChevronDown size={14} strokeWidth={1.75} />
+          <CaretDownIcon size={14} />
         </Select.Icon>
       </Select.Trigger>
       <Select.Portal>
@@ -140,7 +150,7 @@ export function PillSelect<T extends string>({ value, onChange, options, label, 
               {options.map((o) => (
                 <Select.Item key={o.value} value={o.value} className="select-item">
                   <Select.ItemIndicator className="select-item-check" keepMounted>
-                    <Check size={14} strokeWidth={2} />
+                    <CheckIcon size={14} />
                   </Select.ItemIndicator>
                   <Select.ItemText>{o.label}</Select.ItemText>
                   {o.hint ? <span className="mono ml-auto text-[11px] text-fg-3">{o.hint}</span> : null}

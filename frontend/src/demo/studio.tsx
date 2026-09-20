@@ -1,6 +1,7 @@
 import { PipecatClient, RTVIEvent } from "@pipecat-ai/client-js";
 import { SmallWebRTCTransport } from "@pipecat-ai/small-webrtc-transport";
-import { Mic, Square } from "lucide-react";
+import { MicrophoneIcon } from "@phosphor-icons/react/dist/csr/Microphone";
+import { StopIcon } from "@phosphor-icons/react/dist/csr/Stop";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Orb, useLevelMeter, type OrbLevels, type OrbState } from "@/components/orb";
 import { demo, describeError, sessionIdOf, type LedgerEntry, type Persona, type Snapshot, type StreamEvent } from "./api";
@@ -258,7 +259,7 @@ export function Studio() {
           <Orb size={300} levels={levels} state={orbState} onActivate={() => void (phase === "live" ? stop() : start())}
             label={phase === "live" ? "End the call" : "Start the call"}
             disabled={phase === "connecting" || phase === "ending"}
-            controlIcon={phase === "live" ? <Square size={22} /> : <Mic size={22} />} />
+            controlIcon={phase === "live" ? <StopIcon size={22} /> : <MicrophoneIcon size={22} />} />
           <p className="status" aria-live="polite" ref={statusRef}>{status}</p>
           {milestones.length ? <p className="progress">{done} of {milestones.length} steps done</p> : null}
         </div>
