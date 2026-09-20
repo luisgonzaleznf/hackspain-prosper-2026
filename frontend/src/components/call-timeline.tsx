@@ -40,6 +40,7 @@ const BUCKETS = 1200;
 const MARKER_SIZE = 44;
 const MARKER_GAP = 4;
 const MARKER_INSET = 6;
+const STACK_BACK_OFFSET = 4;
 const finiteSeconds = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;
 const clampSeconds = (value: number, total: number) => Math.min(total, finiteSeconds(value));
 
@@ -128,6 +129,173 @@ export function decisionGlyph(d: Decision): { Icon: Icon; tone: "lookup" | "avai
 
 const TONE_VAR: Record<string, string> = { lookup: "--event-lookup", availability: "--event-availability", write: "--event-write", refusal: "--event-refusal", submit: "--event-submit" };
 
+interface DecisionStack {
+  decisions: [Decision, ...Decision[]];
+  left: number;
+}
+
+function TimelineDecisionStack({
+  stack, laneWidth, reducedMotion, tooltipKey, onTooltipChange, onSelect,
+}: {
+  stack: DecisionStack;
+  laneWidth: number;
+  reducedMotion: boolean;
+  tooltipKey: string | null;
+  onTooltipChange: (key: string, open: boolean) => void;
+  onSelect: (decision: Decision) => void;
+}) {
+  const group = useRef<HTMLDivElement>(null);
+  const viewport = useRef<HTMLDivElement>(null);
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
+  const pointerInside = useRef(false);
+  const [expanded, setExpanded] = useState(false);
+  const [keyboard, setKeyboard] = useState(false);
+  const multiple = stack.decisions.length > 1;
+  const open = reducedMotion || expanded;
+  const contentWidth = stack.decisions.length * (MARKER_SIZE + MARKER_GAP) - MARKER_GAP + MARKER_INSET * 2;
+  const spreadWidth = Math.min(contentWidth, Math.max(MARKER_SIZE + MARKER_INSET * 2, laneWidth));
+  const spreadLeft = Math.max(0, Math.min(stack.left - MARKER_INSET, laneWidth - spreadWidth));
+  const anchor = stack.left - spreadLeft;
+
+  const close = () => {
+    setExpanded(false);
+    if (tooltipKey && stack.decisions.some((decision) => decision.key === tooltipKey)) onTooltipChange(tooltipKey, false);
+  };
+
+  useEffect(() => {
+    if (!expanded) {
+      if (viewport.current) viewport.current.scrollLeft = 0;
+      return;
+    }
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !group.current?.contains(event.target)) {
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && group.current?.contains(active)) active.blur();
+        setExpanded(false);
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [expanded]);
+
+  const focusMember = (index: number) => {
+    setKeyboard(true);
+    setExpanded(true);
+    // Focus after the hidden members have entered the tab order.
+    requestAnimationFrame(() => {
+      const button = buttons.current[index];
+      button?.focus({ preventScroll: true });
+      button?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+    });
+  };
+
+  return (
+    <div
+      ref={group}
+      className="review-marker-stack"
+      role="group"
+      aria-label={`${stack.decisions.length} call ${multiple ? "decisions" : "decision"}`}
+      data-open={open}
+      data-keyboard={keyboard}
+      style={{ left: spreadLeft, width: spreadWidth }}
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse" && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+          pointerInside.current = true;
+          setKeyboard(false);
+          if (multiple) setExpanded(true);
+        }
+      }}
+      onPointerLeave={() => {
+        pointerInside.current = false;
+        if (!group.current?.contains(document.activeElement)) close();
+      }}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget) && !pointerInside.current) close();
+      }}
+      onKeyDownCapture={(event) => {
+        if (event.key === "Escape" && expanded) {
+          event.preventDefault();
+          event.stopPropagation();
+          setKeyboard(true);
+          buttons.current[0]?.focus({ preventScroll: true });
+          close();
+          return;
+        }
+        if (!multiple) return;
+        const index = buttons.current.indexOf(document.activeElement as HTMLButtonElement);
+        if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+          event.preventDefault();
+          const next = event.key === "Home" ? 0 : event.key === "End" ? stack.decisions.length - 1
+            : Math.max(0, Math.min(stack.decisions.length - 1, index + (event.key === "ArrowLeft" ? -1 : 1)));
+          focusMember(next);
+        } else if (!open && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          focusMember(0);
+        }
+      }}
+    >
+      {!open && multiple ? (
+        <span className="review-marker-backs" aria-hidden="true" style={{ left: anchor }}>
+          {stack.decisions.length > 2 ? <span style={{ transform: `translate(${STACK_BACK_OFFSET * 2}px, ${STACK_BACK_OFFSET * 2}px)` }} /> : null}
+          <span style={{ transform: `translate(${STACK_BACK_OFFSET}px, ${STACK_BACK_OFFSET}px)` }} />
+        </span>
+      ) : null}
+      <div ref={viewport} className="review-marker-spread" data-open={open}>
+        <div className="review-marker-members" style={{ width: open ? contentWidth : spreadWidth }}>
+          {stack.decisions.map((decision, index) => {
+            const { Icon, tone, title } = decisionGlyph(decision);
+            const visible = open || index === 0;
+            const style: CSSProperties = {
+              transform: `translateX(${open ? MARKER_INSET + index * (MARKER_SIZE + MARKER_GAP) : anchor}px)`,
+              opacity: visible ? 1 : 0,
+              zIndex: stack.decisions.length - index,
+              ["--tone" as string]: `var(${TONE_VAR[tone]})`,
+            };
+            return (
+              <Tooltip.Root key={decision.key} open={visible && tooltipKey === decision.key} onOpenChange={(next) => onTooltipChange(decision.key, next)}>
+                <Tooltip.Trigger
+                  ref={(node: HTMLButtonElement | null) => { buttons.current[index] = node; }}
+                  type="button"
+                  className="review-marker"
+                  data-hidden={!visible}
+                  style={style}
+                  tabIndex={visible ? 0 : -1}
+                  aria-hidden={!visible}
+                  aria-expanded={multiple && index === 0 ? open : undefined}
+                  delay={200}
+                  closeOnClick={false}
+                  aria-label={!open && multiple
+                    ? `${stack.decisions.length} decisions starting with ${title} at ${fmtOffset(decision.offset)}. Expand decisions`
+                    : `${title} at ${fmtOffset(decision.offset)}. Show decision`}
+                  onClick={() => {
+                    if (multiple && !open) {
+                      setKeyboard(false);
+                      setExpanded(true);
+                      return;
+                    }
+                    onSelect(decision);
+                  }}
+                >
+                  <Icon size={17} aria-hidden="true" />
+                  {!open && index === 0 && stack.decisions.length > 3 ? <span className="review-marker-count" aria-hidden="true">{stack.decisions.length}</span> : null}
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Positioner side="top" sideOffset={8} collisionPadding={12} sticky className="review-tooltip-positioner">
+                    <Tooltip.Popup className="review-tooltip">
+                      {title}
+                      <span className="review-tooltip-time">{fmtOffset(decision.offset)}</span>
+                    </Tooltip.Popup>
+                  </Tooltip.Positioner>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CallTimeline({
   audioUrl,
   durationSeconds,
@@ -178,6 +346,13 @@ export function CallTimeline({
   const [speed, setSpeed] = useState(1);
   const [hover, setHover] = useState<number | null>(null);
   const [tooltipKey, setTooltipKey] = useState<string | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(preference.matches);
+    preference.addEventListener("change", update);
+    return () => preference.removeEventListener("change", update);
+  }, []);
   const hasDecisions = decisions.length > 0;
   const total = useMemo(() => {
     let end = Math.max(1, finiteSeconds(durationSeconds), mediaDuration, peaks?.duration ?? 0);
@@ -517,21 +692,24 @@ export function CallTimeline({
     return out;
   }, [total, width]);
 
-  // Nearby events occupy separate rows, never a summary that hides a decision.
-  const { markers, markerRows } = useMemo(() => {
-    const rowEnds: number[] = [];
-    const size = Math.min(MARKER_SIZE, Math.max(0, markerWidth - MARKER_INSET * 2));
-    const markers = [...decisions].sort((a, b) => a.offset - b.offset).map((decision) => {
-      const center = Math.max(MARKER_INSET + size / 2, Math.min(markerWidth - MARKER_INSET - size / 2, clampSeconds(decision.offset, total) / total * width));
-      const left = center - size / 2;
-      let row = rowEnds.findIndex((end) => left >= end + MARKER_GAP);
-      if (row < 0) row = rowEnds.length;
-      rowEnds[row] = left + size;
-      return { decision, left, size, row };
-    });
-    return { markers, markerRows: rowEnds.length };
-  }, [decisions, total, markerWidth, width]);
-  const visibleMarkerRows = Math.min(3, Math.max(compact ? 1 : 2, markerRows));
+  // Bundle collisions in chronological order, including the closed card backs.
+  const stacks = useMemo(() => {
+    const ordered = [...decisions].sort((a, b) => a.offset - b.offset);
+    if (reducedMotion) return ordered.length ? [{ decisions: ordered as DecisionStack["decisions"], left: MARKER_INSET }] : [];
+    const stacks: DecisionStack[] = [];
+    let previousRight = -Infinity;
+    for (const decision of ordered) {
+      const left = Math.max(MARKER_INSET, Math.min(markerWidth - MARKER_INSET - MARKER_SIZE - STACK_BACK_OFFSET * 2, clampSeconds(decision.offset, total) / total * width - MARKER_SIZE / 2));
+      const previous = stacks[stacks.length - 1];
+      if (previous && left < previousRight + MARKER_GAP) {
+        previous.decisions.push(decision);
+      } else {
+        stacks.push({ decisions: [decision], left });
+      }
+      previousRight = left + MARKER_SIZE + STACK_BACK_OFFSET * 2;
+    }
+    return stacks;
+  }, [decisions, total, markerWidth, width, reducedMotion]);
 
   return (
     <div className="review-player relative grid min-w-0 gap-2 select-none" data-compact={compact}>
@@ -541,49 +719,30 @@ export function CallTimeline({
       </span>
 
       {/* Marker lane */}
-      {markers.length > 0 ? (
-        <div className="review-marker-frame" data-compact={compact} style={{ height: visibleMarkerRows * (MARKER_SIZE + MARKER_GAP) + MARKER_INSET * 2 }}>
-          <div className="review-marker-scroll" role="region" tabIndex={0} aria-label={`Call decisions: ${markers.length} decisions in ${markerRows} rows.${markerRows > visibleMarkerRows ? " Scroll vertically for more." : ""}`}>
-          <div ref={markerLane} className="review-marker-track" style={{ height: markerRows * (MARKER_SIZE + MARKER_GAP) }}>
-            {Array.from({ length: markerRows }, (_, row) => <span key={row} aria-hidden="true" className="review-marker-row" style={{ top: row * (MARKER_SIZE + MARKER_GAP), height: MARKER_SIZE + MARKER_GAP }} />)}
+      {stacks.length > 0 ? (
+        <div className="review-marker-frame">
+          <div ref={markerLane} className="review-marker-track" role="region" aria-label={`Call decisions: ${decisions.length}. Expand a stack to select each decision.`}>
             <Tooltip.Provider>
-              {markers.map(({ decision, left, size, row }) => {
-                const { Icon, tone, title } = decisionGlyph(decision);
-                const style: CSSProperties = { left, top: row * (MARKER_SIZE + MARKER_GAP), width: size, height: MARKER_SIZE, ["--tone" as string]: `var(${TONE_VAR[tone]})` };
-                return (
-                  <Tooltip.Root key={decision.key} open={tooltipKey === decision.key} onOpenChange={(open) => setTooltipKey((previous) => open ? decision.key : previous === decision.key ? null : previous)}>
-                    <Tooltip.Trigger
-                      type="button"
-                      className="review-marker"
-                      style={style}
-                      delay={200}
-                      closeOnClick={false}
-                      aria-label={`${title} at ${fmtOffset(decision.offset)}. Show decision`}
-                      onClick={() => {
-                        pause();
-                        seek(decision.offset);
-                        setTooltipKey(decision.key);
-                        onDecision?.(decision);
-                      }}
-                    >
-                      <Icon size={17} aria-hidden="true" />
-                    </Tooltip.Trigger>
-                    <Tooltip.Portal>
-                      <Tooltip.Positioner side="top" sideOffset={8} collisionPadding={12} sticky className="review-tooltip-positioner">
-                        <Tooltip.Popup className="review-tooltip">
-                          {title}
-                          <span className="review-tooltip-time">{fmtOffset(decision.offset)}</span>
-                        </Tooltip.Popup>
-                      </Tooltip.Positioner>
-                    </Tooltip.Portal>
-                  </Tooltip.Root>
-                );
-              })}
+              {stacks.map((stack) => (
+                <TimelineDecisionStack
+                  key={stack.decisions[0].key}
+                  stack={stack}
+                  laneWidth={markerWidth}
+                  reducedMotion={reducedMotion}
+                  tooltipKey={tooltipKey}
+                  onTooltipChange={(key, open) => setTooltipKey((previous) => open ? key : previous === key ? null : previous)}
+                  onSelect={(decision) => {
+                    pause();
+                    seek(decision.offset);
+                    setTooltipKey(decision.key);
+                    onDecision?.(decision);
+                  }}
+                />
+              ))}
             </Tooltip.Provider>
           </div>
-          </div>
         </div>
-      ) : <div className="review-marker-frame review-marker-empty" data-compact={compact}>No recorded decisions</div>}
+      ) : <div className="review-marker-frame review-marker-empty">No recorded decisions</div>}
 
       {/* Audiogram */}
       <div

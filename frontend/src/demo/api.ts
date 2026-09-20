@@ -1,4 +1,6 @@
-// The roleplay backend contract, unchanged from the demo branch.
+import type { VoiceSettings, VoiceSettingsDocument } from "@/lib/voice-settings";
+
+// Roleplay Studio and its saved voice configuration share the same backend.
 export interface Persona {
   id: string;
   title: string;
@@ -45,6 +47,10 @@ export interface StreamEvent {
 }
 
 export const demo = {
+  settings: () => json<VoiceSettingsDocument>("/api/demo/settings", { signal: AbortSignal.timeout(15_000) }),
+  saveSettings: (settings: VoiceSettings) => json<VoiceSettings>("/api/demo/settings", {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings), signal: AbortSignal.timeout(15_000),
+  }),
   scenarios: () => json<Persona[]>("/api/demo/scenarios"),
   ledger: () => json<LedgerEntry[]>("/api/demo/ledger"),
   snapshot: (id: string) => json<Snapshot>(`/api/demo/sessions/${encodeURIComponent(id)}`),

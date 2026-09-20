@@ -7,6 +7,7 @@ import { CalendarScreen } from "./screens/calendar/calendar";
 import { CasesScreen } from "./screens/cases/cases";
 import { MetricsScreen } from "./screens/metrics/metrics";
 import { TalkScreen } from "./screens/talk/talk";
+import { SettingsScreen } from "./screens/settings/settings";
 import "./styles/globals.css";
 
 const router = createBrowserRouter([
@@ -20,6 +21,7 @@ const router = createBrowserRouter([
       { path: "calls/:id", element: <CallsScreen /> },
       { path: "calendar", element: <CalendarScreen /> },
       { path: "metrics", element: <MetricsScreen /> },
+      { path: "settings", element: <SettingsScreen /> },
       { path: "*", element: <Navigate to="/metrics" replace /> },
     ],
   },

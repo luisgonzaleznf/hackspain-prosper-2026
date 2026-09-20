@@ -6,6 +6,13 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 export interface OrbLevels { agent: number; caller: number }
 export type OrbState = "disconnected" | "connecting" | "listening" | "speaking" | "thinking";
 
+export type OrbPalette = "rosario" | "clara" | "serena";
+
+const palettes = {
+  rosario: ["--color-obsidian-burgundy", "--color-nava-fire", "--color-ember-glow", "--color-ash-rose", "--color-muted-coral"],
+  clara: ["--voice-clara-deep", "--voice-clara-base", "--voice-clara-light", "--voice-clara-pale", "--voice-clara-membrane"],
+  serena: ["--voice-serena-deep", "--voice-serena-base", "--voice-serena-light", "--voice-serena-pale", "--voice-serena-membrane"],
+} as const;
 const theme: OrbTheme = {
   name: "radial",
   preset: "calm",
@@ -13,7 +20,7 @@ const theme: OrbTheme = {
   motion: { idleSpeed: 0, listeningBaseSpeed: 0, speakingBaseSpeed: 0 },
 };
 
-export function Orb({ size = 192, levels, state, className, onActivate, label, controlIcon, disabled }: {
+export function Orb({ size = 192, levels, state, className, onActivate, label, controlIcon, disabled, palette = "rosario" }: {
   size?: number;
   levels?: RefObject<OrbLevels>;
   state: OrbState;
@@ -22,8 +29,10 @@ export function Orb({ size = 192, levels, state, className, onActivate, label, c
   label?: string;
   controlIcon?: ReactNode;
   disabled?: boolean;
+  palette?: OrbPalette;
 }) {
   const [meter, setMeter] = useState<OrbLevels>({ agent: 0, caller: 0 });
+  const colors = palettes[palette];
   useEffect(() => {
     if (!levels || state === "disconnected") {
       setMeter({ agent: 0, caller: 0 });
@@ -51,11 +60,11 @@ export function Orb({ size = 192, levels, state, className, onActivate, label, c
     data-levels={`${meter.agent},${meter.caller}`}
     style={{
       "--orb-ui-radial-control-surround": "var(--bg)",
-      "--orb-ui-radial-appearance-deep-color": "var(--color-obsidian-burgundy)",
-      "--orb-ui-radial-appearance-cobalt-color": "var(--color-nava-fire)",
-      "--orb-ui-radial-appearance-aqua-color": "var(--color-ember-glow)",
-      "--orb-ui-radial-appearance-pale-color": "var(--color-ash-rose)",
-      "--orb-ui-radial-appearance-membrane-color": "var(--color-muted-coral)",
+      "--orb-ui-radial-appearance-deep-color": `var(${colors[0]})`,
+      "--orb-ui-radial-appearance-cobalt-color": `var(${colors[1]})`,
+      "--orb-ui-radial-appearance-aqua-color": `var(${colors[2]})`,
+      "--orb-ui-radial-appearance-pale-color": `var(${colors[3]})`,
+      "--orb-ui-radial-appearance-membrane-color": `var(${colors[4]})`,
       "--orb-ui-radial-appearance-seam-color": "var(--color-nava-white)",
       "--orb-ui-radial-appearance-idle-control-color": "var(--primary)",
       "--orb-ui-radial-appearance-active-control-color": "var(--primary)",

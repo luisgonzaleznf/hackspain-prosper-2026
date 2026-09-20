@@ -1,26 +1,82 @@
-from app.demo import bot
-from app.tools import TOOLS, call_tool
-from app.voice import codex
+import pytest
+from app.demo import settings as store
+from app.demo.app import register_demo_routes
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 
-def test_demo_imports_exact_scored_codex_module():
-    assert bot.codex is codex
-    assert bot.codex.run_call is codex.run_call
+@pytest.fixture
+def client(tmp_path, monkeypatch):
+    monkeypatch.setattr(store, "SETTINGS_PATH", tmp_path / "demo" / "voice-settings.json")
+    app = FastAPI()
+    register_demo_routes(app)
+    with TestClient(app) as client:
+        yield client
 
 
-def test_codex_voice_uses_canonical_tool_contract():
-    assert codex.TOOLS is TOOLS
-    assert codex.call_tool is call_tool
+SAVED = {"voice": "spruce", "preset": "serena", "opening_language": "es", "guidance": "Use plain language."}
 
 
-def test_demo_defines_no_prompt_or_tool_copy():
-    assert not hasattr(bot, "VOICE_PROMPT")
-    assert not hasattr(bot, "BRAIN_PREAMBLE")
-    assert not hasattr(bot, "TOOLS")
+@pytest.mark.parametrize("invalid", [
+    {**SAVED, "voice": "alloy"},
+    {**SAVED, "guidance": "x" * 1201},
+    {**SAVED, "guidance": 42},
+    {**SAVED, "temperature": 0.8},
+])
+def test_invalid_save_preserves_last_settings(client, invalid):
+    assert client.put("/api/demo/settings", json=SAVED).status_code == 200
+    rejected = client.put("/api/demo/settings", json=invalid)
+    assert rejected.status_code == 422
+    assert rejected.headers["cache-control"] == "no-store"
+    assert client.get("/api/demo/settings").json()["settings"] == SAVED
 
 
-def test_codex_composes_canonical_session_instructions():
-    names = codex.run_call.__code__.co_names
-    assert "instructions" in names
-    assert "VOICE_PROMPT" in names
-    assert "BRAIN_PREAMBLE" in names
+def test_failed_atomic_replace_keeps_saved_settings(client, monkeypatch):
+    assert client.put("/api/demo/settings", json=SAVED).status_code == 200
+
+    def disk_failure(source, destination):
+        raise OSError("Storage unavailable")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(store.os, "replace", disk_failure)
+        failed = client.put("/api/demo/settings", json={**SAVED, "voice": "juniper"})
+    assert failed.status_code == 503
+    assert client.get("/api/demo/settings").json()["settings"] == SAVED
+    assert list(store.SETTINGS_PATH.parent.iterdir()) == [store.SETTINGS_PATH]
+
+
+def test_corrupt_settings_are_not_silently_reset(client):
+    assert client.put("/api/demo/settings", json=SAVED).status_code == 200
+    store.SETTINGS_PATH.write_text('{"voice":', encoding="utf-8")
+    response = client.get("/api/demo/settings")
+    assert response.status_code == 503
+    assert response.headers["cache-control"] == "no-store"
+
+
+def test_saved_changes_do_not_mutate_an_existing_call_snapshot(client):
+    assert client.put("/api/demo/settings", json=SAVED).status_code == 200
+    snapshot = store.load_settings()
+    changed = {**SAVED, "voice": "juniper", "preset": "clara", "opening_language": "en"}
+    assert client.put("/api/demo/settings", json=changed).status_code == 200
+    assert snapshot.model_dump() == SAVED
+    assert store.load_settings().model_dump() == changed
+
+
+def test_cross_origin_browser_save_is_rejected_and_proxy_origin_is_accepted(client):
+    assert client.put("/api/demo/settings", json=SAVED).status_code == 200
+    changed = {**SAVED, "voice": "juniper"}
+    rejected = client.put(
+        "/api/demo/settings", json=changed,
+        headers={"Origin": "https://other.example", "Sec-Fetch-Site": "cross-site"},
+    )
+    assert rejected.status_code == 403
+    assert client.get("/api/demo/settings").json()["settings"] == SAVED
+    accepted = client.put(
+        "/api/demo/settings", json=changed,
+        headers={
+            "Origin": "https://studio.example", "Sec-Fetch-Site": "same-origin",
+            "X-Forwarded-Host": "studio.example", "X-Forwarded-Proto": "https",
+        },
+    )
+    assert accepted.status_code == 200
+    assert client.get("/api/demo/settings").json()["settings"] == changed

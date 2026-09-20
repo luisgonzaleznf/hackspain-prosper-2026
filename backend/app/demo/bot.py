@@ -12,6 +12,7 @@ from app.demo.app import register_demo_routes
 from app.demo.models import DemoStartRequest
 from app.demo.recording import DemoRecorder
 from app.demo.scenarios import get_scenario
+from app.demo.settings import load_settings
 from app.demo.state import (
     build_action_evidence,
     claim_session,
@@ -53,17 +54,25 @@ async def bot(runner_args: RunnerArguments) -> None:
     session: DemoCallSession | None = None
     recorder = DemoRecorder()
     try:
+        settings = load_settings()
         session = await DemoCallSession.start(
             call_id=session_id,
             stream_sid=session_id,
             from_number=scenario.phone,
+        )
+        session.log(
+            "voice.config",
+            voice=settings.voice,
+            preset=settings.preset,
+            opening_language=settings.opening_language,
+            guidance_chars=len(settings.guidance),
         )
         transport = await create_transport(
             runner_args,
             {"webrtc": lambda: TransportParams(audio_in_enabled=True, audio_out_enabled=True)},
         )
         recorder.tap(transport)
-        await codex.run_call(transport, session)
+        await codex.run_call(transport, session, settings=settings)
     except Exception as exc:
         if session:
             session.log("voice_error", error=repr(exc))

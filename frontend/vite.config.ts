@@ -11,8 +11,10 @@ import { recordings } from "./tools/recordings-server.ts";
 const demoApi = process.env.ROSARIO_DEMO_API ?? "http://127.0.0.1:7860";
 
 const proxy = {
-  "/api/demo": { target: demoApi, changeOrigin: true },
+  "/api/demo": { target: demoApi, changeOrigin: true, xfwd: true },
   "/start": { target: demoApi, changeOrigin: true },
+  // Pipecat returns session-scoped WebRTC signaling URLs after /start.
+  "/sessions/": { target: demoApi, changeOrigin: true },
 };
 
 // Two pages share one origin: the brand landing page is `index.html` at `/`,
@@ -22,7 +24,7 @@ const proxy = {
 // static HTML: it and /brand/identity.html read brand/, tokens/ and fonts/
 // directly (classic scripts, runtime-fetched SVGs), so only the console is
 // bundled and those files are copied into dist as they are.
-const CONSOLE_ROUTES = /^\/(dashboard|calls|calendar|cases|metrics|talk)(\/|\?|$)/;
+const CONSOLE_ROUTES = /^\/(dashboard|calls|calendar|cases|metrics|talk|settings)(\/|\?|$)/;
 // The roleplay studio is its own bundled page at /demo; everything else under
 // /demo/ (the review page, its script and the stylesheet) is served statically.
 const DEMO_ROUTE = /^\/demo\/?(\?|$)/;

@@ -5,6 +5,7 @@ import { CalendarDotsIcon } from "@phosphor-icons/react/dist/csr/CalendarDots";
 import { ChartLineIcon } from "@phosphor-icons/react/dist/csr/ChartLine";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
 import { PhoneIcon } from "@phosphor-icons/react/dist/csr/Phone";
+import { SlidersHorizontalIcon } from "@phosphor-icons/react/dist/csr/SlidersHorizontal";
 import type { ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { usePolling } from "@/lib/store";
@@ -15,6 +16,7 @@ const NAV = [
   { to: "/metrics", label: "Overview", icon: ChartLineIcon },
   { to: "/calls", label: "Calls", icon: PhoneIcon },
   { to: "/calendar", label: "Calendar", icon: CalendarDotsIcon },
+  { to: "/settings", label: "Settings", icon: SlidersHorizontalIcon },
 ] as const;
 
 export function Shell() {
@@ -48,7 +50,7 @@ export function Shell() {
       </aside>
       <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden"><Outlet /></div>
       <nav className="safe-b fixed inset-x-0 bottom-0 z-20 border-t border-line-1 bg-bg p-1.5 md:hidden" aria-label="Dashboard navigation">
-        <div className="relative isolate grid grid-cols-3">
+        <div className="relative isolate grid grid-cols-4">
           <SelectionIndicator activeKey={pathname} />
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to} className={({ isActive: on }) => clsx("sliding-tab flex flex-col items-center gap-1 rounded-tags py-2 text-[11px]", on ? "text-fg" : "text-fg-3")}>

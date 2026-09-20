@@ -73,26 +73,36 @@
 .review-decision { min-width: 0; padding: 14px 16px; border: 1px solid var(--line-1); border-radius: var(--radius-tags); background: var(--surface-1); overflow-wrap: anywhere; }
 .chat-match { background: var(--fill-hover); color: var(--accent-ink); font-weight: var(--font-weight-regular); }
 
-/* The frame grows to three whole 48px rows; denser stacks scroll inside it. */
-.review-marker-frame { box-sizing: border-box; height: 108px; padding-block: 6px; }
-.review-marker-frame[data-compact="true"] { height: 60px; }
-.review-marker-scroll { height: 100%; overflow-y: scroll; overflow-x: hidden; scrollbar-gutter: stable; scrollbar-width: auto; scrollbar-color: var(--fg-2) var(--surface-1); scroll-snap-type: y mandatory; }
-.review-marker-scroll::-webkit-scrollbar { width: 14px; }
-.review-marker-scroll::-webkit-scrollbar-track { background: var(--surface-1); }
-.review-marker-scroll::-webkit-scrollbar-thumb { background: var(--fg-2); border: 3px solid var(--surface-1); border-radius: 7px; }
-.review-marker-row { position: absolute; inset-inline: 0; pointer-events: none; scroll-snap-align: start; }
+/* A fixed lane keeps the audiogram still while stacks spread across it. */
+.review-marker-frame { box-sizing: border-box; height: 76px; padding-block: 6px; }
 .review-marker-empty { display: grid; place-items: center; color: var(--fg-3); font-size: 12px; }
-.review-marker-track { position: relative; min-width: 0; }
+.review-marker-track { position: relative; height: 64px; min-width: 0; overflow: visible; }
+.review-marker-stack { position: absolute; top: 0; z-index: 0; height: 64px; pointer-events: none; }
+.review-marker-stack[data-open="true"] { z-index: 2; }
+.review-marker-stack:focus-within { z-index: 3; }
+.review-marker-spread { position: relative; height: 64px; overflow: hidden; pointer-events: none; border-radius: var(--radius-tags); }
+.review-marker-spread[data-open="true"] { overflow-x: auto; overflow-y: hidden; pointer-events: auto; background: var(--surface-1); outline: 1px solid var(--line-2); outline-offset: -1px; scrollbar-width: thin; scrollbar-color: var(--fg-2) var(--surface-1); overscroll-behavior-x: contain; }
+.review-marker-members { position: relative; height: 56px; }
+.review-marker-backs { position: absolute; top: 6px; width: 44px; height: 44px; }
+.review-marker-backs > span { position: absolute; inset: 0; border: 1px solid var(--line-2); border-radius: var(--radius-tags); background: var(--surface-1); }
+.review-marker-count { position: absolute; right: -4px; top: -5px; display: grid; place-items: center; min-width: 18px; height: 18px; padding-inline: 4px; border: 1px solid var(--line-2); border-radius: var(--radius-buttons); background: var(--surface-1); color: var(--fg); font-family: var(--font-mono); font-size: 10px; font-variant-numeric: tabular-nums; }
 .review-marker {
   position: absolute;
+  top: 6px;
+  left: 0;
+  width: 44px;
+  height: 44px;
+  pointer-events: auto;
   display: grid;
   place-items: center;
   border: 1px solid var(--line-2);
   border-radius: var(--radius-tags);
   background: var(--surface-1);
   color: var(--tone, var(--fg-2));
-  transition: border-color var(--dur-state) var(--ease), background-color var(--dur-state) var(--ease);
+  transition: transform var(--dur-popover) var(--ease-smooth), opacity var(--dur-state) var(--ease), border-color var(--dur-state) var(--ease), background-color var(--dur-state) var(--ease);
 }
+.review-marker[data-hidden="true"] { pointer-events: none; }
+.review-marker-stack[data-keyboard="true"] .review-marker { transition: border-color var(--dur-state) var(--ease), background-color var(--dur-state) var(--ease); }
 .review-marker[data-popup-open], .review-marker:focus-visible { border-color: var(--tone, var(--accent-ink)); }
 .review-tooltip-positioner { z-index: 100; }
 .review-tooltip-positioner[data-anchor-hidden] { visibility: hidden; pointer-events: none; }
@@ -121,9 +131,11 @@
   .chat-bubble-action:hover { border-color: var(--line-2); }
   .chat-decisions-toggle:hover { color: var(--fg); }
   .review-marker:hover { border-color: var(--tone, var(--fg)); }
+  .review-marker-stack[data-open="true"]:hover { z-index: 4; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .review-marker { transition: border-color var(--dur-state) var(--ease), background-color var(--dur-state) var(--ease); }
   .chat-chevron, .review-tooltip { transition: opacity var(--dur-state) var(--ease); }
   .review-tooltip[data-starting-style], .review-tooltip[data-ending-style] { transform: none; }
 }
