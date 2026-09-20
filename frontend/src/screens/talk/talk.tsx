@@ -1,4 +1,8 @@
-import { Mic, MicOff, Pause, Play, Square } from "lucide-react";
+import { MicrophoneIcon } from "@phosphor-icons/react/dist/csr/Microphone";
+import { MicrophoneSlashIcon } from "@phosphor-icons/react/dist/csr/MicrophoneSlash";
+import { PauseIcon } from "@phosphor-icons/react/dist/csr/Pause";
+import { PlayIcon } from "@phosphor-icons/react/dist/csr/Play";
+import { StopIcon } from "@phosphor-icons/react/dist/csr/Stop";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScreenHeader } from "@/app";
 import { CallTimeline, type TimelineHandle } from "@/components/call-timeline";
@@ -81,7 +85,7 @@ export function TalkScreen() {
       <div className="measure grid items-start gap-8 lg:grid-cols-[minmax(300px,4fr)_minmax(420px,8fr)]">
         <section className="grid justify-items-center gap-5 text-center lg:sticky lg:top-0" aria-label="Call controls">
           <Orb size={300} levels={levels} state={orbState} onActivate={orbAction} label={orbLabel} disabled={!stream && !timeline}
-            controlIcon={stream ? (muted ? <MicOff size={24} /> : <Mic size={24} />) : playing ? <Pause size={24} /> : <Play size={24} />} />
+            controlIcon={stream ? (muted ? <MicrophoneSlashIcon size={24} /> : <MicrophoneIcon size={24} />) : playing ? <PauseIcon size={24} /> : <PlayIcon size={24} />} />
           <p className="min-h-6 text-[16px] text-fg" aria-live="polite"><SwapText text={status} /></p>
           <div className="grid w-full max-w-[360px] gap-4 text-left">
             {!stream && candidates.length > 0 ? <div className="grid gap-2">
@@ -90,7 +94,7 @@ export function TalkScreen() {
                 options={candidates.map((call) => ({ value: call.call_id, label: `${call.action === "NO_ACTION" ? "Declined" : call.action === "BOOK" ? "Booked" : call.action === "REGISTER" ? "Registered" : call.action} call · ${duration(call.duration_seconds)}`, hint: call.call_id.slice(0, 8) }))} />
             </div> : null}
             <button type="button" className="pill pill-ghost" onClick={stream ? stopMic : () => void startMic()}>
-              {stream ? <Square size={16} /> : <Mic size={16} />}{stream ? "Stop microphone" : "Try your microphone"}
+              {stream ? <StopIcon size={16} /> : <MicrophoneIcon size={16} />}{stream ? "Stop microphone" : "Try your microphone"}
             </button>
             {micError ? <p role="alert" className="text-[13px] text-fg-2">{micError}</p> : null}
             <p className="text-center text-[12px] leading-[1.6] text-fg-3">{stream ? "Local microphone preview. Audio is not sent to the agent." : "Recorded calls only. Browser calling is not connected."}</p>

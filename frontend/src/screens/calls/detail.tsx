@@ -1,23 +1,25 @@
-// Call detail: the editor-style timeline on top (audiogram, speaker track,
-// icon per decision), the transcript below it synced to the playhead, and
-// Report / Patient / Raw tabs. Nothing is a chip; ids and codes are mono text.
+// Call detail: live stage or recorded audiogram with decision icons,
+// followed by the conversation and Report / Patient / Raw tabs.
 
 import { clsx } from "clsx";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { CaretLeftIcon } from "@phosphor-icons/react/dist/csr/CaretLeft";
+import { CaretRightIcon } from "@phosphor-icons/react/dist/csr/CaretRight";
+import { XIcon } from "@phosphor-icons/react/dist/csr/X";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { CallTimeline, type TimelineHandle } from "@/components/call-timeline";
 import { LoadingConversation, LoadingTimeline } from "@/components/loading";
 import { CopyButton, Empty, KeyValue, Label, Mono, Outcome, PillSelect, ReasonCode, VerdictMark } from "@/components/primitives";
 import { SelectionIndicator } from "@/components/selection-indicator";
+import { StageIndicator } from "@/components/stage";
 import { Transcript } from "@/components/transcript";
 import { api } from "@/lib/api";
 import { attribute, problemOf, verdictFor } from "@/lib/cases";
 import { duration, maskNationalId, maskPhone, offset, slotLabel, wallClockSeconds } from "@/lib/format";
 import { useSlideIn } from "@/lib/motion";
 import { isNoise, outcomeOf, type Decision, type Timeline } from "@/lib/timeline";
-import { loadDetail, type CallRecord } from "@/lib/store";
-import type { ClinicAction, RawEvent } from "@/lib/types";
+import { isActive, loadDetail, type CallRecord } from "@/lib/store";
+import type { CallSummary, ClinicAction, RawEvent } from "@/lib/types";
 
 type Tab = "transcript" | "report" | "patient" | "raw";
 const TABS: { id: Tab; label: string }[] = [
@@ -26,6 +28,19 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "patient", label: "Patient" },
   { id: "raw", label: "Raw" },
 ];
+
+export function CallDuration({ summary, endedAt }: { summary: CallSummary; endedAt?: number | null }) {
+  const active = isActive(summary);
+  const ticking = active && endedAt == null;
+  const [now, setNow] = useState(() => Date.now() / 1000);
+  useEffect(() => {
+    if (!ticking) return;
+    const timer = window.setInterval(() => setNow(Date.now() / 1000), 1000);
+    return () => window.clearInterval(timer);
+  }, [ticking, summary.call_id]);
+  const elapsed = active ? (endedAt ?? now) - summary.started_at : summary.duration_seconds ?? (endedAt == null ? null : endedAt - summary.started_at);
+  return duration(elapsed);
+}
 
 export function CallDrawer({ record, onClose, prev, next, basePath }: { record: CallRecord; onClose: () => void; prev: string | null; next: string | null; basePath: string }) {
   const panel = useRef<HTMLElement>(null);
@@ -42,6 +57,7 @@ export function CallDrawer({ record, onClose, prev, next, basePath }: { record: 
   const decisionRequest = useRef(0);
   const { summary, detail, timeline, detailError } = record;
   const outcome = outcomeOf(detail, summary);
+  const live = isActive(summary);
   const unknown = summary.started_at === 0;
 
   const current = useMemo(() => {
@@ -74,24 +90,28 @@ export function CallDrawer({ record, onClose, prev, next, basePath }: { record: 
       <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-1 px-4 py-3 md:px-6">
         <div className="flex items-center gap-1">
           <Link to={prev ? `${basePath}/${prev}` : "#"} aria-disabled={!prev} className={clsx("pill pill-quiet pill-sm pill-icon", !prev && "pointer-events-none opacity-40")} aria-label="Previous call">
-            <ChevronLeft size={14} strokeWidth={1.75} />
+            <CaretLeftIcon size={14} />
           </Link>
           <Link to={next ? `${basePath}/${next}` : "#"} aria-disabled={!next} className={clsx("pill pill-quiet pill-sm pill-icon", !next && "pointer-events-none opacity-40")} aria-label="Next call">
-            <ChevronRight size={14} strokeWidth={1.75} />
+            <CaretRightIcon size={14} />
           </Link>
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-[18px] font-light text-fg">{timeline ? callerLabel(timeline) : detailError ? "Call unavailable" : "Loading call"}</h2>
-          {!unknown ? <p className="mt-1 text-[12px] text-fg-3">{wallClockSeconds(summary.started_at)} <span className="ml-3 mono tabular">{duration(summary.duration_seconds)}</span></p> : null}
+          {!unknown ? <p className="mt-1 text-[12px] text-fg-3">{wallClockSeconds(summary.started_at)} <span className="ml-3 mono tabular"><CallDuration summary={summary} endedAt={timeline?.endedAt} />{live ? " elapsed" : ""}</span></p> : null}
         </div>
-        {!unknown ? <Outcome verb={outcome.verb} reason={outcome.reason} status={outcome.status} /> : null}
+        {!unknown ? live ? <span className="text-[13px] text-accent-ink">Live</span> : <Outcome verb={outcome.verb} reason={outcome.reason} status={outcome.status} /> : null}
         <button type="button" className="pill pill-quiet pill-sm pill-icon" onClick={onClose} aria-label="Close call">
-          <X size={14} strokeWidth={1.75} />
+          <XIcon size={14} />
         </button>
       </header>
 
 
-      {detail && timeline && !unknown ? (
+      {live && timeline ? (
+        <div className="shrink-0 border-b border-line-1 px-4 py-3 md:px-6">
+          <StageIndicator stage={timeline.stage} size="md" />
+        </div>
+      ) : detail && timeline && !unknown ? (
         <div className="shrink-0 border-y border-line-1 px-4 py-3 md:px-6">
           <CallTimeline audioUrl={detail.audio ? api.audioUrl(summary.call_id) : null} durationSeconds={detail.audio?.duration_seconds ?? summary.duration_seconds ?? 0} turns={timeline.turns} decisions={timeline.decisions} onTime={setPlayhead} onPlaying={onPlaying} onDecision={onDecision} controller={controller} />
         </div>
@@ -111,7 +131,7 @@ export function CallDrawer({ record, onClose, prev, next, basePath }: { record: 
         {!detail && !detailError ? <LoadingConversation search /> : null}
         {detail && timeline ? (
           <>
-            {tab === "transcript" ? <TranscriptTab timeline={timeline} query={query} onQuery={setQuery} expandAll={expandAll} onExpandAll={setExpandAll} current={current} openDecision={openDecision} onSeek={onSeek} playing={playing} playhead={playhead} followAudio={followAudio} onFollowAudio={setFollowAudio} /> : null}
+            {tab === "transcript" ? <TranscriptTab timeline={timeline} live={live} query={query} onQuery={setQuery} expandAll={expandAll} onExpandAll={setExpandAll} current={current} openDecision={openDecision} onSeek={onSeek} playing={playing} playhead={playhead} followAudio={followAudio} onFollowAudio={setFollowAudio} /> : null}
             {tab === "report" ? <ReportTab record={record} /> : null}
             {tab === "patient" ? <PatientTab timeline={timeline} /> : null}
             {tab === "raw" ? <RawTab events={detail.events} startedAt={timeline.startedAt} /> : null}
@@ -123,7 +143,7 @@ export function CallDrawer({ record, onClose, prev, next, basePath }: { record: 
 }
 
 
-function TranscriptTab({ timeline, query, onQuery, expandAll, onExpandAll, current, openDecision, onSeek, playing, playhead, followAudio, onFollowAudio }: { timeline: Timeline; query: string; onQuery: (v: string) => void; expandAll: boolean; onExpandAll: (v: boolean) => void; current: string | null; openDecision: { key: string; request: number } | null; onSeek: (seconds: number) => void; playing: boolean; playhead: number; followAudio: boolean; onFollowAudio: (value: boolean) => void }) {
+function TranscriptTab({ timeline, live, query, onQuery, expandAll, onExpandAll, current, openDecision, onSeek, playing, playhead, followAudio, onFollowAudio }: { timeline: Timeline; live: boolean; query: string; onQuery: (v: string) => void; expandAll: boolean; onExpandAll: (v: boolean) => void; current: string | null; openDecision: { key: string; request: number } | null; onSeek: (seconds: number) => void; playing: boolean; playhead: number; followAudio: boolean; onFollowAudio: (value: boolean) => void }) {
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -133,7 +153,8 @@ function TranscriptTab({ timeline, query, onQuery, expandAll, onExpandAll, curre
         </button>
         {playing ? <button type="button" className="pill pill-quiet pill-sm" aria-pressed={followAudio} onClick={() => onFollowAudio(!followAudio)}>{followAudio ? "Following audio" : "Follow audio"}</button> : null}
       </div>
-      <Transcript turns={timeline.turns} expandAll={expandAll} query={query} activeKey={current} revealDecision={openDecision} onSeek={onSeek} followPlayback={playing && followAudio} playbackTime={playing && followAudio && !query ? playhead : undefined} />
+      {live ? <p className="text-[12px] text-fg-3">Scroll to the bottom to follow new turns.</p> : null}
+      <Transcript turns={timeline.turns} expandAll={expandAll} query={query} follow={live && !query} activeKey={live ? undefined : current} revealDecision={openDecision} onSeek={live ? undefined : onSeek} followPlayback={!live && playing && followAudio} playbackTime={!live && playing && followAudio && !query ? playhead : undefined} emptyText={live ? "Waiting for the first turn." : "No transcript yet."} />
     </div>
   );
 }

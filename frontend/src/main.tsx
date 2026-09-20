@@ -5,7 +5,6 @@ import { Shell, ToolsShell } from "./app";
 import { CallsScreen } from "./screens/calls/calls";
 import { CalendarScreen } from "./screens/calendar/calendar";
 import { CasesScreen } from "./screens/cases/cases";
-import { LiveScreen } from "./screens/live/live";
 import { MetricsScreen } from "./screens/metrics/metrics";
 import { TalkScreen } from "./screens/talk/talk";
 import "./styles/globals.css";
@@ -17,8 +16,6 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/metrics" replace /> },
       { path: "dashboard", element: <Navigate to="/metrics" replace /> },
-      { path: "live", element: <LiveScreen /> },
-      { path: "live/:id", element: <LiveScreen /> },
       { path: "calls", element: <CallsScreen /> },
       { path: "calls/:id", element: <CallsScreen /> },
       { path: "calendar", element: <CalendarScreen /> },

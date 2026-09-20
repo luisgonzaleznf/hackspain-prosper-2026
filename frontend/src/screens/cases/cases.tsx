@@ -3,7 +3,9 @@
 // The eval story for the jury.
 
 import { clsx } from "clsx";
-import { Check, Phone, X } from "lucide-react";
+import { CheckIcon } from "@phosphor-icons/react/dist/csr/Check";
+import { PhoneIcon } from "@phosphor-icons/react/dist/csr/Phone";
+import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ScreenHeader } from "@/app";
@@ -188,9 +190,9 @@ function CaseGlyph({ result, selected, onClick }: { result: CaseResult | undefin
     >
       {verdict ? (
         verdict.passed ? (
-          <Check size={14} strokeWidth={2} className="text-accent-ink" />
+          <CheckIcon size={14} className="text-accent-ink" />
         ) : (
-          <X size={14} strokeWidth={2} className="text-fg-3" />
+          <XIcon size={14} className="text-fg-3" />
         )
       ) : (
         <span className="text-[12px] text-fg-3" aria-hidden="true">–</span>
@@ -221,10 +223,10 @@ function CaseDrawer({ testCase, result, onClose }: { testCase: PublicCase; resul
         </div>
         <div className="ml-auto flex items-center gap-2">
           <button type="button" className="pill pill-quiet pill-sm" disabled title="Practice call needs the backend's POST /api/cases/{id}/call; not available yet">
-            <Phone size={14} strokeWidth={1.75} /> Call
+            <PhoneIcon size={14} /> Call
           </button>
           <button type="button" className="pill pill-quiet pill-sm pill-icon" onClick={onClose} aria-label="Close">
-            <X size={14} strokeWidth={1.75} />
+            <XIcon size={14} />
           </button>
         </div>
       </header>

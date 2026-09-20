@@ -22,7 +22,7 @@ const proxy = {
 // static HTML: it and /brand/identity.html read brand/, tokens/ and fonts/
 // directly (classic scripts, runtime-fetched SVGs), so only the console is
 // bundled and those files are copied into dist as they are.
-const CONSOLE_ROUTES = /^\/(dashboard|live|calls|calendar|cases|metrics|talk)(\/|\?|$)/;
+const CONSOLE_ROUTES = /^\/(dashboard|calls|calendar|cases|metrics|talk)(\/|\?|$)/;
 // The roleplay studio is its own bundled page at /demo; everything else under
 // /demo/ (the review page, its script and the stylesheet) is served statically.
 const DEMO_ROUTE = /^\/demo\/?(\?|$)/;

@@ -1,17 +1,16 @@
-import { X } from "lucide-react";
+import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 
-export function LoadingRows({ label, rows = 6, compact = false, live = false }: { label: string; rows?: number; compact?: boolean; live?: boolean }) {
-  return <div role="status" aria-label={label} className={`loading-rows ${compact ? "loading-rows-compact" : ""} ${live ? "loading-rows-live" : ""}`}>
+export function LoadingRows({ label, rows = 6, compact = false }: { label: string; rows?: number; compact?: boolean }) {
+  return <div role="status" aria-label={label} className={`loading-rows ${compact ? "loading-rows-compact" : ""}`}>
     <span className="sr-only">{label}</span>
     <div className="loading-table-head" aria-hidden="true"><span className="loading-skeleton loading-row-title" /></div>
-    {!live ? <div className="loading-group" aria-hidden="true"><span className="loading-skeleton loading-row-subtitle" /></div> : null}
+    <div className="loading-group" aria-hidden="true"><span className="loading-skeleton loading-row-subtitle" /></div>
     {Array.from({ length: rows }, (_, index) => <div key={index} className="loading-row" aria-hidden="true">
-      {live ? <span className="loading-skeleton loading-row-orb" /> : null}
       <span className="loading-skeleton loading-row-time" />
       <div><span className="loading-skeleton loading-row-title" /><span className="loading-skeleton loading-row-subtitle" /></div>
       <span className="loading-skeleton loading-row-strip" />
       <span className="loading-skeleton loading-row-outcome" />
-      {!compact && !live ? <span className="loading-skeleton loading-row-duration" /> : null}
+      {!compact ? <span className="loading-skeleton loading-row-duration" /> : null}
       <span className="loading-skeleton loading-row-value" />
     </div>)}
   </div>;
@@ -32,7 +31,6 @@ export function LoadingTimeline() {
   return <div className="loading-timeline" aria-hidden="true">
     <div className="loading-timeline-markers"><span className="loading-skeleton" /><span className="loading-skeleton" /><span className="loading-skeleton" /></div>
     <div className="loading-timeline-track"><span className="loading-skeleton" /><span className="loading-skeleton" /></div>
-    <span className="loading-skeleton" />
     <div className="loading-timeline-ruler"><span className="loading-skeleton" /><span className="loading-skeleton" /></div>
     <div className="loading-timeline-controls"><span className="loading-skeleton" /><span className="loading-skeleton" /></div>
   </div>;
@@ -53,7 +51,7 @@ export function LoadingCall({ onClose }: { onClose: () => void }) {
   return <section className="flex h-full flex-col bg-bg" aria-label="Loading call">
     <header className="flex min-h-[70px] items-center justify-between border-b border-line-1 px-4 py-3 md:px-6">
       <h2 className="text-[18px] font-light text-fg">Loading call</h2>
-      <button type="button" className="pill pill-quiet pill-sm pill-icon" onClick={onClose} aria-label="Close call"><X size={14} strokeWidth={1.75} /></button>
+      <button type="button" className="pill pill-quiet pill-sm pill-icon" onClick={onClose} aria-label="Close call"><XIcon size={14} /></button>
     </header>
     <div className="border-y border-line-1 px-4 py-3 md:px-6"><LoadingTimeline /></div>
     <div className="loading-call-tabs px-4 md:px-6" aria-hidden="true"><span className="loading-skeleton" /><span className="loading-skeleton" /><span className="loading-skeleton" /></div>

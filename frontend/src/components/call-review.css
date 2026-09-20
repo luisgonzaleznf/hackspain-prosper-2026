@@ -73,7 +73,7 @@
 .review-decision { min-width: 0; padding: 14px 16px; border: 1px solid var(--line-1); border-radius: var(--radius-tags); background: var(--surface-1); overflow-wrap: anywhere; }
 .chat-match { background: var(--fill-hover); color: var(--accent-ink); font-weight: var(--font-weight-regular); }
 
-/* The fixed frame fits whole 48px rows, with its inset outside the scroller. */
+/* The frame grows to three whole 48px rows; denser stacks scroll inside it. */
 .review-marker-frame { box-sizing: border-box; height: 108px; padding-block: 6px; }
 .review-marker-frame[data-compact="true"] { height: 60px; }
 .review-marker-scroll { height: 100%; overflow-y: scroll; overflow-x: hidden; scrollbar-gutter: stable; scrollbar-width: auto; scrollbar-color: var(--fg-2) var(--surface-1); scroll-snap-type: y mandatory; }
