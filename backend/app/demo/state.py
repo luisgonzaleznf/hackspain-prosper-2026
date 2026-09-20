@@ -30,6 +30,8 @@ _MILESTONES = (
 )
 
 _TOOL_SUMMARIES = {
+    "prepare_customer_account": "Captured the customer's name and email",
+    "confirm_customer_account": "Confirmed customer account creation and welcome email",
     "resolve_names": "Matched the requested clinic details",
     "find_patient": "Checked the patient record",
     "list_appointments": "Checked upcoming appointments",
@@ -43,6 +45,7 @@ _TOOL_SUMMARIES = {
     "clear_recorded_actions": "Cleared the previously prepared outcome",
 }
 _RECORD_TOOLS = {
+    "confirm_customer_account",
     "record_booking",
     "record_reschedule",
     "record_cancellation",
@@ -168,6 +171,27 @@ def build_action_evidence(session: "CallSession") -> list[DemoActionEvidence]:
                 label={"BOOK": "Booking prepared", "CANCEL": "Cancellation prepared", "RESCHEDULE": "Change prepared", "ESCALATE": "Escalated safely", "NO_ACTION": "No action required"}.get(verb, "Action prepared"),
                 fields=fields,
                 checks=checks,
+            )
+        )
+    if session.customer_account_result:
+        result = session.customer_account_result
+        saved = result.get("status") in {"created", "existing"}
+        evidence.append(
+            DemoActionEvidence(
+                action="REGISTER",
+                label="Customer account saved" if saved else "Customer account could not be saved",
+                fields=[
+                    ("Account reference", result.get("account_id", "Unavailable")),
+                    (
+                        "Email",
+                        "Accepted by Resend"
+                        if result.get("email_status") == "accepted"
+                        else "Not sent; check the trace",
+                    ),
+                ],
+                checks=["Name and email read back and confirmed", "Saved in local SQLite database"]
+                if saved
+                else ["Database write failed; no email sent"],
             )
         )
     return evidence

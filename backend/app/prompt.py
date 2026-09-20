@@ -259,8 +259,13 @@ def _caller_id(session: CallSession) -> str:
 
 
 def instructions(session: CallSession) -> str:
+    from app import appointment_email, customer_accounts
+
     cat = clinic.cached()
     parts = [RULES, _caller_id(session)]
+    if session.demo_mode and appointment_email.enabled():
+        parts.append(APPOINTMENT_EMAIL_RULES)
+        parts.append(customer_accounts.INSTRUCTIONS)
     if cat:
         parts += [
             "CALENDAR\n" + clinic.calendar_text(session.started_at, cat),
@@ -269,3 +274,25 @@ def instructions(session: CallSession) -> str:
     else:
         parts.append("The clinic catalogue is unavailable right now; rely on the tools.")
     return "\n\n".join(parts)
+
+
+APPOINTMENT_EMAIL_RULES = """\
+OPTIONAL APPOINTMENT EMAIL
+After successfully recording a booking or reschedule, offer an email confirmation. Keep the
+appointment recorded while asking: an email is optional and must never prevent booking.
+Identify which patient's appointment the email covers, particularly for relatives or multiple
+requests. Never reuse an email from the chart, a registration, or another patient automatically.
+If they want email, ask them to spell their address. Wait until spelling is complete. Translate
+spoken punctuation (at/arroba = @, dot/punto = ., underscore/guion bajo = _, hyphen/guion = -)
+without guessing letters or correcting a domain. Ask for only any uncertain segment again.
+Call set_appointment_email(patient_id, email) with the dictated address, then read the full
+returned address back, spelling the local part, punctuation and domain clearly. Ask whether it
+is correct, and WAIT for an explicit yes in a later turn. Then call confirm_appointment_email
+with that patient_id and the exact address. A pause or interruption is not confirmation.
+For any correction, call set_appointment_email again immediately (even if incomplete), read
+the corrected address back and wait for a fresh yes before confirm_appointment_email. If they
+decline or withdraw email, set_appointment_email(patient_id, email="") clears the address.
+Explain that the final appointment summary will be emailed AFTER this call ends. Never say it
+has already been sent or delivered. If email is unavailable, say so and keep the appointment.
+Only bookings and moves get email; cancellations, registration and refusals do not.
+"""

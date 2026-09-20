@@ -4,8 +4,10 @@ from unittest.mock import AsyncMock
 from xml.etree.ElementTree import fromstring
 
 import pytest
-from app import config
+from app import clinic, config
 from app.server import app
+from app.session import CallSession
+from app.tools import register_pipecat_tools, tools_for_session
 from fastapi.testclient import TestClient
 from integrations import twilio
 from integrations.twilio import PHONE_NUMBER, TwilioCallSession
@@ -62,6 +64,35 @@ def test_phone_demo_records_outcome_without_submitting_to_scorer(monkeypatch, tm
     assert asyncio.run(session.finish()) == []
     submit.assert_not_called()
     events = [json.loads(line) for line in (tmp_path / "CA123.jsonl").read_text().splitlines()]
-    assert len(events) == 1
-    assert events[0]["submitted"] is False
-    assert events[0]["actions"] == session.actions
+    assert [event["kind"] for event in events] == ["demo_outcome", "call_ended"]
+    assert all(event["submitted"] is False for event in events)
+    assert all(event["source"] == "twilio" for event in events)
+    assert events[-1]["actions"] == session.actions
+
+
+def test_twilio_start_enables_human_tools_for_gptlive_only_when_configured(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "CALLS_DIR", tmp_path)
+    monkeypatch.setattr(clinic, "catalogue", AsyncMock(return_value={}))
+    monkeypatch.setattr(config, "APPOINTMENT_EMAILS_ENABLED", True)
+    monkeypatch.setattr(config, "RESEND_API_KEY", "test-secret")
+    monkeypatch.setattr(config, "RESEND_FROM_EMAIL", "Rosario <citas@example.org>")
+    monkeypatch.setattr(config, "EVAL_MODE", False)
+
+    session = asyncio.run(TwilioCallSession.start(call_id="CA123"))
+    assert session.demo_mode is True
+    assert "OPTIONAL APPOINTMENT EMAIL" in session.instructions()
+    assert "HUMAN DEMO CUSTOMER ACCOUNTS" in session.instructions()
+    registered = {}
+
+    class LLM:
+        def register_function(self, name, handler):
+            registered[name] = handler
+
+    register_pipecat_tools(LLM(), session)
+    assert set(registered) == {tool["name"] for tool in tools_for_session(session)}
+    assert {"set_appointment_email", "confirm_customer_account"} <= registered.keys()
+    scored = asyncio.run(CallSession.start(call_id="scored"))
+    assert scored.demo_mode is False
+    assert "set_appointment_email" not in {tool["name"] for tool in tools_for_session(scored)}
+    monkeypatch.setattr(config, "EVAL_MODE", True)
+    assert "set_appointment_email" not in {tool["name"] for tool in tools_for_session(session)}

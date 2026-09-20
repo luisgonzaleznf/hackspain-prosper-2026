@@ -1,6 +1,7 @@
 """Inbound PSTN calls: TwiML webhook and local outcomes for unscored demo calls."""
 
 import os
+from dataclasses import dataclass
 from urllib.parse import parse_qs
 from xml.etree.ElementTree import Element, SubElement, tostring
 
@@ -35,17 +36,11 @@ async def incoming_call(request: Request) -> Response:
     return Response(tostring(response, encoding="unicode"), media_type="application/xml")
 
 
+@dataclass
 class TwilioCallSession(CallSession):
     """Use real clinic lookups, but don't submit foreign call IDs to Prosper's scorer."""
 
+    demo_mode: bool = True
+
     async def finish(self) -> list[dict]:
-        if self.finished:
-            return []
-        self.finished = True
-        self.log(
-            "call_ended",
-            source="twilio",
-            actions=self.actions or [self.fallback()],
-            submitted=False,
-        )
-        return []
+        return await self.finish_demo(source="twilio")
