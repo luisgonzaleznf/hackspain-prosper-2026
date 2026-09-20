@@ -27,7 +27,7 @@ Prosper ──wss──▶ tunnel ──▶ app/server.py /ws        (Twilio Med
 
 ```bash
 make serve VOICE=codex        # ws://localhost:7860/ws  (reads PLATFORM_API_KEY from .env)
-make session VOICE=gemini     # connect for one run (auto-disconnects); see "Endpoint policy" in AGENTS.md
+make session VOICE=codex      # connect for one run (auto-disconnects); see "Endpoint policy" in AGENTS.md
 make smoke                    # live: a public case through the tools + a submit Prosper accepts
 make fake-call WAV=x.wav N=10 # fake Prosper calls at the local server (8 kHz mono PCM16 wav)
 ```

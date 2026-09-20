@@ -117,7 +117,7 @@ def project_event(row: dict, event_id: int) -> dict | None:
     if event == "voice.recovering":
         return _event(base, "voice.recovering", "Voice lane recovering", "Browser call and clinic state remain active", "running")
     if event == "voice.recovered":
-        return _event(base, "voice.recovered", "Voice lane recovered", "Listening resumed on a fresh realtime connection", "succeeded")
+        return _event(base, "voice.recovered", "Voice lane recovered", "Listening resumed on a fresh GPT-Live connection", "succeeded")
     return None
 
 

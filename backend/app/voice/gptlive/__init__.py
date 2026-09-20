@@ -5,6 +5,9 @@ The same two-model shape as VOICE=codex, without the ChatGPT subscription:
 - the brain (a Responses model, OpenAI-hosted "Responses delegation") gets each delegation and
   calls app.tools, which pipecat executes here through `register_pipecat_tools`.
 
+A socket that drops mid-call is recovered the way VOICE=codex recovers a closed transport:
+a new session seeded with the conversation so far, and the same line to the caller.
+
 Every call logs what it costs as kind="usage": GPT-Live's billed audio seconds and each brain
 response's tokens (see scripts/call_costs.py).
 """
@@ -29,11 +32,13 @@ from pipecat.services.openai.responses.llm import (
 )
 from pipecat.transports.base_transport import BaseTransport
 from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies
+from pipecat.utils.errors import ErrorCategory
 from pipecat.workers.runner import WorkerRunner
 
 from app.session import CallSession
 from app.tools import register_pipecat_tools
 from app.voice.codex import BRAIN_PREAMBLE, VOICE_PROMPT
+from app.voice.codex.service import MAX_RECOVERIES, RECOVERY_PROMPT
 
 LIVE_MODEL = os.getenv("GPTLIVE_MODEL", "gpt-live-1")
 BRAIN_MODEL = os.getenv("GPTLIVE_BRAIN_MODEL", "gpt-5.6-luna")
@@ -42,20 +47,88 @@ DRAIN_SECS = 8  # after the caller hangs up, before the session is torn down
 
 
 class MeteredLive(OpenAILiveLLMService):
-    """OpenAILiveLLMService that also writes the call's billable usage to the call log.
+    """OpenAILiveLLMService that meters the call and survives a dropped socket.
 
     pipecat only logs the live seconds at debug level and turns the brain's tokens into
     metrics frames; the call log is where cost is added up afterwards.
+
+    It also recovers like VOICE=codex does: the same model on the same call, so a socket
+    that drops mid-call rebuilds the session and apologises instead of ending the call.
     """
 
     def __init__(self, *, call: CallSession, **kwargs: Any):
         super().__init__(**kwargs)
         self._call = call
+        self._recoveries = 0
+        self._recovering = False
+        self._say_recovery = False
 
     async def _report_usage(self, usage: events.Usage):
         await super()._report_usage(usage)
         if usage.seconds is not None:  # cumulative for the session: the last one counts
             self._call.log("usage", model=LIVE_MODEL, live_seconds=usage.seconds)
+
+    async def push_error(
+        self,
+        error_msg: str,
+        exception: Exception | None = None,
+        fatal: bool = False,
+        category: ErrorCategory | None = None,
+        force_treat_as_permanent: bool = False,
+    ):
+        """Rebuild the session instead of ending the call when the socket drops mid-call.
+
+        pipecat reports a closed connection as permanent for this service, which cancels the
+        pipeline and takes the call with it. A session that already started and then lost its
+        socket is the same failure VOICE=codex recovers from (`transport_closed`), so it gets
+        the same answer, and the same ceiling. A startup failure (bad key, no credits, no
+        session ever started) stays fatal: retrying it would only fail again.
+        """
+        if (
+            force_treat_as_permanent
+            and self._session_started_on_connection
+            and not self._recovering
+            and self._recoveries < MAX_RECOVERIES
+        ):
+            self._recovering = True
+            self._recoveries += 1
+            self._call.log("voice.recovering", attempt=self._recoveries, error=error_msg)
+            # reset_conversation() must not run in the receive task this error came from.
+            self.create_task(self._recover(), "voice-recovery")
+            return
+        await super().push_error(
+            error_msg=error_msg,
+            exception=exception,
+            fatal=fatal,
+            category=category,
+            force_treat_as_permanent=force_treat_as_permanent,
+        )
+
+    async def _recover(self) -> None:
+        """Open a new session seeded with the conversation so far, then apologise into it."""
+        self._say_recovery = True
+        try:
+            await self.reset_conversation()
+            self._call.log("voice.recovered", attempt=self._recoveries)
+        except Exception as error:
+            self._say_recovery = False
+            self._call.log("voice.recovery_failed", attempt=self._recoveries, error=repr(error))
+            await super().push_error(
+                error_msg=f"Voice recovery failed: {error!r}",
+                exception=error,
+                force_treat_as_permanent=True,
+            )
+        finally:
+            self._recovering = False
+
+    async def _handle_evt_session_started(self, evt: events.SessionStartedEvent) -> None:
+        await super()._handle_evt_session_started(evt)
+        if self._say_recovery:
+            # The rebuilt session has no opening instruction of its own (the greeting's
+            # trailing developer message is long behind us in the context), so the line the
+            # caller hears comes from here.
+            self._say_recovery = False
+            await self._send_context_append(None, RECOVERY_PROMPT, spoken=True)
 
     async def _report_backend_usage(self, response: dict[str, Any]):
         await super()._report_backend_usage(response)
