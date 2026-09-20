@@ -57,16 +57,6 @@ main { max-width: var(--page-max-width); margin: 0 auto; padding: 0 var(--gutter
 
 .alert { margin: var(--spacing-20) 0 0; padding: 12px 16px; border-radius: var(--radius-tags); border: 1px solid var(--primary); color: var(--fg); font-size: 14px; }
 
-.phone-setup { margin-top: var(--spacing-52); padding: var(--card-padding); border: 1px solid var(--line-1); border-radius: var(--radius-cards); background: var(--surface-1); display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 0.6fr); gap: var(--spacing-20); align-items: end; }
-.phone-setup h2 { margin-bottom: 8px; }
-.phone-setup p { color: var(--fg-2); font-size: 14px; }
-.phone-setup label { display: grid; gap: 8px; color: var(--fg-2); font-size: 13px; }
-.phone-setup input { width: 100%; min-height: 48px; border: 1px solid var(--line-2); border-radius: var(--radius-buttons); padding: 0 16px; color: var(--fg); background: var(--bg); font-family: var(--font-mono); font-size: 15px; }
-.phone-setup input:disabled { opacity: 0.6; }
-.phone-examples { grid-column: 2; display: flex; flex-wrap: wrap; gap: 16px; }
-.phone-examples button { border: 0; border-bottom: 1px solid var(--line-2); padding: 0 0 2px; color: var(--fg-2); background: none; font: inherit; cursor: pointer; }
-.phone-examples button:hover { color: var(--fg); border-bottom-color: var(--fg); }
-
 /* Roles: three cards, one choice. */
 .roles-wrap { padding: var(--spacing-52) 0 0; display: grid; gap: var(--spacing-32); }
 .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-20); }
@@ -154,8 +144,6 @@ main { max-width: var(--page-max-width); margin: 0 auto; padding: 0 var(--gutter
 
 
 @media (max-width: 1100px) {
-  .phone-setup { grid-template-columns: 1fr; }
-  .phone-examples { grid-column: 1; }
   .roles { grid-template-columns: 1fr; }
   .stage { grid-template-columns: 1fr; gap: var(--spacing-32); }
   .control { position: static; }

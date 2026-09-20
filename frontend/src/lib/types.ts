@@ -124,20 +124,6 @@ export interface CallDetail {
   events: RawEvent[];
 }
 
-export interface CalendarAppointment {
-  appointment_id: string;
-  patient_id: string;
-  patient_name: string;
-  provider_id: string;
-  provider_name: string;
-  location_id: string;
-  location_name: string;
-  appointment_type_id: string | null;
-  start_time: string;
-  duration_minutes: number;
-  status: string;
-}
-
 // Public practice cases (trimmed copy of the platform roster in src/data).
 export interface ProtectedValue {
   kind: "national_id" | "phone" | string;

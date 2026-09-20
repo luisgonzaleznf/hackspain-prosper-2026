@@ -699,7 +699,7 @@ async def _find_patient(session: CallSession, args: dict) -> dict:
     if _id_decides(query):
         matches = await _by_national_id(session, query)
     else:
-        matches = await prosper.client().directory(**query)
+        matches = await session.clinic_client.directory(**query)
         session.log("lookup", path="directory")
     session.remember_patients(matches)
     today = session.started_at.date()
@@ -747,7 +747,7 @@ async def _by_national_id(session: CallSession, query: dict[str, str]) -> list[d
         for p in session.patients.values()
         if clinic.normalize_national_id(p["national_id"]) == nid
     ]
-    matches = held or await prosper.client().directory(national_id=nid)
+    matches = held or await session.clinic_client.directory(national_id=nid)
     session.log("lookup", path="held" if held else "national_id_only")
     fields = ["national_id"]
     if query.get("date_of_birth"):
@@ -773,7 +773,7 @@ async def _list_appointments(session: CallSession, args: dict) -> dict:
     if patient_id not in session.patients:
         return {"error": "Unknown patient_id: look the patient up with find_patient first."}
     when = args.get("when") or "upcoming"
-    appointments = await prosper.client().appointments(patient_id, when)
+    appointments = await session.clinic_client.appointments(patient_id, when)
     upcoming = [
         a for a in appointments if datetime.fromisoformat(a["start_time"]) > session.started_at
     ]
@@ -878,7 +878,7 @@ async def _search_availability(session: CallSession, args: dict) -> dict:
         date_to = date_from + timedelta(days=13)
         notes.append(f"Windows are capped at 14 days, so this one ends {date_to.isoformat()}.")
     try:
-        data = await prosper.client().availability(
+        data = await session.clinic_client.availability(
             date_from.isoformat(),
             date_to.isoformat(),
             specialty_id=args.get("specialty_id"),
@@ -1157,17 +1157,19 @@ _HANDLERS = {
 async def call_tool(session: CallSession, name: str, args: dict | None) -> dict:
     """Run one tool for this call. Never raises: the model gets {"error": ...} and can recover."""
     args = dict(args or {})
+    session.log("tool_started", name=name, args=args)
     handler = _HANDLERS.get(name)
     if handler is None:
         result: dict = {"error": f"Unknown tool {name}."}
     else:
         try:
-            result = await handler(session, args)
+            result = await session.execute_tool(name, args, handler)
         except KeyError as e:
             result = {"error": f"Missing argument {e}."}
         except prosper.ProsperError as e:
             result = {"error": f"The clinic system answered {e.status}: {e.detail}"}
         except Exception as e:  # network trouble etc.: tell the model, keep the call alive
+            session.log("tool_error", name=name, error_type=type(e).__name__, error=str(e))
             result = {
                 "error": f"The clinic system is not answering ({type(e).__name__}). Try again."
             }
@@ -1186,7 +1188,7 @@ def register_pipecat_tools(llm: Any, session: CallSession) -> Any:
         )
 
     schemas = []
-    for spec in tools_for_session(session):
+    for spec in session.tool_specs(tools_for_session(session)):
         llm.register_function(spec["name"], handler)
         schemas.append(
             FunctionSchema(

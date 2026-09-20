@@ -2,12 +2,13 @@
 
 from typing import Any
 
+from integrations.local_session import LocalCallSession
 from pipecat.runner.run import app as runner_app
 from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
 from pipecat.transports.base_transport import TransportParams
 
-from app import appointment_email, config, customer_accounts, database
+from app import config
 from app.demo.app import register_demo_routes
 from app.demo.models import DemoStartRequest
 from app.demo.recording import DemoRecorder
@@ -20,14 +21,13 @@ from app.demo.state import (
     log_event,
     update_outcome,
 )
-from app.session import CallSession
-from app.voice import codex
+from app.voice import gptlive
 
 register_demo_routes(runner_app)
 
 
-class DemoCallSession(CallSession):
-    """A normal call session whose observable events also feed the demo UI."""
+class DemoCallSession(LocalCallSession):
+    """The phone booking flow over browser audio, with events for the demo UI."""
 
     def log(self, kind: str, **data: Any) -> None:
         super().log(kind, **data)
@@ -37,7 +37,7 @@ class DemoCallSession(CallSession):
 
 
 async def bot(runner_args: RunnerArguments) -> None:
-    """Run one browser call with caller ID and the writable clinic backend."""
+    """Run GPT-Live with persistent local writes and no telephone connection."""
     request = DemoStartRequest.model_validate(runner_args.body)
     scenario = get_scenario(request.scenario_id)
     if scenario is None:
@@ -53,27 +53,18 @@ async def bot(runner_args: RunnerArguments) -> None:
     session: DemoCallSession | None = None
     recorder = DemoRecorder()
     try:
-        from_number = request.from_number or scenario.phone
-        if from_number and not from_number.startswith("+"):
-            from_number = "+34" + from_number
         session = await DemoCallSession.start(
             call_id=session_id,
             stream_sid=session_id,
-            from_number=from_number or None,
+            from_number=scenario.phone or None,
             demo_mode=True,
-        )
-        database.open_call(
-            session.call_id,
-            session.stream_sid,
-            session.from_number,
-            session.started_at.timestamp(),
         )
         transport = await create_transport(
             runner_args,
             {"webrtc": lambda: TransportParams(audio_in_enabled=True, audio_out_enabled=True)},
         )
         recorder.tap(transport)
-        await codex.run_call(transport, session)
+        await gptlive.run_call(transport, session)
     except Exception as exc:
         if session:
             session.log("voice_error", error=repr(exc))
@@ -88,18 +79,7 @@ async def bot(runner_args: RunnerArguments) -> None:
                 session.log("recording.saved", **await recorder.save(session_id, config.AUDIO_DIR))
             except Exception as exc:
                 session.log("recording.error", error=repr(exc))
-            session.demo_mode = False
-            results = await session.finish()
-            session.demo_mode = True
-            await appointment_email.send_for_actions(session, session.actions)
-            session.customer_account_result = await customer_accounts.finalize(session)
-            database.close_call(session.call_id)
-            session.log(
-                "call_ended",
-                actions=session.actions,
-                submitted=True,
-                statuses=[result["status"] for result in results],
-            )
+            await session.finish_demo()
             end_session(session_id, session.actions, build_action_evidence(session))
 
 

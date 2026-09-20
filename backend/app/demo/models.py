@@ -16,7 +16,7 @@ class DemoPersona(BaseModel):
 
 class DemoStartRequest(BaseModel):
     scenario_id: str
-    from_number: str | None = Field(default=None, pattern=r"^\+?[0-9]{9,15}$")
+
 
 class DemoMilestone(BaseModel):
     id: str

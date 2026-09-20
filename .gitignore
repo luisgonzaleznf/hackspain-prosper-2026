@@ -12,6 +12,7 @@
 *.wav
 *.opus
 logs/
+backend/data/
 docs/private-calls/
 
 # Python
@@ -32,9 +33,6 @@ env/
 .coverage
 htmlcov/
 .hypothesis/
-*.sqlite3-shm
-*.sqlite3-wal
-**/data/runtime.sqlite3
 
 # Node
 node_modules/

@@ -10,11 +10,10 @@ import { useCallMoment, useFeed, useHeadline, useLedger, useReceipt, useRoleCard
 type Phase = "idle" | "connecting" | "live" | "ending" | "complete" | "error";
 const POLL_MS = 900;
 
-/** The whole studio: pick a caller, talk, read what was staged. */
+/** The whole studio: pick a caller, talk, review saved changes. */
 export function Studio() {
   const [roles, setRoles] = useState<Persona[]>([]);
   const [picked, setPicked] = useState<Persona | null>(null);
-  const [fromNumber, setFromNumber] = useState("+34711330529");
   const [phase, setPhase] = useState<Phase>("idle");
   const [alert, setAlert] = useState("");
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -69,7 +68,7 @@ export function Studio() {
 
   const refreshLedger = useCallback(() => { demo.ledger().then(setLedger).catch(() => setLedger([])); }, []);
   useEffect(() => {
-    demo.scenarios().then(setRoles).catch((error: unknown) => setAlert(`The roles could not be loaded: ${String((error as Error).message)}`));
+    demo.scenarios().then((scenarios) => { setRoles(scenarios); setPicked((current) => current ?? scenarios[0] ?? null); }).catch((error: unknown) => setAlert(`The roles could not be loaded: ${String((error as Error).message)}`));
     refreshLedger();
   }, [refreshLedger]);
 
@@ -125,11 +124,6 @@ export function Studio() {
   }, [apply]);
 
   const start = async () => {
-    const normalizedNumber = fromNumber.replace(/[\s()-]/g, "");
-    if (!/^\+?[0-9]{9,15}$/.test(normalizedNumber)) {
-      setAlert("Enter a phone number with 9 to 15 digits, optionally starting with +.");
-      return;
-    }
     if (!picked) return;
     setAlert(""); setSnapshot(null);
     sessionId.current = null; ready.current = false;
@@ -170,11 +164,11 @@ export function Studio() {
       await pipecat.initDevices();
       const started = await pipecat.startBotAndConnect({
         endpoint: "/start",
-        requestData: { transport: "webrtc", enableDefaultIceServers: true, body: { scenario_id: picked.id, from_number: normalizedNumber } },
+        requestData: { transport: "webrtc", enableDefaultIceServers: true, body: { scenario_id: picked.id } },
       });
       sessionId.current = sessionIdOf(started) ?? sessionId.current;
       if (!sessionId.current) throw new Error("The server did not return a session id.");
-      apply(await demo.open(sessionId.current, picked.id, normalizedNumber));
+      apply(await demo.open(sessionId.current, picked.id));
       openStream(sessionId.current);
       ready.current = true;
       setPhase("live");
@@ -246,22 +240,14 @@ export function Studio() {
     </header>
 
     <main id="main" tabIndex={-1}>
-      <h1 className="lead" ref={headline}>Rehearse the call.</h1>
+      <h1 className="lead" ref={headline}>Talk to ROSARIO.</h1>
+      <p className="quiet">GPT-Live through your microphone. Confirmed patient and appointment changes are saved locally. No telephone charges; AI usage still applies.</p>
+      <button type="button" className="pill pill-primary" onClick={() => void (phase === "live" ? stop() : start())}
+        disabled={!picked || phase === "connecting" || phase === "ending"}>
+        {phase === "live" ? <StopIcon size={18} aria-hidden="true" /> : <MicrophoneIcon size={18} aria-hidden="true" />}
+        {phase === "live" ? "End call" : phase === "connecting" ? "Connecting…" : phase === "ending" ? "Ending…" : "Start call"}
+      </button>
       {alert && phase !== "error" ? <p className="alert" role="alert">{alert}</p> : null}
-      <section className="phone-setup" aria-labelledby="simulated-phone">
-        <div>
-          <h2 id="simulated-phone">Call from a simulated phone.</h2>
-          <p>The number is sent as caller ID. Use a synthetic clinic number to test recognition.</p>
-        </div>
-        <label>
-          <span>Caller number</span>
-          <input type="tel" inputMode="tel" autoComplete="tel" value={fromNumber}
-            onChange={(event) => setFromNumber(event.target.value)}
-            disabled={phase === "live" || phase === "connecting" || phase === "ending"}
-            placeholder="+34 711 330 529" />
-        </label>
-        <p className="phone-examples"><button type="button" onClick={() => setFromNumber("+34711330529")}>Josefa</button><button type="button" onClick={() => setFromNumber("+34731169716")}>Ignacio</button><button type="button" onClick={() => setFromNumber("+34708629566")}>Chloe</button></p>
-      </section>
 
       <section className="roles-wrap" aria-labelledby="who">
         <h2 id="who">Who are you calling as?</h2>
@@ -302,9 +288,9 @@ export function Studio() {
       </section> : null}
 
       {phase === "complete" ? <section className="block" aria-labelledby="outcome-heading" ref={outcomeScope}>
-        <h2 id="outcome-heading">What it staged</h2>
+        <h2 id="outcome-heading">Call outcome</h2>
         <div className="card dark receipt">
-          <p className="receipt-label">{evidence?.label ?? "No action staged"}</p>
+          <p className="receipt-label">{evidence?.label ?? "No changes saved"}</p>
           {evidence ? <>
             <dl className="facts">{evidence.fields.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
             <ul className="checks">{evidence.checks.map((check) => <li key={check}>{check}</li>)}</ul>
@@ -321,7 +307,7 @@ export function Studio() {
         <div className="ledger" ref={ledgerScope}>
           {ledger.length ? ledger.map((entry) => <div key={entry.session_id} className="ledger-row">
             <time dateTime={entry.completed_at}>{new Date(entry.completed_at).toLocaleString()}</time>
-            <span>{entry.status === "error" ? "Call failed" : entry.evidence?.[0]?.label ?? "No action staged"}</span>
+            <span>{entry.status === "error" ? "Call failed" : entry.evidence?.[0]?.label ?? "No changes saved"}</span>
             <span className="detail">{entry.evidence?.[0] ? entry.evidence[0].fields.map(([k, v]) => `${k}: ${v}`).join(" · ") : entry.error ?? "Open the trace to see what happened."}</span>
             <a href={demo.reviewUrl(entry.session_id)}>Review</a>
           </div>) : <p className="quiet">Nothing saved yet.</p>}

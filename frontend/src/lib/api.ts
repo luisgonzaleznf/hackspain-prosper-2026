@@ -1,6 +1,7 @@
-import type { CalendarAppointment, CallDetail, CallsIndex } from "./types.ts";
+import type { SchedulingRecord } from "./calendar.ts";
+import type { CallDetail, CallsIndex } from "./types.ts";
 
-// Same-origin `/api/calls`, served from the imported recording dataset by Vite.
+// Same-origin `/api/calls`: live local console when configured, otherwise imported recordings.
 // Errors carry the HTTP status so screens can say what happened.
 
 export class ApiError extends Error {
@@ -36,8 +37,8 @@ async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
 }
 
 export const api = {
+  calendar: (signal?: AbortSignal) => getJson<{ records: SchedulingRecord[] }>("/api/clinic/calendar", signal),
   calls: (signal?: AbortSignal) => getJson<CallsIndex>("/api/calls", signal),
   call: (id: string, signal?: AbortSignal) => getJson<CallDetail>(`/api/calls/${encodeURIComponent(id)}`, signal),
-  calendar: (signal?: AbortSignal) => getJson<{ appointments: CalendarAppointment[] }>("/api/calendar", signal),
   audioUrl: (id: string) => `/api/calls/${encodeURIComponent(id)}/audio`,
 };

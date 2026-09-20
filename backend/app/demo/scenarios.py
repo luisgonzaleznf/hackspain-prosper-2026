@@ -3,6 +3,21 @@ from app.demo.models import DemoPersona
 
 _SCENARIOS = (
     DemoPersona(
+        id="new_patient",
+        title="Register and book a first visit",
+        name="Prueba Sistema Temporal",
+        phone="699887766",
+        facts=[
+            ("Date of birth", "15 January 1990"),
+            ("DNI/NIE", "99887766P"),
+            ("Insurance", "Private payment"),
+            ("Email", "qa@example.test"),
+        ],
+        objective="Create a patient profile and book a General Practice appointment. On later calls, use the saved profile.",
+        opening_hint="I would like to register and book my first General Practice visit.",
+        expected_outcome="BOOK",
+    ),
+    DemoPersona(
         id="account",
         title="Create your customer account",
         name="You",

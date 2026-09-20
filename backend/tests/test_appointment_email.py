@@ -34,7 +34,16 @@ def run(coro):
     return asyncio.run(coro)
 
 
-@pytest.fixture(params=[CallSession, TwilioCallSession], ids=["browser", "twilio"])
+class TwilioEmailFinalizer(TwilioCallSession):
+    # Isolate the email finalizer's staged-proposal contract. Persistent phone writes
+    # require confirmation, identity and fresh availability and are exercised in
+    # test_local_clinic.py, including email delivery after a persisted booking.
+    execute_tool = CallSession.execute_tool
+    stage = CallSession.stage
+    finish_demo = CallSession.finish_demo
+
+
+@pytest.fixture(params=[CallSession, TwilioEmailFinalizer], ids=["browser", "twilio-finalizer"])
 def setup(tmp_path, monkeypatch, request):
     monkeypatch.setattr(config, "CALLS_DIR", tmp_path)
     monkeypatch.setattr(config, "APPOINTMENT_EMAILS_ENABLED", True)

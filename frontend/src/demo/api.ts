@@ -48,8 +48,8 @@ export const demo = {
   scenarios: () => json<Persona[]>("/api/demo/scenarios"),
   ledger: () => json<LedgerEntry[]>("/api/demo/ledger"),
   snapshot: (id: string) => json<Snapshot>(`/api/demo/sessions/${encodeURIComponent(id)}`),
-  open: (id: string, scenarioId: string, fromNumber: string) => json<Snapshot>(`/api/demo/sessions/${encodeURIComponent(id)}`, {
-    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenario_id: scenarioId, from_number: fromNumber }),
+  open: (id: string, scenarioId: string) => json<Snapshot>(`/api/demo/sessions/${encodeURIComponent(id)}`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenario_id: scenarioId }),
   }),
   reviewUrl: (id: string) => `/demo/review.html?call=${encodeURIComponent(id)}`,
   eventsUrl: (id: string) => `/api/demo/sessions/${encodeURIComponent(id)}/events`,
