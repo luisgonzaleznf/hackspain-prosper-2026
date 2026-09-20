@@ -6,9 +6,9 @@
 </p>
 
 <p align="center">
-  <a href="#architecture"><img src="https://img.shields.io/badge/Python-000000?style=flat-square" alt="Python"></a>
-  <a href="#architecture"><img src="https://img.shields.io/badge/React-000000?style=flat-square" alt="React"></a>
-  <a href="#architecture"><img src="https://img.shields.io/badge/GPT--Live-BC0400?style=flat-square" alt="GPT-Live"></a>
+  <a href="https://rosario.fyi"><img src="https://img.shields.io/badge/HackSpain-2026-000000?style=flat-square" alt="HackSpain 2026"></a>
+  <a href="#architecture"><img src="https://img.shields.io/badge/Stack-Python%20%2B%20React-000000?style=flat-square" alt="Stack: Python and React"></a>
+  <a href="#architecture"><img src="https://img.shields.io/badge/Voice-GPT--Live-000000?style=flat-square" alt="Voice: GPT-Live"></a>
 </p>
 
 ---
