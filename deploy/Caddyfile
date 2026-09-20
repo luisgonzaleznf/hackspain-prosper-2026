@@ -1,4 +1,4 @@
-{$ROSARIO_DOMAIN:demo.udarc.com} {
+rosario.fyi, demo.udarc.com {
 	handle /api/demo/* {
 		reverse_proxy 127.0.0.1:7862
 	}
