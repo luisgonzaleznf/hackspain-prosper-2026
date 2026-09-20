@@ -100,6 +100,63 @@ def test_new_call_appears_immediately_and_keeps_its_identity_after_hangup(client
     assert completed[0]["duration_seconds"] == 30.0
     assert completed[0]["action"] == "BOOK"
 
+def test_local_writes_keep_call_live_until_hangup_then_report_latest_saved_action(client, tmp_path):
+    path = tmp_path / "calls" / f"{CALL}.jsonl"
+    lines = [
+        LINES[0],
+        {
+            "t": 105.0,
+            "kind": "local_write",
+            "action": {"action": "REGISTER"},
+            "result": {"patient_id": "LP001"},
+        },
+        {
+            "t": 110.0,
+            "kind": "local_write",
+            "action": {"action": "BOOK", "patient_id": "LP001"},
+            "result": {"appointment_id": "LA001"},
+        },
+    ]
+    path.write_text("".join(json.dumps(line) + "\n" for line in lines))
+    summary = client.get(f"/api/calls/{CALL}").json()["summary"]
+    assert summary["status"] == "in progress"
+
+    with path.open("a") as log:
+        log.write(json.dumps({"t": 120.0, "kind": "stop_received"}) + "\n")
+    summary = client.get(f"/api/calls/{CALL}").json()["summary"]
+    assert summary["status"] == "saved locally"
+    assert summary["action"] == "BOOK"
+
+    with path.open("a") as log:
+        log.write(json.dumps({
+            "t": 121.0,
+            "kind": "demo_outcome",
+            "actions": [{"action": "CANCEL", "appointment_id": "LA001"}],
+            "submitted": False,
+        }) + "\n")
+    summary = client.get(f"/api/calls/{CALL}").json()["summary"]
+    assert summary["action"] == "BOOK"
+
+
+def test_demo_proposal_without_local_write_does_not_claim_saved_outcome(client, tmp_path):
+    path = tmp_path / "calls" / f"{CALL}.jsonl"
+    lines = [
+        LINES[0],
+        LINES[5],
+        {
+            "t": 110.0,
+            "kind": "demo_outcome",
+            "actions": [{"action": "BOOK", "patient_id": "P01842"}],
+            "submitted": False,
+        },
+        {"t": 111.0, "kind": "call_ended", "submitted": False},
+    ]
+    path.write_text("".join(json.dumps(line) + "\n" for line in lines))
+    summary = client.get(f"/api/calls/{CALL}").json()["summary"]
+    assert summary["status"] == "ended"
+    assert summary["action"] == "BOOK"
+
+
 
 def test_detail_splits_the_log_the_way_the_console_reads_it(client):
     body = client.get(f"/api/calls/{CALL}").json()

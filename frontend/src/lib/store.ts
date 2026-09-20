@@ -77,7 +77,7 @@ async function fetchIndex(): Promise<void> {
     const changed: string[] = [];
     const calls = index.calls.map((summary) => {
       const existing = byId[summary.call_id];
-      if (existing?.detail && existing.detailRevision !== summary.modified_at) stale.push(summary.call_id);
+      if (existing?.detail && (existing.detailRevision !== summary.modified_at || existing.detail.summary.has_audio !== summary.has_audio)) stale.push(summary.call_id);
       if (existing && sameSummary(existing.summary, summary)) return existing.summary;
       if (byId === state.byId) byId = { ...byId };
       byId[summary.call_id] = existing ? { ...existing, summary } : { summary, detail: null, timeline: null, detailError: null, detailAt: 0, detailRevision: null };

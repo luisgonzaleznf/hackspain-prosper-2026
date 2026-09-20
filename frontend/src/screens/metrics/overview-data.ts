@@ -51,9 +51,11 @@ const OUTCOMES = [
 
 export function outcomeKey(call: CallSummary): string {
   const status = /^submitted (\d{3})$/.exec(call.status)?.[1];
-  if (!status) return "unknown";
-  if (Number(status) < 200 || Number(status) >= 300) return "failed";
-  return OUTCOMES.some(([key]) => key === call.action) ? call.action : "unknown";
+  if (call.status === "rejected" || (status && (Number(status) < 200 || Number(status) >= 300))) return "failed";
+  if (call.status === "submitted" || call.status === "saved locally" || status) {
+    return OUTCOMES.some(([key]) => key === call.action) ? call.action : "unknown";
+  }
+  return "unknown";
 }
 
 export function outcomeLabel(call: CallSummary): string {

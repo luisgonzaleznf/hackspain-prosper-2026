@@ -78,7 +78,7 @@ def _status(events: list[dict[str, Any]]) -> str:
         codes = [int(s.get("status") or 0) for s in submits]
         return "submitted" if all(200 <= c < 300 for c in codes) else "rejected"
     if any(e.get("kind") in END_KINDS for e in events):
-        return "ended"
+        return "saved locally" if any(e.get("kind") == "local_write" for e in events) else "ended"
     # The console's Calls screen keys off this exact string (`isActive` in
     # frontend/src/lib/store.ts); do not reword it.
     return "in progress"
@@ -87,6 +87,9 @@ def _status(events: list[dict[str, Any]]) -> str:
 def _action(events: list[dict[str, Any]]) -> str:
     """What the call did, as the console's one-word column."""
     verbs = [str((s.get("action") or {}).get("action", "")) for s in _of_kind(events, "submit")]
+    if not verbs:
+        saved = _of_kind(events, "local_write")
+        verbs = [str((s.get("action") or {}).get("action", "")) for s in saved[-1:]]
     if not verbs:
         staged = _of_kind(events, "action_staged")
         verbs = [str((s.get("action") or {}).get("action", "")) for s in staged[-1:]]
