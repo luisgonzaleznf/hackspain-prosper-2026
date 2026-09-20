@@ -7,7 +7,7 @@ from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
 from pipecat.transports.base_transport import TransportParams
 
-from app import config, database
+from app import appointment_email, config, customer_accounts, database
 from app.demo.app import register_demo_routes
 from app.demo.models import DemoStartRequest
 from app.demo.recording import DemoRecorder
@@ -54,12 +54,13 @@ async def bot(runner_args: RunnerArguments) -> None:
     recorder = DemoRecorder()
     try:
         from_number = request.from_number or scenario.phone
-        if not from_number.startswith("+"):
+        if from_number and not from_number.startswith("+"):
             from_number = "+34" + from_number
         session = await DemoCallSession.start(
             call_id=session_id,
             stream_sid=session_id,
-            from_number=from_number,
+            from_number=from_number or None,
+            demo_mode=True,
         )
         database.open_call(
             session.call_id,
@@ -87,7 +88,11 @@ async def bot(runner_args: RunnerArguments) -> None:
                 session.log("recording.saved", **await recorder.save(session_id, config.AUDIO_DIR))
             except Exception as exc:
                 session.log("recording.error", error=repr(exc))
+            session.demo_mode = False
             results = await session.finish()
+            session.demo_mode = True
+            await appointment_email.send_for_actions(session, session.actions)
+            session.customer_account_result = await customer_accounts.finalize(session)
             database.close_call(session.call_id)
             session.log(
                 "call_ended",

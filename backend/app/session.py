@@ -13,7 +13,7 @@ from typing import Any
 
 from loguru import logger
 
-from app import clinic, config, prosper
+from app import appointment_email, clinic, config, customer_accounts, prosper
 
 # Reported when a call ends with nothing staged: silence always fails, so a reason always goes out.
 FALLBACK = {"action": "NO_ACTION", "reason": "out_of_scope"}
@@ -45,6 +45,11 @@ class CallSession:
     # Set once a dictated registration phone is flagged as one digit off the caller-ID number,
     # so the model is warned only once and a repeat (or a second try) is accepted, not looped.
     phone_mismatch_flagged: bool = False
+    appointment_emails: dict[str, appointment_email.Recipient] = field(default_factory=dict)
+    sent_appointment_emails: set[str] = field(default_factory=set)
+    demo_mode: bool = False
+    customer_account: customer_accounts.AccountRequest | None = None
+    customer_account_result: dict | None = None
 
     @classmethod
     async def start(
@@ -53,8 +58,11 @@ class CallSession:
         stream_sid: str = "",
         from_number: str | None = None,
         started_at: datetime | None = None,
+        demo_mode: bool | None = None,
     ) -> "CallSession":
         session = cls(call_id=call_id, stream_sid=stream_sid, from_number=from_number)
+        if demo_mode is not None:
+            session.demo_mode = demo_mode
         if started_at is not None:
             session.started_at = started_at
         session.log(
@@ -126,6 +134,7 @@ class CallSession:
         verb = action["action"]
         if verb in _TERMINAL:
             self.actions = [action]
+            self.appointment_emails.clear()
             return self.actions
 
         def superseded(old: dict) -> bool:
@@ -147,6 +156,7 @@ class CallSession:
 
     def clear_actions(self) -> None:
         self.actions = []
+        self.appointment_emails.clear()
 
     def record_search(self, slots_found: int, blocked: list[str]) -> None:
         self.searches.append(
@@ -183,6 +193,8 @@ class CallSession:
 
     async def finish(self) -> list[dict]:
         """POST every staged action (or the fallback) once. Called by the server on hang-up."""
+        if self.demo_mode:
+            return await self.finish_demo()
         if self.finished:
             return []
         self.finished = True
@@ -200,6 +212,23 @@ class CallSession:
             results.append({"action": action, "status": status, "response": body})
         self.log("call_ended", submitted=[r["status"] for r in results])
         return results
+
+    async def finish_demo(self, *, source: str = "browser") -> list[dict]:
+        """Finalize a human browser/Twilio demo; its call ID is not registered with Prosper.
+
+        Persist the final proposal before sending real, clearly labelled demo emails.
+        """
+        if self.finished:
+            return []
+        self.finished = True
+        actions = self.actions or ([] if self.customer_account else [self.fallback()])
+        self.log("demo_outcome", source=source, actions=actions, submitted=False)
+        self.customer_account_result = await customer_accounts.finalize(self)
+        emails = await appointment_email.send_for_actions(self, self.actions)
+        self.log("call_ended", source=source, actions=actions, submitted=False)
+        if self.customer_account_result:
+            return [{"action": "REGISTER_CUSTOMER", **self.customer_account_result}, *emails]
+        return emails
 
     async def _submit_once_retrying(self, payload: dict) -> tuple[int, Any]:
         # One retry on a network failure only: the record is binary and the window is 30 s.

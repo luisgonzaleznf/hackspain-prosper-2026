@@ -1,9 +1,11 @@
 """Twilio inbound webhook for the standalone ROSARIO media stream."""
 
 import os
+from dataclasses import dataclass
 from urllib.parse import parse_qs
 from xml.etree.ElementTree import Element, SubElement, tostring
 
+from app.session import CallSession
 from fastapi import APIRouter, HTTPException, Request, Response
 
 router = APIRouter()
@@ -33,3 +35,13 @@ async def incoming_call(request: Request) -> Response:
         SubElement(stream, "Parameter", name="to_number", value=fields["To"][0])
     SubElement(response, "Hangup")
     return Response(tostring(response, encoding="unicode"), media_type="application/xml")
+
+
+@dataclass
+class TwilioCallSession(CallSession):
+    """Use real clinic lookups, but don't submit foreign call IDs to Prosper's scorer."""
+
+    demo_mode: bool = True
+
+    async def finish(self) -> list[dict]:
+        return await self.finish_demo(source="twilio")

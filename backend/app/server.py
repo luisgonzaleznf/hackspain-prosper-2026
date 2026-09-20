@@ -182,7 +182,7 @@ async def run_telephony_call(websocket: WebSocket, session_type: type[CallSessio
         database.close_call(session.call_id)
         if caller_ulaw:
             await asyncio.to_thread(save_caller_audio, session, caller_ulaw)
-        logger.info(f"call {session.call_id} ended; submitted {[r['status'] for r in results]}")
+        logger.info(f"call {session.call_id} ended; outcome statuses {[r['status'] for r in results]}")
         # Only after the submit: the audio can wait, the 30 s window cannot.
         try:
             session.log("audio.timeline", **await recorder.save(session.call_id, config.AUDIO_DIR))

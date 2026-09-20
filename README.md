@@ -16,3 +16,5 @@ Public mirror (platform link only): [hackspain-prosper-2026](https://github.com/
 ## Docs
 
 - [`AGENTS.md`](./AGENTS.md) — what we're building
+- [Demo email setup](./backend/docs/appointment-email.md) — Resend, custom sender domain,
+  confirmed appointment summaries and customer welcome emails for Twilio/browser calls

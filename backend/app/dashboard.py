@@ -13,7 +13,7 @@ the same rewrite — that is what `_page_for` below is.
 import re
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -59,6 +59,8 @@ if DIST.is_dir():
 
     @app.get("/{path:path}", include_in_schema=False)
     def page(path: str) -> FileResponse:
+        if path == "api" or path.startswith("api/"):
+            raise HTTPException(404, "API route not found")
         direct = DIST / path
         if path and direct.is_file():
             return FileResponse(direct)

@@ -1,6 +1,14 @@
 # Role-play Studio
 
-Run `make roleplay-demo` and open <http://127.0.0.1:7860/demo/> in a browser with a microphone.
+Optional [appointment emails](../../docs/appointment-email.md) use Resend to send a real,
+clearly labelled demo summary after hang-up. Enable the feature before starting the server;
+the caller must dictate and confirm their own address. The clinic diary is not changed.
+When enabled, **Create your customer account** also saves a confirmed name and email
+locally and sends a welcome email. Both paths finalize after disconnect; the receipt
+reports customer persistence and whether Resend accepted the welcome email.
+
+From `backend/`, run `uv run python -m app.demo.bot --host 127.0.0.1 --port 7860`
+and open <http://127.0.0.1:7860/demo/> in a browser with a microphone.
 Choose a role, allow microphone access, and use the facts on its card. You can interrupt,
 change your mind, change language, or ask something outside the clinic's remit.
 End the call with the microphone button, then open **Review call** under **Saved rehearsals**.
@@ -9,7 +17,7 @@ The studio calls the same `app.voice.codex.run_call`, `CallSession`, prompt, and
 clinic tools used by the scored server. Its base is serving commit `571b7db` (PR #69),
 merged into studio commit `ad3e80f`. The brain is `gpt-5.6-luna`, low effort, with the
 Codex subscription voice connection. The studio branch also contains its existing voice
-reconnection recovery. It does not call `CallSession.finish()` or submit to Prosper.
+reconnection recovery. It calls `CallSession.finish_demo()` and never submits to Prosper.
 The rehearsal also adds clinic-only scope instructions to the shared voice and back-office
 prompts: unrelated tasks are redirected, while ordinary clinic questions remain supported.
 These prompt changes are locally rehearsed; they have not been scored on the leaderboard.

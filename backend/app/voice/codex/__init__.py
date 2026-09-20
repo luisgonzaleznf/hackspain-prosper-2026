@@ -15,7 +15,7 @@ from pipecat.transports.base_transport import BaseTransport
 from pipecat.workers.runner import WorkerRunner
 
 from app.session import CallSession
-from app.tools import TOOLS, call_tool
+from app.tools import TOOLS, call_tool, tools_for_session
 from app.voice.codex.service import CodexLiveService
 from app.voice.deadair import EVERY_SECS, MAX_IN_ROW, MAX_PER_CALL, QUIET_SECS, STUCK_TURN_SECS
 
@@ -114,7 +114,7 @@ async def run_call(transport: BaseTransport, session: CallSession) -> None:
         prompt=VOICE_PROMPT,
         greeting=session.greeting,
         on_transcript=on_transcript,
-        tools=TOOLS,
+        tools=tools_for_session(session) if session.demo_mode else TOOLS,
         brain_instructions=BRAIN_PREAMBLE + session.instructions(),
         on_tool_call=on_tool_call,
         on_brain_event=lambda event, detail: session.log("codex", event=event, detail=detail),
