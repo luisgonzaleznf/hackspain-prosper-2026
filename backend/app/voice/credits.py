@@ -12,18 +12,19 @@ from __future__ import annotations
 
 import re
 
-# Error text that means the model provider refused for lack of payment/quota,
-# not a transient outage: auth failures on a key that worked before, quota and
-# billing language, and OpenAI's insufficient_quota code.
+# Error text that means the model provider refused for lack of payment/quota.
+# Deliberately narrow: bare status codes ("401", "429") and plain throttling
+# phrases ("rate limit exceeded") also fire for a revoked key or a temporary
+# throttle on a healthy account, which the console would misreport as
+# exhaustion. Only explicit quota/billing language counts.
 _CREDIT = re.compile(
-    r"insufficient_quota|quota exceeded|billing|exceeded your current quota|"
-    r"usage limit|usage_cap|rate limit exceeded|401|429",
+    r"insufficient_quota|quota exceeded|exceeded your current quota|"
+    r"billing|usage limit|usage_cap",
     re.IGNORECASE,
 )
 
 # Transient/noise strings that must not read as exhaustion even though they
-# mention a matched word (e.g. a 429 that is plain per-minute throttling on a
-# healthy account is still "the demo cannot run right now" for the console).
+# mention a matched word (e.g. "billing" inside a transient-error body).
 _TRANSIENT = re.compile(r"temporary|retry|backoff", re.IGNORECASE)
 
 

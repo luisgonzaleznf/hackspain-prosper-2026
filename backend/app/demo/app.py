@@ -114,9 +114,19 @@ def _router() -> APIRouter:
             raise HTTPException(status_code=400, detail="Invalid session ID") from error
         if not path.is_file():
             raise HTTPException(status_code=404, detail="Call trace not found")
-        masked = (_mask_event(json.loads(line)) for line in path.read_text(errors="replace").splitlines() if line.strip())
+        def masked_lines():
+            for line in path.read_text(errors="replace").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue  # a half-written last line of a live call
+                yield json.dumps(_mask_event(event), ensure_ascii=False) + "\n"
+
+
         return StreamingResponse(
-            (json.dumps(event, ensure_ascii=False) + "\n" for event in masked),
+            masked_lines(),
             media_type="application/x-ndjson",
         )
 

@@ -138,7 +138,7 @@ async def run_call(
         if role == "assistant":
             autohangup.agent_closed_call(session, text)
         else:
-            autohangup.caller_reopened_call(session)
+            autohangup.caller_reopened_call(session, text)
         session.log("transcript", role="agent" if role == "assistant" else role, text=text)
     prompt = VOICE_PROMPT
     greeting = session.greeting

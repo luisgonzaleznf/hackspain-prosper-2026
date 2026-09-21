@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 import time
-from collections import defaultdict, deque
+from collections import deque
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -35,17 +35,33 @@ def client_ip(request: Request) -> str:
 
 
 class SlidingWindow:
-    """Per-key sliding window: True when the hit is allowed."""
+    """Per-key sliding window: True when the hit is allowed.
+
+    Expired entries are dropped on access so a flood of unique (spoofed-XFF)
+    keys cannot grow the dict without bound; `MAX_KEYS` caps the map anyway.
+    """
+
+    MAX_KEYS = int(os.getenv("RATE_LIMIT_MAX_KEYS", "10000"))
 
     def __init__(self, limit: int, window: float):
         self.limit, self.window = limit, window
-        self._hits: dict[str, deque[float]] = defaultdict(deque)
+        self._hits: dict[str, deque[float]] = {}
 
     def check(self, key: str) -> bool:
         now = time.monotonic()
-        hits = self._hits[key]
-        while hits and now - hits[0] > self.window:
-            hits.popleft()
+        hits = self._hits.get(key)
+        if hits is not None:
+            while hits and now - hits[0] > self.window:
+                hits.popleft()
+            if not hits:
+                del self._hits[key]  # expired: start clean below
+                hits = None
+        if hits is None:
+            if len(self._hits) >= self.MAX_KEYS:  # hard cap: shed the coldest key
+                oldest = min(self._hits, key=lambda k: self._hits[k][0] if self._hits[k] else now)
+                del self._hits[oldest]
+            self._hits[key] = deque([now])
+            return True
         if len(hits) >= self.limit:
             return False
         hits.append(now)

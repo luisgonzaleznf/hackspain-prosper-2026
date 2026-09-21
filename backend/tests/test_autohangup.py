@@ -128,15 +128,18 @@ def test_in_flight_tool_holds_the_hangup_until_it_lands():
     async def run():
         session = demo_session("autohangup-4")
         autohangup.agent_closed_call(session, "Booked. Take care!")
+        session.in_flight_tools = 1  # the booking write is running
         fired = asyncio.Event()
 
         async def end_call():
             fired.set()
 
         task = asyncio.create_task(autohangup.watch(session, end_call))
-        await asyncio.sleep(0.6)  # longer than the watcher's poll, shorter than the grace
+        # wait longer than the full grace: a watcher that ignores in-flight
+        # tools fires here, before the write lands
+        await asyncio.sleep(autohangup.GRACE_SECS + 1)
         assert not fired.is_set(), "hang-up fired while the booking write was in flight"
-        session.in_flight_tools = 0
+        session.in_flight_tools = 0  # the write lands -> the hang-up goes through
         try:
             await asyncio.wait_for(fired.wait(), timeout=5)
         finally:
