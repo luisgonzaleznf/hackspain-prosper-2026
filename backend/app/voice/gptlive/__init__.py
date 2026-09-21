@@ -38,9 +38,11 @@ from pipecat.workers.runner import WorkerRunner
 
 from app.session import CallSession
 from app.tools import register_pipecat_tools
+from app.voice import autohangup
 from app.voice.codex import BRAIN_PREAMBLE, VOICE_PROMPT, voice_prompt
 from app.voice.codex.service import MAX_RECOVERIES, RECOVERY_PROMPT
 from app.voice.codex.settings import VoiceSettings, spanish_greeting
+from app.voice.credits import classify_error
 
 LIVE_MODEL = os.getenv("GPTLIVE_MODEL", "gpt-live-1")
 BRAIN_MODEL = os.getenv("GPTLIVE_BRAIN_MODEL", "gpt-5.6-luna")
@@ -159,6 +161,8 @@ class MeteredLive(OpenAILiveLLMService):
         the same answer, and the same ceiling. A startup failure (bad key, no credits, no
         session ever started) stays fatal: retrying it would only fail again.
         """
+        if verdict := classify_error(error_msg):
+            self._call.log("voice.credits", **verdict)
         if (
             force_treat_as_permanent
             and self._session_started_on_connection
@@ -264,12 +268,14 @@ async def run_call(
 
     @user_agg.event_handler("on_user_turn_message_added")
     async def on_user_text(aggregator, message):
+        autohangup.caller_reopened_call(session)
         llm.note_speech(message.content, agent=False)
         session.log("transcript", role="user", text=message.content)
 
     @assistant_agg.event_handler("on_assistant_turn_stopped")
     async def on_agent_text(aggregator, message):
         if message.content:
+            autohangup.agent_closed_call(session, message.content)
             llm.note_speech(message.content, agent=True)
             session.log(
                 "transcript", role="agent", text=message.content, interrupted=message.interrupted
@@ -281,6 +287,7 @@ async def run_call(
     )
     runner = WorkerRunner(handle_sigint=False)
     await runner.add_workers(worker)
+    watcher = asyncio.create_task(autohangup.watch(session, runner.cancel))
 
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
@@ -295,4 +302,7 @@ async def run_call(
         await asyncio.sleep(DRAIN_SECS)
         await runner.cancel()
 
-    await runner.run()
+    try:
+        await runner.run()
+    finally:
+        watcher.cancel()

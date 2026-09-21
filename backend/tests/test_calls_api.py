@@ -190,3 +190,13 @@ def test_unknown_call_and_traversal_are_404(client):
     assert client.get("/api/calls/nope").status_code == 404
     assert client.get("/api/calls/nope/audio").status_code == 404
     assert client.get("/api/calls/..%2F..%2Fetc%2Fpasswd").status_code == 404
+
+
+def test_the_api_never_serves_a_raw_caller_number(client, tmp_path):
+    """The console masks in the UI, but the full number must not leave the server."""
+    path = tmp_path / "calls" / f"{CALL}.jsonl"
+    path.write_text("".join(json.dumps(line) + "\n" for line in LINES))
+    body = client.get(f"/api/calls/{CALL}").json()
+    started = next(e for e in body["events"] if e["kind"] == "call_started")
+    assert started["from_number"] == "+3···000"
+    assert "+34600000000" not in json.dumps(body)
