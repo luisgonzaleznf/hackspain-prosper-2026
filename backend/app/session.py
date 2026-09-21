@@ -57,6 +57,10 @@ class CallSession:
     # tool is still running so a goodbye can never cut a booking write off.
     agent_finished: bool = False
     in_flight_tools: int = 0
+    # Set by the auto hang-up watcher's audio hook (app/voice/autohangup.py):
+    # the last time raw caller audio arrived above the speech floor, used to
+    # push the goodbye grace back without clearing the arm.
+    caller_sound_at: float | None = None
 
     @property
     def clinic_client(self) -> Any:

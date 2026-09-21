@@ -17,7 +17,7 @@ import os
 import re
 from typing import Any
 
-from pipecat.frames.frames import LLMRunFrame
+from pipecat.frames.frames import Frame, InputAudioRawFrame, LLMRunFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
 from pipecat.processors.aggregators.llm_context import LLMContext
@@ -25,6 +25,7 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMContextAggregatorPair,
     LLMUserAggregatorParams,
 )
+from pipecat.processors.frame_processor import FrameDirection
 from pipecat.services.openai.live import events
 from pipecat.services.openai.live.llm import OpenAILiveLLMService
 from pipecat.services.openai.responses.llm import (
@@ -40,7 +41,7 @@ from app.session import CallSession
 from app.tools import register_pipecat_tools
 from app.voice import autohangup
 from app.voice.codex import BRAIN_PREAMBLE, VOICE_PROMPT, voice_prompt
-from app.voice.codex.service import MAX_RECOVERIES, RECOVERY_PROMPT
+from app.voice.codex.service import MAX_RECOVERIES, MIN_SPEECH_RMS, RECOVERY_PROMPT
 from app.voice.codex.settings import VoiceSettings, spanish_greeting
 from app.voice.credits import classify_error
 
@@ -108,7 +109,21 @@ class MeteredLive(OpenAILiveLLMService):
                     if c.get("type") == "output_text"
                 )
                 self._call.log("brain.reply", delegation_id=evt.delegation_id, text=text)
-        await super()._handle_evt_response(evt)
+
+    async def process_frame(self, frame: Frame, direction: FrameDirection):
+        """Watch the caller's audio level: any real speech delays the hang-up
+        grace (app/voice/autohangup.py) even though transcripts lag 1-2 s."""
+        await super().process_frame(frame, direction)
+        if isinstance(frame, InputAudioRawFrame) and frame.audio:
+            import array
+
+            pcm = array.array("h", frame.audio)
+            if pcm:
+                import math
+
+                rms = math.sqrt(sum(x * x for x in pcm) / len(pcm))
+                if rms >= MIN_SPEECH_RMS:
+                    autohangup.caller_made_sound(self._call)
 
     def note_speech(self, text: str, *, agent: bool) -> None:
         self._speech_revision += 1
