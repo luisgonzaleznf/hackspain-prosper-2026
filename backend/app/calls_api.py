@@ -29,9 +29,6 @@ NOISE_KINDS = {"codex", "usage"}
 # What the console renders as a warning badge on a call.
 WARNING_KINDS = {"fallback", "error", "socket_closed", "stop_received"}
 END_KINDS = {"call_ended", "stop_received", "socket_closed", "closed_by_agent"}
-# Voice-layer credit exhaustion (app/voice/credits.py): the console shows the
-# "demo finished" popup when any call reports it.
-CREDIT_KIND = "voice.credits"
 
 
 def _calls_dir() -> Path:
@@ -40,18 +37,6 @@ def _calls_dir() -> Path:
 
 def _audio_path(call_id: str) -> Path:
     return Path(config.AUDIO_DIR) / f"{call_id}.wav"
-
-
-def _mask_e164(number: Any) -> Any:
-    """+34 612 ··· 678: country code plus first/last three digits. The console's own
-    rendering masks too (frontend/src/lib/format.ts), but the full number must never
-    leave the server: these endpoints are reachable without a login."""
-    if not isinstance(number, str) or not number.startswith("+"):
-        return number
-    digits = "".join(ch for ch in number if ch.isdigit())
-    if len(digits) < 7:
-        return number
-    return f"+{digits[0]}···{digits[-3:]}"
 
 
 def _read(path: Path) -> list[dict[str, Any]]:
@@ -154,7 +139,6 @@ def _summary(path: Path, events: list[dict[str, Any]]) -> dict[str, Any]:
         "action": _action(events),
         "duration_seconds": round(max(0, (ended if ended is not None else max(stamps)) - started), 3) if stamps else None,
         "warnings": len(_warnings(events)),
-        "credits": next(({"provider": e.get("provider"), "detail": e.get("detail")} for e in reversed(events) if e.get("kind") == CREDIT_KIND), None),
         "has_audio": _audio_path(call_id).exists(),
         "run": None,  # Prosper does not tell us its run id on the call.
     }
@@ -174,13 +158,6 @@ def _provenance(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return chains
 
 
-def _mask_event(event: dict[str, Any]) -> dict[str, Any]:
-    """Strip raw caller numbers from one event before it is served."""
-    if event.get("kind") == "call_started" and "from_number" in event:
-        return {**event, "from_number": _mask_e164(event["from_number"])}
-    return event
-
-
 def _detail(path: Path) -> dict[str, Any]:
     events = _read(path)
     call_id = path.stem
@@ -196,7 +173,7 @@ def _detail(path: Path) -> dict[str, Any]:
         "submissions": _of_kind(events, "submit"),
         "errors": [e for e in events if e.get("kind") in WARNING_KINDS],
         "provenance": _provenance(events),
-        "events": [_mask_event(e) for e in events if e.get("kind") not in NOISE_KINDS],
+        "events": [e for e in events if e.get("kind") not in NOISE_KINDS],
     }
 
 

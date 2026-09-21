@@ -40,7 +40,7 @@ function matchesFilter(summary: CallSummary, filter: Filter): boolean {
     case "escalated":
       return summary.action === "ESCALATE";
     case "failed":
-      return summary.status === "rejected" || /^submitted [45]\d{2}$/.test(summary.status);
+      return /^submitted [45]\d{2}$/.test(summary.status);
   }
 }
 

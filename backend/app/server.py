@@ -26,10 +26,8 @@ from starlette.websockets import WebSocketState
 
 from app import audio, clinic, config, voice
 from app.demo.app import register_demo_routes
-from app.ratelimit import CallLimitExceeded, RateLimitMiddleware, check_call_admission, client_ip
 from app.recorder import WireRecorder
 from app.session import CallSession
-from app.voice.credits import classify_error
 
 ACTIVE: set[str] = set()
 
@@ -105,7 +103,6 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-app.add_middleware(RateLimitMiddleware)
 
 # Role-play Studio at /demo/ (app/demo/README.md). It shares this process's CallSession,
 # prompt and clinic tools, but never submits to Prosper, so it is safe to leave mounted:
@@ -133,14 +130,8 @@ async def ws(websocket: WebSocket):
 async def twilio_ws(websocket: WebSocket):
     await run_telephony_call(websocket, session_type=TwilioCallSession)
 
+
 async def run_telephony_call(websocket: WebSocket, session_type: type[CallSession] = CallSession):
-    ip = client_ip(websocket)
-    try:
-        check_call_admission(ip, ACTIVE)
-    except CallLimitExceeded as e:
-        logger.warning(f"call refused from {ip}: {e}")
-        await websocket.close(code=1013)
-        return
     await websocket.accept()
     transport_type, call = await parse_telephony_websocket(websocket)
     recorder = WireRecorder()  # the call's clock starts once the handshake is in
@@ -180,8 +171,6 @@ async def run_telephony_call(websocket: WebSocket, session_type: type[CallSessio
     except Exception as e:
         logger.exception(f"call {session.call_id}: voice layer failed")
         session.log("voice_error", error=repr(e))
-        if verdict := classify_error(repr(e)):
-            session.log("voice.credits", **verdict)
     finally:
         if websocket.client_state == WebSocketState.CONNECTED:
             session.log("closed_by_agent")  # returning closes the socket: we hung up first

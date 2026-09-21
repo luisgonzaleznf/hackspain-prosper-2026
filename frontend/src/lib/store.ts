@@ -25,12 +25,12 @@ interface State {
   loadedAt: number | null;
   error: string | null;
   loading: boolean;
-  creditsExhausted: { provider: string; detail: string } | null;
 }
 
 const INDEX_INTERVAL_MS = 4000;
 const ACTIVE_DETAIL_INTERVAL_MS = 1500;
-let state: State = { calls: [], byId: {}, order: [], loadedAt: null, error: null, loading: true, creditsExhausted: null };
+
+let state: State = { calls: [], byId: {}, order: [], loadedAt: null, error: null, loading: true };
 const listeners = new Set<() => void>();
 const rowListeners = new Map<string, Set<() => void>>();
 
@@ -54,7 +54,7 @@ export function isActive(summary: CallSummary): boolean {
   return summary.status === "in progress" && Date.now() / 1000 - summary.started_at < 3600;
 }
 
-const SUMMARY_FIELDS = ["call_id", "started_at", "modified_at", "modified_iso", "status", "action", "duration_seconds", "warnings", "has_audio", "credits"] as const;
+const SUMMARY_FIELDS = ["call_id", "started_at", "modified_at", "modified_iso", "status", "action", "duration_seconds", "warnings", "has_audio"] as const;
 const RUN_FIELDS = ["run_id", "mode", "problem_id", "case_id", "suite_position", "suite_total"] as const;
 
 function sameSummary(a: CallSummary, b: CallSummary): boolean {
@@ -85,8 +85,7 @@ async function fetchIndex(): Promise<void> {
       return summary;
     });
     const unchanged = calls.length === state.calls.length && calls.every((call, index) => call === state.calls[index]);
-    const credits = calls.find((c) => c.credits)?.credits ?? null;
-    setState({ calls: unchanged ? state.calls : calls, byId, order: unchanged ? state.order : calls.map((c) => c.call_id), loadedAt: Date.now(), error: null, loading: false, creditsExhausted: credits });
+    setState({ calls: unchanged ? state.calls : calls, byId, order: unchanged ? state.order : calls.map((c) => c.call_id), loadedAt: Date.now(), error: null, loading: false });
     for (const id of changed) emitRow(id);
     for (const id of stale) void loadDetail(id, true);
   } catch (error) {
@@ -125,7 +124,6 @@ export function loadDetail(id: string, force = false): Promise<void> {
         duration_seconds: null,
         warnings: 0,
         has_audio: false,
-        credits: null,
         run: null,
       };
       const next: CallRecord = prev ? { ...prev, detailError: message, detailAt: Date.now() } : { summary: placeholder, detail: null, timeline: null, detailError: message, detailAt: Date.now(), detailRevision: null };
@@ -199,15 +197,6 @@ export function useCallsIndex(): State {
     subscribe,
     () => state,
     () => state,
-  );
-}
-
-/** True while any call reports voice-provider credit exhaustion. */
-export function useCreditsExhausted(): { provider: string; detail: string } | null {
-  return useSyncExternalStore(
-    subscribe,
-    () => state.creditsExhausted,
-    () => state.creditsExhausted,
   );
 }
 

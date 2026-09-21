@@ -10,7 +10,6 @@ import type { ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { usePolling } from "@/lib/store";
 import { SelectionIndicator } from "@/components/selection-indicator";
-import { CreditsExhaustedBanner } from "@/components/demo-status";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV = [
@@ -26,7 +25,6 @@ export function Shell() {
 
   return (
     <div className="h-dvh overflow-hidden md:grid md:grid-cols-[auto_1fr]">
-      <CreditsExhaustedBanner />
       <aside className="dashboard-rail hidden border-r border-line-1 md:flex md:h-dvh md:w-[208px] md:flex-col md:px-4 md:py-6" aria-label="Dashboard sidebar">
         <div className="flex items-center justify-between gap-2 px-2">
           <Link to="/metrics" className="flex min-h-11 items-center gap-3" aria-label="ROSARIO dashboard">
