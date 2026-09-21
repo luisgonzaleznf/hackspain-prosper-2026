@@ -11,7 +11,6 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
 from app import config
-from app.calls_api import _mask_event
 from app.demo.events import call_log_path, read_projected
 from app.demo.models import DemoLedgerEntry, DemoPersona, DemoSnapshot, DemoStartRequest
 from app.demo.scenarios import list_scenarios
@@ -114,11 +113,7 @@ def _router() -> APIRouter:
             raise HTTPException(status_code=400, detail="Invalid session ID") from error
         if not path.is_file():
             raise HTTPException(status_code=404, detail="Call trace not found")
-        masked = (_mask_event(json.loads(line)) for line in path.read_text(errors="replace").splitlines() if line.strip())
-        return StreamingResponse(
-            (json.dumps(event, ensure_ascii=False) + "\n" for event in masked),
-            media_type="application/x-ndjson",
-        )
+        return FileResponse(path, media_type="application/x-ndjson")
 
     @router.get("/sessions/{session_id}/audio")
     def audio(session_id: str):

@@ -1183,7 +1183,6 @@ async def call_tool(session: CallSession, name: str, args: dict | None) -> dict:
     if handler is None:
         result: dict = {"error": f"Unknown tool {name}."}
     else:
-        session.in_flight_tools += 1
         try:
             result = await session.execute_tool(name, args, handler)
         except KeyError as e:
@@ -1195,8 +1194,6 @@ async def call_tool(session: CallSession, name: str, args: dict | None) -> dict:
             result = {
                 "error": f"The clinic system is not answering ({type(e).__name__}). Try again."
             }
-        finally:
-            session.in_flight_tools -= 1
     session.log("tool", name=name, args=args, result=result)
     return result
 

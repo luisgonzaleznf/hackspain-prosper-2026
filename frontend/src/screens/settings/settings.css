@@ -132,10 +132,3 @@
 @media (forced-colors: active) {
   .settings-preset:has(input:checked) { outline: 2px solid; outline-offset: -4px; }
 }
-
-/* Public-demo save notice: a small modal over the form. */
-.settings-notice-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px; background: var(--scrim); }
-.settings-notice { display: grid; gap: var(--spacing-16); max-width: 420px; padding: var(--spacing-24); border: 1px solid var(--line-2); border-radius: var(--radius-cards); background: var(--bg); }
-.settings-notice h2 { color: var(--fg); font-size: 17px; font-weight: var(--font-weight-medium); }
-.settings-notice p { color: var(--fg-2); font-size: 14px; line-height: var(--leading-body); }
-.settings-notice .pill { justify-self: start; }

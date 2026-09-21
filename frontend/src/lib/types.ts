@@ -45,7 +45,6 @@ export interface CallSummary {
   duration_seconds: number | null;
   warnings: number;
   has_audio: boolean;
-  credits: { provider: string; detail: string } | null;
   run: RunRef | null;
 }
 

@@ -98,7 +98,7 @@ export function CallDrawer({ record, onClose, prev, next, basePath }: { record: 
           </Link>
         </div>
         <div className="min-w-0 flex-1">
-          <h2 title={timeline ? callerLabel(timeline) : undefined} className="truncate text-[18px] font-light text-fg">{timeline ? callerLabel(timeline) : detailError ? "Call unavailable" : "Loading call"}</h2>
+          <h2 className="truncate text-[18px] font-light text-fg">{timeline ? callerLabel(timeline) : detailError ? "Call unavailable" : "Loading call"}</h2>
           {!unknown ? <p className="mt-1 text-[12px] text-fg-3">{wallClockSeconds(summary.started_at)} <span className="ml-3 mono tabular"><CallDuration summary={summary} endedAt={timeline?.endedAt} />{live ? " elapsed" : ""}</span></p> : null}
         </div>
         {!unknown ? live ? <CallInProgress endedAt={timeline?.endedAt} /> : <Outcome verb={outcome.verb} reason={outcome.reason} status={outcome.status} /> : null}

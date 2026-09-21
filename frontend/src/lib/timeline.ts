@@ -498,10 +498,9 @@ export function outcomeOf(detail: CallDetail | null, summary: { action: string; 
   const submit = detail?.submissions[detail.submissions.length - 1];
   if (submit) return { verb: submit.action.action, reason: submit.action.reason ?? null, status: submit.status };
   const status = /submitted (\d+)/.exec(summary.status)?.[1];
-  const failed = summary.status === "rejected";
   // The backend writes U+2014 as the action of a call that has not ended.
   const verb = !summary.action || summary.action.codePointAt(0) === 0x2014
     ? summary.status === "in progress" ? "in progress" : "Ended"
     : summary.action;
-  return { verb, reason: null, status: status ? Number(status) : failed ? 400 : null };
+  return { verb, reason: null, status: status ? Number(status) : null };
 }
