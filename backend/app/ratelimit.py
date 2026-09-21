@@ -20,8 +20,10 @@ HTTP_LIMIT = int(os.getenv("RATE_LIMIT_HTTP", "300"))  # requests ...
 HTTP_WINDOW = float(os.getenv("RATE_LIMIT_HTTP_WINDOW", "10"))  # ... per this many seconds
 WS_BURST = int(os.getenv("RATE_LIMIT_WS", "6"))  # call sockets ...
 WS_BURST_WINDOW = 60.0  # ... per minute
-MAX_CONCURRENT_CALLS = int(os.getenv("MAX_CONCURRENT_CALLS", "10"))  # process-wide
-MAX_CALLS_PER_IP = int(os.getenv("MAX_CALLS_PER_IP", "3"))  # per client IP
+MAX_CONCURRENT_CALLS = int(os.getenv("MAX_CONCURRENT_CALLS", "20"))  # process-wide; frontend/AGENTS.md
+# sizes the console for 10-20 concurrent calls and scored runs hit 9, so the cap must sit
+# above any legitimate burst: a rejected scored call is a lost case.
+
 
 
 def client_ip(request: Request) -> str:
@@ -55,9 +57,14 @@ ws_burst_window = SlidingWindow(WS_BURST, WS_BURST_WINDOW)
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Per-IP sliding window on every HTTP request; 429 with Retry-After on excess."""
+    """Per-IP sliding window on every HTTP request; 429 with Retry-After on excess.
+
+    /health is exempt: organisers poll it and a 429 there reads as an outage.
+    """
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        if request.url.path.rstrip("/") == "/health":
+            return await call_next(request)
         if not http_window.check(client_ip(request)):
             return JSONResponse(
                 {"detail": "Too many requests"}, status_code=429, headers={"Retry-After": str(int(HTTP_WINDOW))}

@@ -268,7 +268,7 @@ async def run_call(
 
     @user_agg.event_handler("on_user_turn_message_added")
     async def on_user_text(aggregator, message):
-        autohangup.caller_reopened_call(session)
+        autohangup.caller_reopened_call(session, message.content)
         llm.note_speech(message.content, agent=False)
         session.log("transcript", role="user", text=message.content)
 

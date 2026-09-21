@@ -23,7 +23,8 @@ export function CreditsExhaustedBanner() {
           <p className="text-[15px] text-fg">The demo has finished: credits are exhausted.</p>
           <p className="text-[13px] text-fg-2">
             The {credits.provider === "codex" ? "GPT-Live subscription" : "OpenAI account"} behind the voice agent has
-            run out of credits, so new calls cannot start. Everything already recorded stays reviewable.
+            run out of credits, so new calls cannot start. Everything already recorded stays reviewable. Note: the
+            phone line's own (Twilio) balance is not visible from this app, so it cannot be checked here.
           </p>
         </div>
         <button

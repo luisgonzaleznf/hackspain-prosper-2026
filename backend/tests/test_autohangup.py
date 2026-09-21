@@ -2,19 +2,24 @@
 
 The watcher must fire only after the agent's own transcript closed the call,
 hold while a clinic tool is in flight, and stand down when the caller speaks.
+Demo calls only: scored calls never auto-close (the platform owns hang-up).
 """
 
 import asyncio
-import time
 
 from app.session import CallSession
 from app.voice import autohangup
 
 
+def demo_session(call_id: str) -> CallSession:
+    session = CallSession(call_id=call_id, demo_mode=True)
+    session.actions.append({"action": "BOOK", "patient_id": "P1"})
+    return session
+
+
 def test_goodbye_after_outcome_arms_and_fires():
     async def run():
-        session = CallSession(call_id="autohangup-1")
-        session.actions.append({"action": "BOOK", "patient_id": "P1"})
+        session = demo_session("autohangup-1")
         autohangup.agent_closed_call(session, "It is booked for Tuesday. Have a good day!")
         assert session.agent_finished
         fired = asyncio.Event()
@@ -33,17 +38,42 @@ def test_goodbye_after_outcome_arms_and_fires():
 
 
 def test_goodbye_without_outcome_does_not_arm():
-    session = CallSession(call_id="autohangup-2")
+    session = CallSession(call_id="autohangup-2", demo_mode=True)
     autohangup.agent_closed_call(session, "Have a good day!")
     assert not session.agent_finished
 
 
+def test_scored_call_never_arms_even_with_outcome_and_goodbye():
+    session = CallSession(call_id="autohangup-scored", demo_mode=False)
+    session.actions.append({"action": "BOOK", "patient_id": "P1"})
+    autohangup.agent_closed_call(session, "Booked for Tuesday. Have a good day!")
+    assert not session.agent_finished, "a scored call must not auto-close"
+
+
 def test_caller_speech_cancels_the_fired_hangup():
     async def run():
-        session = CallSession(call_id="autohangup-3")
-        session.actions.append({"action": "NO_ACTION", "reason": "out_of_scope"})
+        session = demo_session("autohangup-3")
         autohangup.agent_closed_call(session, "Then I cannot help with that. Goodbye!")
-        autohangup.caller_reopened_call(session)
+        autohangup.caller_reopened_call(session, "Actually, wait, one more thing")
+        assert not session.agent_finished
+
+    asyncio.run(run())
+
+
+def test_caller_farewell_does_not_cancel_the_hangup():
+    """The agent says "Adiós", the caller replies "gracias, adiós": the call ends."""
+    session = demo_session("autohangup-4b")
+    autohangup.agent_closed_call(session, "Adiós!")
+    autohangup.caller_reopened_call(session, "gracias, adiós")
+    assert session.agent_finished
+
+
+def test_caller_audio_cancels_the_hangup():
+    """Audio above the speech floor cancels even without a committed transcript."""
+    async def run():
+        session = demo_session("autohangup-4c")
+        autohangup.agent_closed_call(session, "Booked. Take care!")
+        autohangup.caller_made_sound(session)
         assert not session.agent_finished
 
     asyncio.run(run())
@@ -51,8 +81,7 @@ def test_caller_speech_cancels_the_fired_hangup():
 
 def test_in_flight_tool_holds_the_hangup_until_it_lands():
     async def run():
-        session = CallSession(call_id="autohangup-4")
-        session.actions.append({"action": "BOOK", "patient_id": "P1"})
+        session = demo_session("autohangup-4")
         autohangup.agent_closed_call(session, "Booked. Take care!")
         fired = asyncio.Event()
 

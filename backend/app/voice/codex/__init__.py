@@ -138,7 +138,7 @@ async def run_call(
         if role == "assistant":
             autohangup.agent_closed_call(session, text)
         else:
-            autohangup.caller_reopened_call(session)
+            autohangup.caller_reopened_call(session, text)
         session.log("transcript", role="agent" if role == "assistant" else role, text=text)
     prompt = VOICE_PROMPT
     greeting = session.greeting
@@ -158,6 +158,7 @@ async def run_call(
         brain_instructions=BRAIN_PREAMBLE + session.instructions(),
         on_tool_call=on_tool_call,
         on_brain_event=lambda event, detail: session.log("codex", event=event, detail=detail),
+        on_caller_speech=lambda: autohangup.caller_made_sound(session),
     )
     worker = PipelineWorker(
         Pipeline([transport.input(), svc, transport.output()]),

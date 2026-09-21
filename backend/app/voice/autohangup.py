@@ -7,6 +7,10 @@ outcome is staged, or a terminal report (NO_ACTION / ESCALATE) — the watcher
 ends the transport session so the carrier hangs up. Any caller speech cancels
 it: a goodbye that is answered is not an ending. A tool still running (the
 booking write behind the goodbye) holds the hang-up until it lands.
+
+Scored calls never auto-close: the platform owns hang-up there, and a mid-call
+farewell ("…have a good day" after booking three of ten) must not end the call
+while the caller's next request is still to come.
 """
 
 from __future__ import annotations
@@ -28,23 +32,45 @@ def agent_closed_call(session: CallSession, text: str) -> None:
     """Feed one agent transcript line to the watcher: does it end the call?"""
     from app.voice.deadair import is_goodbye
 
-    if session.actions and is_goodbye(text):
-        session.agent_finished = True
-        session.log("autohangup.armed", trigger="goodbye", text=text)
+    if not session.demo_mode or not session.actions or not is_goodbye(text):
+        return
+    session.agent_finished = True
+    session.log("autohangup.armed", trigger="goodbye", text=text)
 
 
-def caller_reopened_call(session: CallSession) -> None:
-    """Caller speech after the goodbye reopens the call: the hang-up is off."""
-    if session.agent_finished:
-        session.agent_finished = False
-        session.log("autohangup.cancelled", reason="caller_spoke")
+def caller_reopened_call(session: CallSession, text: str | None = None) -> None:
+    """Caller speech or sound after the goodbye reopens the call — unless the
+    caller's own words are a farewell. The common ending is the agent saying
+    "Adiós" and the caller replying "gracias, adiós": the watcher must still
+    fire, which is the whole point. Mirrors deadair.py, which resets said_bye
+    only on non-goodbye caller speech.
+    """
+    if not session.agent_finished:
+        return
+    if text is not None:
+        from app.voice.deadair import is_goodbye
+
+        if is_goodbye(text):
+            return
+    session.agent_finished = False
+    session.log("autohangup.cancelled", reason="caller_spoke")
+
+
+def caller_made_sound(session: CallSession) -> None:
+    """Raw caller audio above the speech floor: the same reopen rule applies.
+
+    Transcript events lag the caller's audio by 1-2 s (deadair.py), so the
+    audio path is what keeps a caller mid-sentence safe during the grace.
+    """
+    caller_reopened_call(session)
 
 
 async def watch(session: CallSession, end_call) -> None:
     """End the transport session once the agent has closed the call.
 
     `end_call` is the voice layer's own teardown (cancel the pipeline runner);
-    it must not raise. Held while any clinic tool is in flight.
+    it must not raise. Held while any clinic tool is in flight, and the arm is
+    re-checked through the grace so a caller who resumes mid-grace is safe.
     """
     while True:
         await asyncio.sleep(POLL_SECS)
