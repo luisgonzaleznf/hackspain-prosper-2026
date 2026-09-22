@@ -50,8 +50,7 @@ jobs:
             ~/.local/bin/uv run --project . ruff check app integrations tests scripts
             ~/.local/bin/uv run --project . python -m pytest -q
 
-            echo "--- frontend build (skipped when unchanged)"
-            export PATH=/tmp/node-v22.22.0-linux-x64/bin:$PATH
+            echo "--- frontend build"
             cd ../frontend
             command -v pnpm >/dev/null || corepack enable
             pnpm install --frozen-lockfile
