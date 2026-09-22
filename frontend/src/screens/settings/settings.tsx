@@ -94,7 +94,7 @@ function SaveNotice({ onClose }: { onClose: () => void }) {
         away, but nothing is kept: the saved settings reset, and this page exists to demonstrate how
         the console works, not to store real preferences.
       </p>
-      <button type="button" className="pill pill-primary" onClick={onClose}>Got it</button>
+      <button type="button" className="pill pill-quiet" onClick={onClose}>Got it</button>
     </div>
   </div>;
 }
