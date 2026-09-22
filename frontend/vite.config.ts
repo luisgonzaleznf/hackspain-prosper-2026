@@ -71,5 +71,8 @@ export default defineConfig({
   },
   preview: {
     proxy,
+    // `ROSARIO_PREVIEW_ALLOWED_HOSTS=true` opens the preview to any Host header
+    // (e.g. a Tailscale MagicDNS name); unset, Vite's default protection applies.
+    ...(process.env.ROSARIO_PREVIEW_ALLOWED_HOSTS === "true" ? { allowedHosts: true } : {}),
   },
 });
