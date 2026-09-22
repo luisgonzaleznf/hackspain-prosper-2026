@@ -186,7 +186,7 @@
 .overview-recent { padding: 20px 0 0; }
 .overview-text-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--fg-2); font-size: 13px; white-space: nowrap; }
 .overview-call-list { margin-top: 12px; }
-.overview-call { display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, 1fr) minmax(0, 1fr) 17px; align-items: center; gap: 24px; height: 74px; padding: 16px 0; border-top: 1px solid var(--line-1); transition: background-color var(--dur-state) var(--ease); }
+.overview-call { display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, 1fr) minmax(0, 1fr) 17px; align-items: center; gap: 24px; height: 74px; padding: 16px 16px; margin: 0 -16px; border-top: 1px solid var(--line-1); border-radius: var(--radius-tags); transition: background-color var(--dur-state) var(--ease); }
 .overview-call-person { display: grid; gap: 5px; min-width: 0; }
 .overview-call-person strong { overflow: hidden; color: var(--fg); font-size: 14px; font-weight: var(--font-weight-light); line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
 .overview-call-person > span { color: var(--fg-3); font-size: 12px; line-height: 16px; }
