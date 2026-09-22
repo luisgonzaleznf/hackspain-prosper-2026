@@ -35,7 +35,7 @@ const CONSOLE_ROUTES = /^\/(dashboard|calls|calendar|cases|metrics|talk|settings
 // The roleplay studio is its own bundled page at /demo; everything else under
 // /demo/ (the review page, its script and the stylesheet) is served statically.
 const DEMO_ROUTE = /^\/demo\/?(\?|$)/;
-const STATIC_PATHS = ["index.html", "brand", "demo", "tokens", "fonts", "licenses"];
+const STATIC_PATHS = ["index.html", "waitlist.html", "brand", "demo", "tokens", "fonts", "licenses"];
 const root = fileURLToPath(new URL(".", import.meta.url));
 function landingAndConsole(): Plugin {
   const rewrite = (server: { middlewares: { use: (fn: (req: { url?: string }, res: unknown, next: () => void) => void) => void } }) => {

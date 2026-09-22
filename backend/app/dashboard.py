@@ -10,6 +10,7 @@ With `frontend/dist` built, it also serves the pages. Vite rewrites console rout
 the same rewrite — that is what `_page_for` below is.
 """
 
+import os
 import re
 from pathlib import Path
 
@@ -21,6 +22,11 @@ from integrations.clinic_api import router as clinic_router
 
 from app.calls_api import router as calls_router
 from app.ratelimit import RateLimitMiddleware
+from app.waitlist import router as waitlist_router
+
+# Console lockdown: every console route serves the waitlist page until this
+# flips back. The waitlist API itself stays open.
+CONSOLE_LOCKED = os.getenv("CONSOLE_LOCKED", "1") == "1"
 
 DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 CONSOLE_ROUTES = re.compile(r"^/(dashboard|live|calls|calendar|cases|metrics|talk)(/|$)")
@@ -33,10 +39,11 @@ app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
+app.include_router(waitlist_router)
 app.include_router(calls_router)
 app.include_router(clinic_router)
 
@@ -51,6 +58,11 @@ def _page_for(path: str) -> Path:
         return DIST / "demo.html"
     if path == "/":
         return DIST / "index.html"
+    if CONSOLE_LOCKED:
+        # The dashboard is closed: console routes and unknown paths serve the
+        # static lockdown page. Real files (assets, fonts) still resolve in the
+        # caller below.
+        return DIST / "waitlist.html"
     # Known console routes and everything unknown: the console renders its own
     # 404 for a mistyped address (frontend/src/screens/not-found.tsx). Only
     # real files and the landing page stay static.

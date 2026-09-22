@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROSARIO — the waitlist is open</title>
+<meta name="description" content="ROSARIO is a voice receptionist for clinics. The dashboard is temporarily closed; join the waitlist for access.">
+<meta name="theme-color" content="#2d1012">
+<link rel="icon" type="image/png" sizes="32x32" href="/brand/logos/final/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16px" href="/brand/logos/final/favicon-16.png">
+<link rel="stylesheet" href="/brand/brand.css">
+<style>
+  .waitlist-card { max-width: 440px; margin: 0 auto; padding: var(--spacing-32); background: var(--surface-1); border: 1px solid var(--line-1); border-radius: var(--radius-cards); }
+  .waitlist-card h1 { font-size: 28px; margin: 0 0 12px; }
+  .waitlist-card p { color: var(--fg-2); font-size: 15px; font-weight: var(--font-weight-light); line-height: 1.6; margin: 0 0 20px; }
+  .waitlist-form { display: flex; gap: 9px; }
+  .waitlist-form input { flex: 1; min-width: 0; min-height: 44px; padding: 0 16px; background: var(--bg); border: 1px solid var(--line-2); border-radius: var(--radius-buttons); color: var(--fg); font-family: inherit; font-size: 15px; font-weight: var(--font-weight-light); }
+  .waitlist-form input:focus { outline: none; border-color: var(--fg-3); }
+  .waitlist-status { min-height: 22px; margin: 12px 0 0; font-size: 13px; color: var(--fg-3); }
+  .waitlist-status.ok { color: var(--fg-2); }
+  .waitlist-status.err { color: var(--accent-ink); }
+  @media (max-width: 480px) { .waitlist-form { flex-direction: column; } .waitlist-form .btn { width: 100%; } }
+</style>
+</head>
+<body>
+<canvas id="grainient" aria-hidden="true"></canvas>
+<canvas id="waves" aria-hidden="true"></canvas>
+
+<header class="top">
+  <a class="lockup" href="/" aria-label="ROSARIO"><i data-mark="dial-rose-ten"></i><span>rosario</span></a>
+</header>
+
+<main id="main" tabindex="-1">
+  <section class="waitlist-hero">
+    <div class="waitlist-card">
+      <h1>The dashboard is temporarily closed</h1>
+      <p>ROSARIO is being prepared for its next round of calls. Leave your email and we will let you know the moment the dashboard opens again — nothing else, no newsletter.</p>
+      <form class="waitlist-form" id="waitlist-form">
+        <input type="email" name="email" id="waitlist-email" placeholder="you@clinic.com" autocomplete="email" required aria-label="Email address">
+        <button type="submit" class="btn" id="waitlist-submit">Join the waitlist</button>
+      </form>
+      <p class="waitlist-status" id="waitlist-status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+const form = document.getElementById("waitlist-form");
+const status = document.getElementById("waitlist-status");
+const button = document.getElementById("waitlist-submit");
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const email = document.getElementById("waitlist-email").value.trim();
+  status.className = "waitlist-status";
+  status.textContent = "Joining…";
+  button.disabled = true;
+  try {
+    const response = await fetch("/api/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || "Something went wrong.");
+    status.className = "waitlist-status ok";
+    status.textContent = body.already ? "You are already on the list. We will be in touch." : "You are on the list. We will be in touch.";
+    form.reset();
+  } catch (error) {
+    status.className = "waitlist-status err";
+    status.textContent = error.message || "The waitlist is unreachable. Try again in a moment.";
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
