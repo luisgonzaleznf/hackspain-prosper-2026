@@ -1,0 +1,76 @@
+name: Deploy to production
+
+# The production server tracks `server-sync`. Pushing this branch deploys:
+# fetch -> verify -> build -> rsync static -> restart services -> smoke test.
+# Manual trigger supports rollback (`git reset --hard <sha>` happens on the
+# server itself; this workflow always deploys the branch tip).
+
+on:
+  push:
+    branches: [server-sync]
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type DEPLOY to confirm"
+        required: true
+        default: ""
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Guard manual runs
+        if: github.event_name == 'workflow_dispatch' && inputs.confirm != 'DEPLOY'
+        run: |
+          echo "Type DEPLOY in the confirm input to run a manual deployment."
+          exit 1
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: 35.157.62.251
+          username: ubuntu
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          timeout: 20m
+          script: |
+            set -euo pipefail
+            cd /home/ubuntu/hackspain-prosper-standalone
+            git fetch origin server-sync
+            git reset --hard origin/server-sync
+
+            echo "--- backend deps + checks"
+            cd backend
+            ~/.local/bin/uv sync --project . --frozen
+            ~/.local/bin/uv run --project . ruff check app integrations tests scripts
+            ~/.local/bin/uv run --project . python -m pytest -q
+
+            echo "--- frontend build (skipped when unchanged)"
+            export PATH=/tmp/node-v22.22.0-linux-x64/bin:$PATH
+            cd ../frontend
+            command -v pnpm >/dev/null || corepack enable
+            pnpm install --frozen-lockfile
+            pnpm typecheck
+            pnpm build
+
+            echo "--- publish static + restart services"
+            cd ..
+            sudo rsync -a --delete frontend/dist/ /var/www/rosario/
+            sudo systemctl restart rosario.service rosario-demo.service rosario-console.service
+            sleep 3
+
+            echo "--- smoke"
+            systemctl is-active --quiet rosario.service
+            systemctl is-active --quiet rosario-demo.service
+            systemctl is-active --quiet rosario-console.service
+            systemctl is-active --quiet caddy
+            curl -fsS https://rosario.fyi/health | grep -q '"ok":true'
+            curl -fsS -o /dev/null -w 'landing %{http_code}\n' https://rosario.fyi/
+            curl -fsS -o /dev/null -w 'calls %{http_code}\n' https://rosario.fyi/calls
+            curl -fsS -o /dev/null -w 'api/calls %{http_code}\n' https://rosario.fyi/api/calls
+            echo "DEPLOY OK"
