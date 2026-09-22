@@ -471,7 +471,7 @@ def test_console_calendar_merges_prosper_submissions(setup, tmp_path):
         )
     )
     # Only the reschedule call was served from this host, so only its log is here.
-    config.CALLS_DIR.mkdir(parents=True)
+    config.CALLS_DIR.mkdir(parents=True, exist_ok=True)  # the autouse _tmp_calls_dir made it
     (config.CALLS_DIR / "harness-move.jsonl").write_text(
         "".join(json.dumps(event) + "\n" for event in MOVE_LOG)
     )

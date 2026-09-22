@@ -33,7 +33,7 @@ LINES = [
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     calls = tmp_path / "calls"
-    calls.mkdir()
+    calls.mkdir(exist_ok=True)  # the autouse _tmp_calls_dir fixture may have made it
     body = "".join(json.dumps(line) + "\n" for line in LINES)
     (calls / f"{CALL}.jsonl").write_text(body)
     # A half-written last line is what a live call looks like on disk.
