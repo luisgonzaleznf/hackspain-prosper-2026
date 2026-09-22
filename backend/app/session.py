@@ -51,6 +51,16 @@ class CallSession:
     demo_mode: bool = False
     customer_account: customer_accounts.AccountRequest | None = None
     customer_account_result: dict | None = None
+    # Agent-initiated hang-up (app/voice/autohangup.py): the voice layer sets
+    # agent_finished when the agent's own transcript closed the call, and any later
+    # caller speech clears it; in_flight_tools holds the hang-up while a clinic
+    # tool is still running so a goodbye can never cut a booking write off.
+    agent_finished: bool = False
+    in_flight_tools: int = 0
+    # Set by the auto hang-up watcher's audio hook (app/voice/autohangup.py):
+    # the last time raw caller audio arrived above the speech floor, used to
+    # push the goodbye grace back without clearing the arm.
+    caller_sound_at: float | None = None
 
     @property
     def clinic_client(self) -> Any:

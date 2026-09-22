@@ -20,12 +20,14 @@ from fastapi.staticfiles import StaticFiles
 from integrations.clinic_api import router as clinic_router
 
 from app.calls_api import router as calls_router
+from app.ratelimit import RateLimitMiddleware
 
 DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 CONSOLE_ROUTES = re.compile(r"^/(dashboard|live|calls|calendar|cases|metrics|talk)(/|$)")
 DEMO_ROUTE = re.compile(r"^/demo/?$")
 
 app = FastAPI(title="ROSARIO console")
+app.add_middleware(RateLimitMiddleware)
 
 # `pnpm dev` serves the pages from 5173 and proxies /api here.
 app.add_middleware(
@@ -47,9 +49,12 @@ def health() -> dict[str, object]:
 def _page_for(path: str) -> Path:
     if DEMO_ROUTE.match(path):
         return DIST / "demo.html"
-    if CONSOLE_ROUTES.match(path):
-        return DIST / "console.html"
-    return DIST / "index.html"
+    if path == "/":
+        return DIST / "index.html"
+    # Known console routes and everything unknown: the console renders its own
+    # 404 for a mistyped address (frontend/src/screens/not-found.tsx). Only
+    # real files and the landing page stay static.
+    return DIST / "console.html"
 
 
 if DIST.is_dir():

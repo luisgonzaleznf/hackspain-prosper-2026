@@ -233,7 +233,9 @@ strong { font-weight: var(--font-weight-regular); }
 
 /* Floating dashboard link */
 .float[hidden] { display: none; }
-.float { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px 12px 14px; border-radius: var(--radius-buttons); background: var(--color-nava-white); color: var(--fg-on-light); border: 1px solid var(--line-2); font-size: 15px; font-weight: var(--font-weight-regular); z-index: 5; }
+.float { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px 12px 14px; border-radius: var(--radius-buttons); background: var(--color-nava-white); color: var(--fg-on-light); border: 1px solid var(--line-2); font-size: 15px; font-weight: var(--font-weight-regular); z-index: 5; opacity: 1; translate: 0 0; transition: opacity var(--dur-nav) var(--ease-smooth), translate var(--dur-nav) var(--ease-smooth), visibility 0s linear 0s; }
+.float.is-hidden { opacity: 0; translate: 0 12px; visibility: hidden; transition: opacity var(--dur-nav) var(--ease-smooth), translate var(--dur-nav) var(--ease-smooth), visibility 0s linear var(--dur-nav); }
+@media (prefers-reduced-motion: reduce) { .float, .float.is-hidden { transition: none; } }
 .float [data-mark] { width: 22px; height: 22px; color: var(--color-nava-red); --logo-bg: var(--color-nava-white); }
 
 /* Short desktop viewports (laptops at 768px): pull the hero up so the CTA stays above the fold. */

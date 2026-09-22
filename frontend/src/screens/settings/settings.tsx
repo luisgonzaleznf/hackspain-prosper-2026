@@ -84,6 +84,21 @@ async function saveSettings() {
   }
 }
 
+/** Save on a public demo: the write lands on the demo backend, but the page is a showcase. */
+function SaveNotice({ onClose }: { onClose: () => void }) {
+  return <div className="settings-notice-backdrop" onClick={onClose}>
+    <div role="alertdialog" aria-label="Public demo notice" className="settings-notice" onClick={(event) => event.stopPropagation()}>
+      <h2>This is a public demo</h2>
+      <p>
+        ROSARIO is shown here as a showcase. Your change is applied to the demo receptionist right
+        away, but nothing is kept: the saved settings reset, and this page exists to demonstrate how
+        the console works, not to store real preferences.
+      </p>
+      <button type="button" className="pill pill-primary" onClick={onClose}>Got it</button>
+    </div>
+  </div>;
+}
+
 function discardSettings() {
   if (state.status !== "ready" || state.save === "saving") return;
   publish({ ...state, draft: state.document.settings, save: "discarded" });
@@ -137,6 +152,7 @@ function VoiceSample({ voice, name }: { voice: VoiceId; name: string }) {
 }
 
 function SettingsForm({ value }: { value: ReadySettings }) {
+  const [notice, setNotice] = useState(false);
   const { document, draft, save } = value;
   const root = useRef<HTMLFormElement>(null);
   const portrait = useRef<HTMLDivElement>(null);
@@ -179,7 +195,8 @@ function SettingsForm({ value }: { value: ReadySettings }) {
     : dirty ? "Unsaved changes. Your draft stays here while you browse the dashboard."
     : null;
 
-  return <form ref={root} className="settings-form" onSubmit={(event) => { event.preventDefault(); void saveSettings(); }} aria-busy={pending}>
+  return <form ref={root} className="settings-form" onSubmit={(event) => { event.preventDefault(); void saveSettings().then(() => { if (state.status === "ready" && state.save === "saved") setNotice(true); }); }} aria-busy={pending}>
+    {notice ? <SaveNotice onClose={() => setNotice(false)} /> : null}
     <fieldset className="settings-presets settings-enter" disabled={pending}>
       <legend>Choose a receptionist</legend>
       <div className="settings-preset-grid" onPointerDown={() => { pointerChoice.current = true; }} onKeyDown={() => { pointerChoice.current = false; }}>

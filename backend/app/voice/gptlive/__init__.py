@@ -17,7 +17,7 @@ import os
 import re
 from typing import Any
 
-from pipecat.frames.frames import LLMRunFrame
+from pipecat.frames.frames import Frame, InputAudioRawFrame, LLMRunFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
 from pipecat.processors.aggregators.llm_context import LLMContext
@@ -25,6 +25,7 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMContextAggregatorPair,
     LLMUserAggregatorParams,
 )
+from pipecat.processors.frame_processor import FrameDirection
 from pipecat.services.openai.live import events
 from pipecat.services.openai.live.llm import OpenAILiveLLMService
 from pipecat.services.openai.responses.llm import (
@@ -38,9 +39,11 @@ from pipecat.workers.runner import WorkerRunner
 
 from app.session import CallSession
 from app.tools import register_pipecat_tools
+from app.voice import autohangup
 from app.voice.codex import BRAIN_PREAMBLE, VOICE_PROMPT, voice_prompt
-from app.voice.codex.service import MAX_RECOVERIES, RECOVERY_PROMPT
+from app.voice.codex.service import MAX_RECOVERIES, MIN_SPEECH_RMS, RECOVERY_PROMPT
 from app.voice.codex.settings import VoiceSettings, spanish_greeting
+from app.voice.credits import classify_error
 
 LIVE_MODEL = os.getenv("GPTLIVE_MODEL", "gpt-live-1")
 BRAIN_MODEL = os.getenv("GPTLIVE_BRAIN_MODEL", "gpt-5.6-luna")
@@ -106,7 +109,21 @@ class MeteredLive(OpenAILiveLLMService):
                     if c.get("type") == "output_text"
                 )
                 self._call.log("brain.reply", delegation_id=evt.delegation_id, text=text)
-        await super()._handle_evt_response(evt)
+
+    async def process_frame(self, frame: Frame, direction: FrameDirection):
+        """Watch the caller's audio level: any real speech delays the hang-up
+        grace (app/voice/autohangup.py) even though transcripts lag 1-2 s."""
+        await super().process_frame(frame, direction)
+        if isinstance(frame, InputAudioRawFrame) and frame.audio:
+            import array
+
+            pcm = array.array("h", frame.audio)
+            if pcm:
+                import math
+
+                rms = math.sqrt(sum(x * x for x in pcm) / len(pcm))
+                if rms >= MIN_SPEECH_RMS:
+                    autohangup.caller_made_sound(self._call)
 
     def note_speech(self, text: str, *, agent: bool) -> None:
         self._speech_revision += 1
@@ -159,6 +176,8 @@ class MeteredLive(OpenAILiveLLMService):
         the same answer, and the same ceiling. A startup failure (bad key, no credits, no
         session ever started) stays fatal: retrying it would only fail again.
         """
+        if verdict := classify_error(error_msg):
+            self._call.log("voice.credits", **verdict)
         if (
             force_treat_as_permanent
             and self._session_started_on_connection
@@ -264,12 +283,14 @@ async def run_call(
 
     @user_agg.event_handler("on_user_turn_message_added")
     async def on_user_text(aggregator, message):
+        autohangup.caller_reopened_call(session, message.content)
         llm.note_speech(message.content, agent=False)
         session.log("transcript", role="user", text=message.content)
 
     @assistant_agg.event_handler("on_assistant_turn_stopped")
     async def on_agent_text(aggregator, message):
         if message.content:
+            autohangup.agent_closed_call(session, message.content)
             llm.note_speech(message.content, agent=True)
             session.log(
                 "transcript", role="agent", text=message.content, interrupted=message.interrupted
@@ -281,6 +302,7 @@ async def run_call(
     )
     runner = WorkerRunner(handle_sigint=False)
     await runner.add_workers(worker)
+    watcher = asyncio.create_task(autohangup.watch(session, runner.cancel))
 
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
@@ -295,4 +317,7 @@ async def run_call(
         await asyncio.sleep(DRAIN_SECS)
         await runner.cancel()
 
-    await runner.run()
+    try:
+        await runner.run()
+    finally:
+        watcher.cancel()
