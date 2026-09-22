@@ -111,6 +111,8 @@ export interface ProvenanceChain {
 
 export interface CallDetail {
   call_id: string;
+  /** Directory name for the logged phone match; not verified patient identity. */
+  caller_id?: { patient_id: string; name: string; source: "caller_id" } | null;
   summary: CallSummary;
   run: RunRef | null;
   warnings: string[];

@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Server-local deploy runbook (describes this host, not the product)
+/deploy.md
+
 # A HAR capture carries the live dashboard session cookie in plain text.
 *.har
 
