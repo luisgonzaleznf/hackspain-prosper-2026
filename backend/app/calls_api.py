@@ -235,6 +235,17 @@ def _detail(path: Path) -> dict[str, Any]:
     }
 
 
+async def _detail_with_caller(path: Path) -> dict[str, Any]:
+    """Detail plus the caller-ID display name, resolved from the unmasked
+    events before they leave this module. The raw number is a lookup key
+    only; the API serves the resolved name, masked numbers stay masked."""
+    events = _read(path)
+    caller = await _caller_id(events)
+    detail = _detail(path)
+    detail["caller_id"] = caller
+    return detail
+
+
 router = APIRouter(prefix="/api/calls", tags=["calls"])
 
 
@@ -256,8 +267,12 @@ async def get_call(call_id: str) -> dict[str, Any]:
     path = _calls_dir() / f"{call_id}.jsonl"
     if not path.is_file() or path.parent.resolve() != _calls_dir().resolve():
         raise HTTPException(404, f"No log for call {call_id}.")
+    # Resolve the display name from the unmasked events first; _detail masks
+    # from_number before anything leaves the server.
+    events = await asyncio.to_thread(_read, path)
+    caller = await _caller_id(events)
     detail = await asyncio.to_thread(_detail, path)
-    detail["caller_id"] = await _caller_id(detail["events"])
+    detail["caller_id"] = caller
     return detail
 
 

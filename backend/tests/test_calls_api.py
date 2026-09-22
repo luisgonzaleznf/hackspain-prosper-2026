@@ -208,7 +208,9 @@ def test_caller_name_resolves_exact_logged_phone_match_and_is_cached(client, mon
         "patient_id": "P01842", "given_name": "Ana",
         "first_surname": "García", "second_surname": "López",
     }])
-    monkeypatch.setattr(prosper, "client", lambda: AsyncMock(directory=directory))
+    prosper_client = AsyncMock()
+    prosper_client.directory = directory
+    monkeypatch.setattr(prosper, "client", lambda: prosper_client)
     body = client.get(f"/api/calls/{CALL}").json()
     assert body["caller_id"] == {
         "patient_id": "P01842", "name": "Ana García López", "source": "caller_id",

@@ -7,7 +7,7 @@ const DAY = 86400;
 const NOW = Date.parse("2026-09-20T10:00:00Z") / 1000;
 
 function call(id: string, startedAt: number, status = "submitted", action = "BOOK"): CallSummary {
-  return { call_id: id, started_at: startedAt, modified_at: startedAt + 120, modified_iso: null, status, action, duration_seconds: 120, warnings: 0, has_audio: false, run: null };
+  return { call_id: id, started_at: startedAt, modified_at: startedAt + 120, modified_iso: null, status, action, duration_seconds: 120, warnings: 0, has_audio: false, credits: null, run: null };
 }
 
 test("live and imported submission labels retain their accepted or failed outcome", () => {
