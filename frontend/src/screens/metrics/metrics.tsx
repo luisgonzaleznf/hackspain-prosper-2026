@@ -9,7 +9,7 @@ import { PillSelect } from "@/components/primitives";
 import { SelectionIndicator } from "@/components/selection-indicator";
 import { dayLabel, duration, wallClock } from "@/lib/format";
 import { loadDetail, refreshNow, useCallsIndex } from "@/lib/store";
-import { aggregateOverview, completed, currentDetail, DETAIL_SAMPLE_SIZE, outcomeLabel, selectCalls, type OverviewRange, type OverviewSeries } from "./overview-data";
+import { aggregateOverview, currentDetail, detailSample, outcomeLabel, selectCalls, type OverviewRange, type OverviewSeries } from "./overview-data";
 import "./overview.css";
 
 const SERIES: { id: OverviewSeries; label: string }[] = [
@@ -21,7 +21,7 @@ const NUMBER_TIMING = { duration: 150, easing: "cubic-bezier(0.23, 1, 0.32, 1)" 
 
 export function MetricsScreen() {
   const { calls, byId, error, loadedAt } = useCallsIndex();
-  const [range, setRange] = useState<OverviewRange>("7d");
+  const [range, setRange] = useState<OverviewRange>("14d");
   const [series, setSeries] = useState<OverviewSeries>("calls");
   const [retryAttempt, setRetryAttempt] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -31,7 +31,8 @@ export function MetricsScreen() {
   const available = loadedAt != null;
   const now = (loadedAt ?? Date.now()) / 1000;
   const scoped = useMemo(() => selectCalls(calls, range, now), [calls, range, now]);
-  const sample = useMemo(() => scoped.filter(completed).slice(0, DETAIL_SAMPLE_SIZE), [scoped]);
+  const sample = useMemo(() => detailSample(scoped), [scoped]);
+  const hasDemoHistory = scoped.some((call) => call.call_id.startsWith("demo-metrics-"));
   const sampleKey = JSON.stringify(sample.map((call) => [call.call_id, call.modified_at]));
   const requestKey = `${retryAttempt}:${sampleKey}`;
   const stats = useMemo(() => aggregateOverview(scoped, byId, range, now), [scoped, byId, range, now]);
@@ -83,10 +84,10 @@ export function MetricsScreen() {
           <div className="overview-toolbar">
             <div className="overview-dates">
               <p>{available ? `${dayLabel(stats.start)} to ${dayLabel(now)}` : "Call activity"}</p>
-              <span className="overview-timezone">Europe/Madrid</span>
+              <span className="overview-timezone">Europe/Madrid{hasDemoHistory ? " · Includes demo history" : ""}</span>
             </div>
             <div className="overview-range">
-              <PillSelect value={range} onChange={setRange} label="Time range" options={[{ value: "24h", label: "Last 24 hours" }, { value: "7d", label: "Last 7 days" }, { value: "all", label: "All recorded calls" }]} />
+              <PillSelect value={range} onChange={setRange} label="Time range" options={[{ value: "24h", label: "Last 24 hours" }, { value: "7d", label: "Last 7 days" }, { value: "14d", label: "Last 14 days" }, { value: "all", label: "All recorded calls" }]} />
             </div>
           </div>
 

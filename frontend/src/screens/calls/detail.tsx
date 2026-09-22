@@ -18,7 +18,7 @@ import { api } from "@/lib/api";
 import { attribute, problemOf, verdictFor } from "@/lib/cases";
 import { duration, maskNationalId, maskPhone, offset, slotLabel, wallClockSeconds } from "@/lib/format";
 import { useSlideIn } from "@/lib/motion";
-import { isNoise, outcomeOf, type Decision, type Timeline } from "@/lib/timeline";
+import { callerLabel, isNoise, outcomeOf, type Decision, type Timeline } from "@/lib/timeline";
 import { isActive, loadDetail, type CallRecord } from "@/lib/store";
 import type { CallSummary, ClinicAction, RawEvent } from "@/lib/types";
 
@@ -317,7 +317,7 @@ function PatientTab({ timeline }: { timeline: Timeline }) {
     <div className="grid gap-4">
       <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-[13px]">
         <div><Label>caller id</Label><p className="mt-1 text-fg">{maskPhone(timeline.fromNumber)}</p></div>
-        <div><Label>number matched</Label><p className="mt-1 text-fg">{timeline.callerIdMatches.length > 0 ? timeline.callerIdMatches.join(", ") : "no record"}</p></div>
+        <div><Label>number matched</Label><p className="mt-1 text-fg">{timeline.callerIdName ? `${timeline.callerIdName} (${timeline.callerIdMatches.join(", ")})` : timeline.callerIdMatches.length > 0 ? timeline.callerIdMatches.join(", ") : "no record"}</p></div>
       </div>
       {matches.length === 0 && !registered ? <Empty>{timeline.matchCount === 0 ? "The lookup found no matching patient." : "No patient lookup ran on this call."}</Empty> : null}
       {matches.length > 1 ? <p className="text-[13px] text-fg-2">{matches.length} matches. ROSARIO had to disambiguate before acting.</p> : null}
@@ -405,12 +405,4 @@ function PillSelectKind({ value, onChange, kinds }: { value: string; onChange: (
   return <PillSelect value={value} onChange={onChange} label="Filter by event kind" options={[{ value: "", label: "All kinds" }, ...kinds.map((k) => ({ value: k, label: k }))]} />;
 }
 
-export function callerLabel(timeline: Timeline | null): string {
-  if (!timeline) return "connecting";
-  if (timeline.identified) return timeline.identified.name;
-  if (timeline.matchCount != null && timeline.matchCount > 1) return `${timeline.matchCount} matches`;
-  if (timeline.matchCount === 0) return "not in records";
-  const registered = timeline.submitted.find((s) => s.action.action === "REGISTER")?.action;
-  if (registered) return `${String(registered.given_name ?? "")} ${String(registered.first_surname ?? "")}`.trim();
-  return timeline.stage === "GREET" || timeline.stage === "IDENTIFY" ? "identifying" : "unknown caller";
-}
+export { callerLabel } from "@/lib/timeline";

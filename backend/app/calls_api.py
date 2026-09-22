@@ -13,16 +13,18 @@ Never mount this on the Prosper call server: that app goes under a public tunnel
 run, and this exposes every transcript. `app/dashboard.py` serves it on its own port.
 """
 
+import asyncio
 import json
 import wave
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
-from app import config
+from app import config, prosper
 
 # Chatter from the voice layer: kept in `events` for the timeline, never counted as a turn.
 NOISE_KINDS = {"codex", "usage"}
@@ -32,6 +34,39 @@ END_KINDS = {"call_ended", "stop_received", "socket_closed", "closed_by_agent"}
 # Voice-layer credit exhaustion (app/voice/credits.py): the console shows the
 # "demo finished" popup when any call reports it.
 CREDIT_KIND = "voice.credits"
+_caller_names: dict[tuple[str, str], dict[str, str] | None] = {}
+
+
+async def _caller_id(events: list[dict[str, Any]]) -> dict[str, str] | None:
+    """Resolve the logged phone match for display, never as verified identity.
+
+    The caller's raw number never leaves this module: it is a lookup key only.
+    What the API serves is the resolved name, masked numbers stay masked.
+    """
+    started = next((e for e in events if e.get("kind") == "call_started"), {})
+    lookup = next((e for e in events if e.get("kind") == "caller_id_lookup"), {})
+    phone, matches = started.get("from_number"), lookup.get("matches")
+    if not isinstance(phone, str) or not phone or not isinstance(matches, list):
+        return None
+    if len(matches) != 1 or not isinstance(matches[0], str):
+        return None
+    key = (phone, matches[0])
+    if key in _caller_names:
+        return _caller_names[key]
+    try:
+        patients = await asyncio.wait_for(prosper.client().directory(phone=phone), timeout=2)
+    except (TimeoutError, httpx.HTTPError, prosper.ProsperError):
+        return None  # The transcript remains usable when the directory is unavailable.
+    caller = None
+    if len(patients) == 1 and patients[0].get("patient_id") == matches[0]:
+        name = " ".join(
+            patients[0].get(field) or ""
+            for field in ("given_name", "first_surname", "second_surname")
+        ).strip()
+        if name:
+            caller = {"patient_id": matches[0], "name": name, "source": "caller_id"}
+    _caller_names[key] = caller
+    return caller
 
 
 def _calls_dir() -> Path:
@@ -217,11 +252,13 @@ def list_calls() -> dict[str, Any]:
 
 
 @router.get("/{call_id}")
-def get_call(call_id: str) -> dict[str, Any]:
+async def get_call(call_id: str) -> dict[str, Any]:
     path = _calls_dir() / f"{call_id}.jsonl"
     if not path.is_file() or path.parent.resolve() != _calls_dir().resolve():
         raise HTTPException(404, f"No log for call {call_id}.")
-    return _detail(path)
+    detail = await asyncio.to_thread(_detail, path)
+    detail["caller_id"] = await _caller_id(detail["events"])
+    return detail
 
 
 @router.get("/{call_id}/audio")

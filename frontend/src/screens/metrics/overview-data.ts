@@ -1,9 +1,10 @@
 import type { CallRecord } from "@/lib/store";
 import type { CallSummary } from "@/lib/types";
 
-export type OverviewRange = "24h" | "7d" | "all";
+export type OverviewRange = "24h" | "7d" | "14d" | "all";
 export type OverviewSeries = "calls" | "bookings" | "duration";
 export const DETAIL_SAMPLE_SIZE = 60;
+const RANGE_SECONDS = { "24h": 86400, "7d": 7 * 86400, "14d": 14 * 86400 };
 
 export function measured(value: number | null | undefined): value is number {
   return value != null && Number.isFinite(value) && value >= 0;
@@ -21,9 +22,32 @@ export function completed(call: CallSummary): boolean {
 }
 
 export function selectCalls(calls: CallSummary[], range: OverviewRange, now: number) {
-  const start = range === "all" ? 0 : now - (range === "24h" ? 86400 : 7 * 86400);
+  const start = range === "all" ? 0 : now - RANGE_SECONDS[range];
   return calls.filter((call) => Number.isFinite(call.started_at) && call.started_at > 0 && call.started_at >= start && call.started_at <= now)
     .sort((a, b) => b.started_at - a.started_at);
+}
+
+/** Keep recent conversations loaded and cover historical days in the detail sample. */
+export function detailSample(calls: CallSummary[]): CallSummary[] {
+  const finished = calls.filter(completed);
+  if (finished.length <= DETAIL_SAMPLE_SIZE) return finished;
+  const sample = finished.slice(0, 4);
+  const byDay = new Map<number, CallSummary[]>();
+  for (const call of finished.slice(4)) {
+    const day = Math.floor(call.started_at / 86400);
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day)!.push(call);
+  }
+  const days = [...byDay.values()];
+  const slots = DETAIL_SAMPLE_SIZE - sample.length;
+  const groups = days.length <= slots ? days : Array.from({ length: slots }, (_, index) => days[Math.floor(index * (days.length - 1) / (slots - 1))]!);
+  for (let offset = 0; sample.length < DETAIL_SAMPLE_SIZE; offset += 1) {
+    for (const group of groups) {
+      if (group[offset]) sample.push(group[offset]!);
+      if (sample.length === DETAIL_SAMPLE_SIZE) break;
+    }
+  }
+  return sample.sort((a, b) => b.started_at - a.started_at);
 }
 
 export function currentDetail(call: CallSummary, byId: Record<string, CallRecord>) {
@@ -52,10 +76,8 @@ const OUTCOMES = [
 export function outcomeKey(call: CallSummary): string {
   const status = /^submitted (\d{3})$/.exec(call.status)?.[1];
   if (call.status === "rejected" || (status && (Number(status) < 200 || Number(status) >= 300))) return "failed";
-  if (call.status === "submitted" || call.status === "saved locally" || status) {
-    return OUTCOMES.some(([key]) => key === call.action) ? call.action : "unknown";
-  }
-  return "unknown";
+  if (call.status !== "submitted" && call.status !== "saved locally" && !status) return "unknown";
+  return OUTCOMES.some(([key]) => key === call.action) ? call.action : "unknown";
 }
 
 export function outcomeLabel(call: CallSummary): string {
@@ -64,7 +86,7 @@ export function outcomeLabel(call: CallSummary): string {
 
 export function aggregateOverview(calls: CallSummary[], byId: Record<string, CallRecord>, range: OverviewRange, now: number) {
   const finished = calls.filter(completed);
-  const sample = finished.slice(0, DETAIL_SAMPLE_SIZE);
+  const sample = detailSample(finished);
   const sampleIds = new Set(sample.map((call) => call.call_id));
   const bookingsByCall = new Map<string, number>();
   let totalSeconds = 0;
@@ -92,7 +114,7 @@ export function aggregateOverview(calls: CallSummary[], byId: Record<string, Cal
     if (measured(record.timeline?.medianResponseGapMs)) latencies.push(record.timeline.medianResponseGapMs);
   }
 
-  const start = range === "all" ? (calls.at(-1)?.started_at ?? now - 86400) : now - (range === "24h" ? 86400 : 7 * 86400);
+  const start = range === "all" ? (calls.at(-1)?.started_at ?? now - 86400) : now - RANGE_SECONDS[range];
   const span = now - start;
   const step = span <= 86400 ? 3600 : span <= 7 * 86400 ? 6 * 3600 : Math.ceil(span / (30 * 86400)) * 86400;
   const first = Math.floor(start / step) * step;
