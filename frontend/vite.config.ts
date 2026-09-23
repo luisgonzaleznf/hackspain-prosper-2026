@@ -16,6 +16,7 @@ const callsApi = process.env.ROSARIO_CALLS_API ?? process.env.ROSARIO_CLINIC_API
 
 const proxy = {
   ...(callsApi ? { "/api/calls": { target: callsApi, changeOrigin: true } } : {}),
+  "/api/waitlist": { target: callsApi ?? demoApi, changeOrigin: true },
   "/api/clinic": { target: process.env.ROSARIO_CLINIC_API ?? "http://127.0.0.1:8000", changeOrigin: true },
   "/api/demo": { target: demoApi, changeOrigin: true, xfwd: true },
   "/api/offer": { target: demoApi, changeOrigin: true },

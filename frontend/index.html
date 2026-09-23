@@ -36,7 +36,7 @@
     <a href="/cases">Rehearsal</a>
     <a href="/calendar">Calendar</a>
     <a href="/brand/identity.html">Identity</a>
-    <a class="btn ghost" href="/waitlist.html">Sign in</a>
+    <button type="button" class="btn ghost" data-waitlist-open>Sign in</button>
   </nav>
 </header>
 
@@ -142,11 +142,27 @@
 
 <footer class="foot">
   <a class="lockup" href="/metrics" aria-label="ROSARIO overview"><i data-mark="dial-rose-ten"></i><span>rosario</span></a>
-  <nav aria-label="ROSARIO"><a href="/waitlist.html">Sign in</a><a href="/calls">Calls</a><a href="/calendar">Calendar</a><a href="/cases">Rehearsal</a><a href="/brand/identity.html">Identity</a></nav>
+  <nav aria-label="ROSARIO"><button type="button" class="link-button" data-waitlist-open>Sign in</button><a href="/calls">Calls</a><a href="/calendar">Calendar</a><a href="/cases">Rehearsal</a><a href="/brand/identity.html">Identity</a></nav>
   <p>ROSARIO, a voice receptionist for clinics. Madrid, 2026.</p>
 </footer>
 
-<a class="float is-hidden" id="float" href="/waitlist.html"><i data-mark="dial-rose-ten"></i><span>Sign in</span></a>
+<button type="button" class="float is-hidden" id="float" data-waitlist-open><i data-mark="dial-rose-ten"></i><span>Sign in</span></button>
+
+<div class="waitlist-scrim" id="waitlist-scrim" hidden>
+  <div class="waitlist-modal" role="dialog" aria-modal="true" aria-labelledby="waitlist-title">
+    <button type="button" class="waitlist-close" data-waitlist-close aria-label="Close">
+      <svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128l63.49,63.51Z"/></svg>
+    </button>
+    <p class="waitlist-eyebrow">Waitlist</p>
+    <h2 id="waitlist-title">rosario is in preparation.</h2>
+    <p class="waitlist-copy">Leave your email and we will let you know when the dashboard opens.</p>
+    <form class="waitlist-form" id="waitlist-form">
+      <input type="email" id="waitlist-email" name="email" placeholder="you@clinic.com" autocomplete="email" required aria-label="Email address">
+      <button type="submit" class="btn" id="waitlist-submit">Join</button>
+    </form>
+    <p class="waitlist-status" id="waitlist-status" role="status" aria-live="polite"></p>
+  </div>
+</div>
 
 <script src="/brand/vendor/gsap.min.js"></script>
 <script src="/brand/vendor/ScrollTrigger.min.js"></script>
@@ -154,5 +170,58 @@
 <script src="/brand/waves.js" defer></script>
 <script src="/brand/brand.js"></script>
 <script src="/brand/motion.js"></script>
+
+<script>
+(() => {
+  const scrim = document.getElementById("waitlist-scrim");
+  const modal = scrim.querySelector(".waitlist-modal");
+  const emailInput = document.getElementById("waitlist-email");
+  const status = document.getElementById("waitlist-status");
+  const submit = document.getElementById("waitlist-submit");
+  const form = document.getElementById("waitlist-form");
+  let lastFocus = null;
+
+  const open = () => {
+    lastFocus = document.activeElement;
+    scrim.hidden = false;
+    requestAnimationFrame(() => scrim.classList.add("is-open"));
+    emailInput.focus();
+  };
+  const close = () => {
+    scrim.classList.remove("is-open");
+    const done = () => { scrim.hidden = true; };
+    matchMedia("(prefers-reduced-motion: reduce)").matches ? done() : setTimeout(done, 380);
+    lastFocus?.focus();
+  };
+  document.querySelectorAll("[data-waitlist-open]").forEach((el) => el.addEventListener("click", open));
+  scrim.querySelector("[data-waitlist-close]").addEventListener("click", close);
+  scrim.addEventListener("click", (e) => { if (e.target === scrim) close(); });
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && !scrim.hidden) close(); });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    status.className = "waitlist-status";
+    status.textContent = "";
+    submit.disabled = true;
+    try {
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailInput.value.trim() }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.detail || "Something went wrong.");
+      status.className = "waitlist-status ok";
+      status.textContent = body.already ? "You are already on the list." : "You are on the list.";
+      emailInput.value = "";
+    } catch (error) {
+      status.className = "waitlist-status err";
+      status.textContent = error.message || "The waitlist is unreachable.";
+    } finally {
+      submit.disabled = false;
+    }
+  });
+})();
+</script>
 </body>
 </html>
