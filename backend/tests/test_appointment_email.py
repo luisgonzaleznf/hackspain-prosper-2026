@@ -144,7 +144,7 @@ def test_final_bookings_only_after_local_persistence_once(setup):
     assert "Dra. Carmen Ortiz Vidal" in message["text"]
     assert "48064716Y" not in message["text"]
     assert "mapfre" not in message["text"]
-    assert "Demo appointment saved in the clinic's demo diary" in message["text"]
+    assert "Demo booking" in message["text"]
     assert run(session.finish()) == []
     assert len(requests) == 2
 
@@ -163,7 +163,7 @@ def test_move_uses_looked_up_patient_and_new_time(setup):
     )
     run(session.finish())
     message = json.loads(requests[0].content)
-    assert "Appointment moved" in message["subject"]
+    assert "Demo reschedule" in message["subject"]
     assert "21/09/2026 · 11:00" in message["text"]
     assert "21/09/2026 · 09:00" in message["text"]
     assert message["to"] == ["chart@mail.es"]
@@ -416,7 +416,7 @@ def test_demo_finalizes_locally_then_sends(setup):
     assert [op[0] for op in operations] == ["email"]
     message = json.loads(requests[0].content)
     assert "Demo" in message["subject"]
-    assert "demo diary" in message["text"]
+    assert "Demo booking" in message["html"]
     assert run(session.finish_demo()) == []
     assert run(session.finish()) == []
     assert len(requests) == 1

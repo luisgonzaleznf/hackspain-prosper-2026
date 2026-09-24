@@ -10,10 +10,14 @@ and waits for an explicit yes before confirming it. At hang-up, Resend receives 
 appointment, with the patient, doctor, date/time in Europe/Madrid, site and address.
 Moves include the previous time. HTML and plain text are supplied.
 
-All clinic data in this project is synthetic. The email has a visible **Demo** label:
-browser/Twilio outcomes are saved locally and do not change the clinic diary. These are
-not real medical appointments. The scored `/ws` endpoint never offers or sends email,
-even when the feature is enabled for human demo calls in the same server.
+All clinic data in this project is synthetic. The email subject and heading identify it as
+a demo. Browser and Twilio calls save their confirmed changes to the demo clinic database.
+These are not real medical appointments.
+
+The HTML email requests the licensed Plain Light and Regular faces from
+`https://rosario.fyi/fonts/plain/`. The public font responses need
+`Access-Control-Allow-Origin: *` for browser-based mail clients. Clients that do not
+load web fonts use Helvetica or Arial.
 
 ## Configure
 

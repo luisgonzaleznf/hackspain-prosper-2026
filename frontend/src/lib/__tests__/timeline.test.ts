@@ -16,6 +16,7 @@ function detail(events: RawEvent[], writes: CallDetail["writes"] = []): CallDeta
     duration_seconds: null,
     warnings: 0,
     has_audio: false,
+    credits: null,
     run: null,
   };
   return { call_id: "c1", summary, run: null, warnings: [], audio: null, transcript: [], tools: [], staged_actions: [], writes, errors: [], provenance: [], events };

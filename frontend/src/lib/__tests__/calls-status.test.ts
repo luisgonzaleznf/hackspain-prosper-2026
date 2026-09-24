@@ -6,7 +6,7 @@ import type { CallRecord } from "../store.ts";
 import type { CallSummary, LocalWriteEvent } from "../types.ts";
 
 function summary(status: string, action: string, duration: number | null = 60): CallSummary {
-  return { call_id: "c1", started_at: 100, modified_at: 1, modified_iso: null, status, action, duration_seconds: duration, warnings: 0, has_audio: false, run: null };
+  return { call_id: "c1", started_at: 100, modified_at: 1, modified_iso: null, status, action, duration_seconds: duration, warnings: 0, has_audio: false, credits: null, run: null };
 }
 
 function withWrites(writes: LocalWriteEvent[]): CallRecord {

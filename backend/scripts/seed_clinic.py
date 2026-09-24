@@ -1,7 +1,7 @@
 """Seed the clinic database: patients, a realistic diary, absences and public holidays.
 
     uv run --project . python scripts/seed_clinic.py [--db PATH] [--anchor YYYY-MM-DD] [--patients 3000]
-        [--seed 7] [--dense-weeks 4] [--tail-weeks 4] [--force]
+        [--seed 7] [--dense-weeks 4] [--tail-weeks 4] [--force | --if-unseeded]
 
 Deterministic for (anchor, seed, patients, weeks). The anchor (default: today in Madrid) is the
 day the diary is built around: ~8 weeks of history before it, `dense` busy weeks after it, then
@@ -1448,6 +1448,19 @@ def db_has_rows(path: Path) -> bool:
         db.close()
 
 
+def is_seeded(path: Path) -> bool:
+    """A database this script built: it holds the clinic catalogue in `meta`."""
+    if not path.exists() or path.stat().st_size == 0:
+        return False
+    db = sqlite3.connect(path)
+    try:
+        if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='meta'").fetchone():
+            return False
+        return db.execute("SELECT 1 FROM meta WHERE key='catalogue'").fetchone() is not None
+    finally:
+        db.close()
+
+
 def build(args) -> World:
     cat = Catalogue(json.loads((SEED_DIR / "catalogue.json").read_text()))
     w = World(args, cat)
@@ -1474,12 +1487,22 @@ def parse_args(argv=None):
     parser.add_argument("--dense-weeks", type=int, default=4)
     parser.add_argument("--tail-weeks", type=int, default=4)
     parser.add_argument("--force", action="store_true", help="overwrite a database that already has rows")
+    parser.add_argument(
+        "--if-unseeded",
+        action="store_true",
+        help="deploy-safe: do nothing if the database is already seeded, else rebuild it (like --force)",
+    )
     parser.add_argument("--quiet", action="store_true", help="only print failures")
     return parser.parse_args(argv)
 
 
 def main(argv=None) -> int:
     args = parse_args(argv)
+    if args.if_unseeded:
+        if is_seeded(args.db):
+            print(f"{args.db} is already seeded; leaving it untouched.")
+            return 0
+        args.force = True  # an empty or pre-seed (old overlay) database is replaced
     if db_has_rows(args.db) and not args.force:
         print(f"{args.db} already has data; pass --force to rebuild it.", file=sys.stderr)
         return 2

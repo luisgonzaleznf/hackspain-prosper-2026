@@ -233,7 +233,9 @@ strong { font-weight: var(--font-weight-regular); }
 
 /* Floating dashboard link */
 .float[hidden] { display: none; }
-.float { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px 12px 14px; border-radius: var(--radius-buttons); background: var(--color-nava-white); color: var(--fg-on-light); border: 1px solid var(--line-2); font-size: 15px; font-weight: var(--font-weight-regular); z-index: 5; }
+.float { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px 12px 14px; border-radius: var(--radius-buttons); background: var(--color-nava-white); color: var(--fg-on-light); border: 1px solid var(--line-2); font-size: 15px; font-weight: var(--font-weight-regular); z-index: 5; opacity: 1; translate: 0 0; transition: opacity var(--dur-nav) var(--ease-smooth), translate var(--dur-nav) var(--ease-smooth), visibility 0s linear 0s; }
+.float.is-hidden { opacity: 0; translate: 0 12px; visibility: hidden; transition: opacity var(--dur-nav) var(--ease-smooth), translate var(--dur-nav) var(--ease-smooth), visibility 0s linear var(--dur-nav); }
+@media (prefers-reduced-motion: reduce) { .float, .float.is-hidden { transition: none; } }
 .float [data-mark] { width: 22px; height: 22px; color: var(--color-nava-red); --logo-bg: var(--color-nava-white); }
 
 /* Short desktop viewports (laptops at 768px): pull the hero up so the CTA stays above the fold. */
@@ -301,3 +303,23 @@ strong { font-weight: var(--font-weight-regular); }
 
 /* Motion support: SplitText wraps each headline line so it can rise out of a clip mask. */
 .split-line { display: block; }
+
+/* Waitlist modal (console lockdown): scrim + Burgundy card, Plain type, no shadow. */
+.waitlist-scrim { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: var(--scrim); opacity: 0; transition: opacity var(--dur-nav) var(--ease-smooth); }
+.waitlist-scrim.is-open { opacity: 1; }
+.waitlist-scrim[hidden] { display: none; }
+.waitlist-modal { position: relative; width: min(440px, 100%); padding: var(--spacing-32); background: var(--color-obsidian-burgundy); border: 1px solid var(--color-dusk-maroon); border-radius: var(--radius-cards); transform: translateY(16px); opacity: 0; transition: transform var(--dur-nav) var(--ease-smooth), opacity var(--dur-nav) var(--ease-smooth); }
+.waitlist-scrim.is-open .waitlist-modal { transform: translateY(0); opacity: 1; }
+.waitlist-close { position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: var(--radius-buttons); background: transparent; color: var(--fg-3); transition: color var(--dur-state) var(--ease), background-color var(--dur-state) var(--ease); }
+.waitlist-close:hover { color: var(--fg); background: var(--color-inkline-crimson); }
+.waitlist-eyebrow { margin: 0 0 12px; font-size: 10px; font-weight: var(--font-weight-regular); letter-spacing: 2.5px; text-transform: uppercase; color: var(--color-nava-fire); }
+.waitlist-modal h2 { margin: 0 0 12px; font-size: 28px; font-weight: var(--font-weight-thin); letter-spacing: -0.56px; line-height: 1.3; color: var(--fg); }
+.waitlist-copy { margin: 0 0 20px; font-size: 14px; font-weight: var(--font-weight-light); line-height: 1.5; color: var(--fg-2); }
+.waitlist-form { display: flex; gap: 9px; }
+.waitlist-form input { flex: 1; min-width: 0; min-height: 48px; padding: 0 18px; background: transparent; border: 1px solid var(--color-dusk-maroon); border-radius: var(--radius-buttons); color: var(--fg); font-family: var(--font-plain); font-size: var(--text-body); font-weight: var(--font-weight-light); transition: border-color var(--dur-state) var(--ease); }
+.waitlist-form input:focus { outline: none; border-color: var(--fg-3); }
+.waitlist-form .btn { padding: 14px 22px; }
+.waitlist-status { min-height: 20px; margin: 12px 0 0; font-size: 13px; font-weight: var(--font-weight-light); color: var(--fg-3); }
+.waitlist-status.ok { color: var(--fg-2); }
+.waitlist-status.err { color: var(--accent-ink); }
+@media (prefers-reduced-motion: reduce) { .waitlist-scrim, .waitlist-modal { transition: none; } }

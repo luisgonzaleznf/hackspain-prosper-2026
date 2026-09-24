@@ -42,7 +42,7 @@ WRITE = LINES[5]
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     calls = tmp_path / "calls"
-    calls.mkdir()
+    calls.mkdir(exist_ok=True)  # the autouse _tmp_calls_dir fixture may have made it
     body = "".join(json.dumps(line) + "\n" for line in LINES)
     (calls / f"{CALL}.jsonl").write_text(body)
     # A half-written last line is what a live call looks like on disk.
@@ -108,6 +108,63 @@ def test_new_call_appears_immediately_and_keeps_its_identity_after_hangup(client
     assert completed[0]["status"] == "saved"
     assert completed[0]["duration_seconds"] == 30.0
     assert completed[0]["action"] == "BOOK"
+
+def test_local_writes_keep_call_live_until_hangup_then_report_latest_saved_action(client, tmp_path):
+    path = tmp_path / "calls" / f"{CALL}.jsonl"
+    lines = [
+        LINES[0],
+        {
+            "t": 105.0,
+            "kind": "local_write",
+            "action": {"action": "REGISTER"},
+            "result": {"patient_id": "LP001"},
+        },
+        {
+            "t": 110.0,
+            "kind": "local_write",
+            "action": {"action": "BOOK", "patient_id": "LP001"},
+            "result": {"appointment_id": "LA001"},
+        },
+    ]
+    path.write_text("".join(json.dumps(line) + "\n" for line in lines))
+    summary = client.get(f"/api/calls/{CALL}").json()["summary"]
+    assert summary["status"] == "in progress"
+
+    with path.open("a") as log:
+        log.write(json.dumps({"t": 120.0, "kind": "stop_received"}) + "\n")
+    summary = client.get(f"/api/calls/{CALL}").json()["summary"]
+    assert summary["status"] == "saved"
+    assert summary["action"] == "BOOK"
+
+    with path.open("a") as log:
+        log.write(json.dumps({
+            "t": 121.0,
+            "kind": "demo_outcome",
+            "actions": [{"action": "CANCEL", "appointment_id": "LA001"}],
+            "submitted": False,
+        }) + "\n")
+    summary = client.get(f"/api/calls/{CALL}").json()["summary"]
+    assert summary["action"] == "BOOK"
+
+
+def test_demo_proposal_without_local_write_does_not_claim_saved_outcome(client, tmp_path):
+    path = tmp_path / "calls" / f"{CALL}.jsonl"
+    lines = [
+        LINES[0],
+        LINES[6],  # the staged proposal, never written
+        {
+            "t": 110.0,
+            "kind": "demo_outcome",
+            "actions": [{"action": "BOOK", "patient_id": "P01842"}],
+            "submitted": False,
+        },
+        {"t": 111.0, "kind": "call_ended", "submitted": False},
+    ]
+    path.write_text("".join(json.dumps(line) + "\n" for line in lines))
+    summary = client.get(f"/api/calls/{CALL}").json()["summary"]
+    assert summary["status"] == "ended"
+    assert summary["action"] == "BOOK"
+
 
 
 def test_detail_splits_the_log_the_way_the_console_reads_it(client):
@@ -181,6 +238,16 @@ def test_unknown_call_and_traversal_are_404(client):
     assert client.get("/api/calls/nope").status_code == 404
     assert client.get("/api/calls/nope/audio").status_code == 404
     assert client.get("/api/calls/..%2F..%2Fetc%2Fpasswd").status_code == 404
+
+
+def test_the_api_never_serves_a_raw_caller_number(client, tmp_path):
+    """The console masks in the UI, but the full number must not leave the server."""
+    path = tmp_path / "calls" / f"{CALL}.jsonl"
+    path.write_text("".join(json.dumps(line) + "\n" for line in LINES))
+    body = client.get(f"/api/calls/{CALL}").json()
+    started = next(e for e in body["events"] if e["kind"] == "call_started")
+    assert started["from_number"] == "+3···000"
+    assert "+34600000000" not in json.dumps(body)
 
 
 def _chart(patient_id="P01842", phone="600000000", **names):

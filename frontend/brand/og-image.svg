@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- OG image per DESIGN.md: Inkline Crimson canvas, hairline borders, eyebrow label,
+       weight-100 headline register, Nava Fire accent, dial mark. No shadows, flat. -->
+  <defs>
+    <linearGradient id="fireline" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#bc0400"/>
+      <stop offset="100%" stop-color="#fe0600"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Page canvas: Inkline Crimson (the override, not Nava Black) -->
+  <rect width="1200" height="630" fill="#2d1012"/>
+
+  <!-- Card surface: Obsidian Burgundy, 1px Inkline Crimson hairline, 35px radius -->
+  <rect x="60" y="60" width="1080" height="510" rx="35" fill="#14090a" stroke="#2d1012" stroke-width="1"/>
+
+  <!-- Fire-to-red signature hairline across the card top (gradient system) -->
+  <rect x="60" y="60" width="1080" height="2" fill="url(#fireline)"/>
+
+  <!-- Eyebrow label: tracked uppercase, Nava Fire -->
+  <text x="132" y="182" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="400" letter-spacing="5" fill="#bc0400">VOICE RECEPTIONIST · HACKSPAIN 2026</text>
+
+  <!-- Dial mark: the brand glyph, fully inside the card, no shadow -->
+  <g transform="translate(1005 250) scale(0.1411) translate(-1524.4 -770)" color="#bc0400">
+    <g transform="translate(754.4 0) scale(1.46055) translate(21.7 14.7)">
+      <ellipse cx="505.5" cy="512.5" rx="446.5" ry="454.5" fill="currentColor"/>
+      <g fill="#14090a">
+        <ellipse cx="505.5" cy="182.8" rx="78.2" ry="78.2"/>
+        <ellipse cx="699.3" cy="245.8" rx="78.2" ry="78.2"/>
+        <ellipse cx="819.0" cy="410.6" rx="78.2" ry="78.2"/>
+        <ellipse cx="819.0" cy="614.4" rx="78.2" ry="78.2"/>
+        <ellipse cx="699.3" cy="779.2" rx="78.2" ry="78.2"/>
+        <ellipse cx="505.5" cy="842.2" rx="78.2" ry="78.2"/>
+        <ellipse cx="311.7" cy="779.2" rx="78.2" ry="78.2"/>
+        <ellipse cx="192.0" cy="614.4" rx="78.2" ry="78.2"/>
+        <ellipse cx="192.0" cy="410.6" rx="78.2" ry="78.2"/>
+        <ellipse cx="311.7" cy="245.8" rx="78.2" ry="78.2"/>
+      </g>
+      <path d="m695.5 531c-15.5-67-58.5-115-115.5-134-60-21-121-6-163 34-29 28-43 62-38.5 103 3.5 40 26.5 72 64.5 86 36 13 75 3 99-25 20-23 28-55 13-79-11-18-31-28-50-26-18 1-30 12-34 30.5 18-3.5 32 8.5 34.5 21 4.5 19.5-11.5 33.5-29.5 35-25 2.5-47-15.5-53-38.5-7-25 3-54 22-73 25-24 59-32 92-22 51 15 85 58 91 105 6 46-17 93-52 120-38 29-87 36-128 26-60-13-106-58-126-113-19-52-11-109 15-156 32-57 90-94 152-99 69-7 133 25 172 78 25 35 38 79 34.5 127z" fill="#14090a"/>
+    </g>
+  </g>
+
+  <!-- Headline register: weight-100 scale pair, white, -0.02em -->
+  <text x="132" y="330" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="88" font-weight="100" letter-spacing="-2.2" fill="#ffffff">rosario</text>
+  <text x="134" y="410" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="30" font-weight="200" letter-spacing="-0.6" fill="#d4a5a5">Answers the phone. Keeps the record.</text>
+
+  <!-- Hairline separator above the footer row -->
+  <rect x="132" y="462" width="936" height="1" fill="#5e1f25"/>
+
+  <!-- Footer row: secondary text, Ash Rose, right text aligned to the divider end -->
+  <text x="132" y="510" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="300" fill="#d4a5a5">Clínica Arenal · Madrid</text>
+  <text x="1068" y="510" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="300" fill="#a86d70" text-anchor="end">rosario.fyi</text>
+</svg>

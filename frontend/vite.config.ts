@@ -16,6 +16,7 @@ const callsApi = process.env.ROSARIO_CALLS_API ?? process.env.ROSARIO_CLINIC_API
 
 const proxy = {
   ...(callsApi ? { "/api/calls": { target: callsApi, changeOrigin: true } } : {}),
+  "/api/waitlist": { target: callsApi ?? demoApi, changeOrigin: true },
   "/api/clinic": { target: process.env.ROSARIO_CLINIC_API ?? "http://127.0.0.1:8000", changeOrigin: true },
   "/api/demo": { target: demoApi, changeOrigin: true, xfwd: true },
   "/api/offer": { target: demoApi, changeOrigin: true },
@@ -35,7 +36,7 @@ const CONSOLE_ROUTES = /^\/(dashboard|calls|calendar|metrics|talk|settings)(\/|\
 // The roleplay studio is its own bundled page at /demo; everything else under
 // /demo/ (the review page, its script and the stylesheet) is served statically.
 const DEMO_ROUTE = /^\/demo\/?(\?|$)/;
-const STATIC_PATHS = ["index.html", "brand", "demo", "tokens", "fonts", "licenses"];
+const STATIC_PATHS = ["index.html", "waitlist.html", "brand", "demo", "tokens", "fonts", "licenses"];
 const root = fileURLToPath(new URL(".", import.meta.url));
 function landingAndConsole(): Plugin {
   const rewrite = (server: { middlewares: { use: (fn: (req: { url?: string }, res: unknown, next: () => void) => void) => void } }) => {
@@ -71,5 +72,8 @@ export default defineConfig({
   },
   preview: {
     proxy,
+    // `ROSARIO_PREVIEW_ALLOWED_HOSTS=true` opens the preview to any Host header
+    // (e.g. a Tailscale MagicDNS name); unset, Vite's default protection applies.
+    ...(process.env.ROSARIO_PREVIEW_ALLOWED_HOSTS === "true" ? { allowedHosts: true } : {}),
   },
 });

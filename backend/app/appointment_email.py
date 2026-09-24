@@ -173,9 +173,9 @@ def message(session: "CallSession", action: dict, address: str) -> dict:
         patient.get(key, "") for key in ("given_name", "first_surname", "second_surname")
     ).strip()
     title = (
-        "Cita reprogramada / Appointment moved"
+        "Cita reprogramada (demo) / Demo reschedule"
         if action["action"] == "RESCHEDULE"
-        else "Cita reservada / Appointment booked"
+        else "Cita reservada (demo) / Demo booking"
     )
     clinic_name = cat.get("clinic_name", "Clínica Arenal")
     fields = [
@@ -207,34 +207,27 @@ def message(session: "CallSession", action: dict, address: str) -> dict:
                 previous.astimezone(config.TZ).strftime("%d/%m/%Y · %H:%M") + " (Europe/Madrid)",
             )
         )
-    disclaimer = (
-        "Demo: cita guardada en la agenda de demostración de la clínica. "
-        "Demo appointment saved in the clinic's demo diary."
-    ) + " No es una cita médica real. This is not a real medical appointment."
-    text = (
-        f"{clinic_name}\n{title}\n\n"
-        + "\n".join(f"{label}: {value}" for label, value in fields)
-        + f"\n\n{disclaimer}"
-    )
+    text = f"{title}\n\n" + "\n".join(f"{label}: {value}" for label, value in fields)
     rows = "".join(
-        f'<tr><td style="padding:12px 0;border-bottom:1px solid #e3e9e6;color:#52605a;font-size:12px">{escape(label)}<br><strong style="color:#152a22;font-size:17px">{escape(str(value))}</strong></td></tr>'
+        f'<tr><td style="padding:14px 0;border-bottom:1px solid #2d1012;color:#a86d70;font-family:Plain,Helvetica,Arial,sans-serif;font-size:12px;font-weight:300;letter-spacing:0.5px;text-transform:uppercase">{escape(label)}<br><strong style="color:#fefefe;font-size:17px;font-weight:400;letter-spacing:0;text-transform:none">{escape(str(value))}</strong></td></tr>'
         for label, value in fields
     )
     html = f"""<!doctype html>
-<html lang="es"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;background:#f3f5f2;font-family:Arial,sans-serif;color:#152a22">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:24px 12px">
-<table role="presentation" width="100%" style="max-width:520px;background:#fff;border-radius:16px" cellspacing="0" cellpadding="0"><tr><td style="padding:32px">
-<p style="margin:0 0 24px;letter-spacing:2px;font-size:12px">ROSARIO · {escape(clinic_name)}</p>
-<p style="color:#52715e;font-size:12px">DEMO</p>
-<h1 style="font-size:24px;line-height:1.3;margin:0 0 16px">{escape(title)}</h1>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@font-face {{ font-family:Plain;src:url('https://rosario.fyi/fonts/plain/plain-light.woff2') format('woff2');font-weight:300;font-style:normal }}
+@font-face {{ font-family:Plain;src:url('https://rosario.fyi/fonts/plain/plain-regular.woff2') format('woff2');font-weight:400;font-style:normal }}
+</style></head>
+<body style="margin:0;background:#2d1012;font-family:Plain,Helvetica,Arial,sans-serif;font-weight:300;color:#fefefe">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:32px 12px">
+<table role="presentation" width="100%" style="max-width:520px;background:#14090a;border:1px solid #2d1012;border-radius:35px" cellspacing="0" cellpadding="0"><tr><td style="padding:32px">
+<h1 style="font-family:Plain,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.3;margin:0 0 16px;font-weight:300;letter-spacing:-0.56px">{escape(title)}</h1>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0">{rows}</table>
-<p style="font-size:12px;line-height:1.6;color:#657069;margin:24px 0 0">{escape(disclaimer)}</p>
 </td></tr></table></td></tr></table></body></html>"""
     return {
         "from": config.RESEND_FROM_EMAIL,
         "to": [address],
-        "subject": f"{title} · {clinic_name} [Demo]",
+        "subject": f"{title} · {clinic_name}",
         "text": text,
         "html": html,
     }

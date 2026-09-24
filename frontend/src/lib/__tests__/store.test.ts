@@ -109,3 +109,36 @@ test("overlapping refreshes share a slow response and recover after a failed ref
   assert.equal(store.__state().calls[0]?.modified_at, 21);
   assert.equal(store.__state().error, null);
 });
+
+test("a recording appearing after call completion refreshes cached detail without a log revision", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const callId = "late-recording";
+  let recorded = false;
+  let detailRequests = 0;
+  const audio = {
+    url: `/api/calls/${callId}/audio`, channels: 2, sample_rate: 8000, sample_width: 2,
+    frames: 160000, duration_seconds: 20, timeline_clock: null,
+    timeline_origin_at: null, caller_carrier_drift_seconds: null,
+  };
+  globalThis.fetch = async (url) => {
+    const detail = detailOf(30, "ended", []);
+    const summary = { ...detail.summary, call_id: callId, has_audio: recorded };
+    if (url === "/api/calls") return Response.json({ calls: [summary] });
+    detailRequests += 1;
+    return Response.json({ ...detail, call_id: callId, summary, audio: recorded ? audio : null });
+  };
+  await store.refreshNow();
+  await store.loadDetail(callId);
+  assert.equal(store.__state().byId[callId]?.detail?.audio, null);
+
+  recorded = true;
+  await store.refreshNow();
+  await store.loadDetail(callId);
+  assert.equal(store.__state().byId[callId]?.detail?.audio?.url, audio.url);
+  assert.equal(store.__state().byId[callId]?.timeline?.horizon, 20);
+
+  await store.refreshNow();
+  await store.loadDetail(callId);
+  assert.equal(detailRequests, 2, "available recordings stay cached after the refresh");
+});

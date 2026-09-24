@@ -26,7 +26,7 @@ from pipecat.frames.frames import (
 from pipecat.processors.frame_processor import FrameDirection, FrameProcessor, FrameProcessorSetup
 
 from app.voice.codex.peer import CodexLivePeer
-from app.voice.deadair import DeadAirWatch, clip_path, observe
+from app.voice.deadair import MIN_SPEECH_RMS, DeadAirWatch, clip_path, observe
 
 SILENCE_PEAK = 300  # int16 peak below which a 20ms chunk counts as silence
 HANGOVER_MS = 600  # keep relaying through pauses shorter than this
@@ -87,6 +87,7 @@ class CodexLiveService(FrameProcessor):
         brain_instructions: str | None = None,
         on_tool_call=None,
         on_brain_event=None,
+        on_caller_speech=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -94,6 +95,7 @@ class CodexLiveService(FrameProcessor):
         self._greeting = greeting
         self._voice = voice
         self._on_transcript = on_transcript  # (role, text) -> None
+        self._on_caller_speech = on_caller_speech  # () -> None: caller audio above the floor
         self._tools = tools
         self._brain_instructions = brain_instructions
         self._on_tool_call = self._tool_call if on_tool_call else None
@@ -332,9 +334,10 @@ class CodexLiveService(FrameProcessor):
                 self._peer.push_audio(frame.audio)
             pcm = array.array("h", frame.audio)
             if pcm:
-                self._watch.caller_level(
-                    time.monotonic(), math.sqrt(sum(x * x for x in pcm) / len(pcm))
-                )
+                rms = math.sqrt(sum(x * x for x in pcm) / len(pcm))
+                self._watch.caller_level(time.monotonic(), rms)
+                if rms >= MIN_SPEECH_RMS and self._on_caller_speech:
+                    self._on_caller_speech()
             return  # consumed: the caller's audio goes to GPT-Live, not downstream
         if isinstance(frame, (EndFrame, CancelFrame)):
             await self._close_peer()

@@ -108,7 +108,7 @@ Anything not in the contract is mocked and named as such in the UI header ("fixt
 - **Reason codes are the closed vocabulary from the contract.** Render them verbatim in mono plus a short human gloss from one lookup table; never rephrase them into the mono chip.
 - **Live view budget.** Twenty rows, each updating several times per second, must not re-render the whole board. Per-row subscriptions to the event buffer; virtualise the transcript past 200 turns.
 - **Copy.** Spanish-first UI labels are fine where the domain is Spanish (Centro, Norte, Sur, DNI); everything else in plain English. No marketing tone, no exclamation marks, no em dashes.
-- **Scope.** Overview, Calls and Calendar form the dashboard; Talk is a separate tool. “Sign in” opens Overview. Authentication is not implemented.
+- **Scope.** Overview, Calls and Calendar form the dashboard; Talk is a separate tool. Landing page actions that point to console or identity pages open the waitlist dialog. Authentication is not implemented.
 - **Verification.** Run `pnpm lint:design`, `pnpm typecheck` (once scaffolded) and walk the three surfaces with fixture data before claiming done. Screenshots go to `demo/`.
 
 ## Scripts

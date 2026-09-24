@@ -91,7 +91,7 @@ if (floatBtn && rivals.length && "IntersectionObserver" in window) {
   const visible = new Set();
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) { if (e.isIntersecting) visible.add(e.target); else visible.delete(e.target); }
-    floatBtn.hidden = visible.size > 0;
+    floatBtn.classList.toggle("is-hidden", visible.size > 0);
   }, { threshold: 0 });
   rivals.forEach((el) => io.observe(el));
 }

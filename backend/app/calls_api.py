@@ -36,6 +36,9 @@ WARNING_KINDS = {"fallback", "error", "socket_closed", "stop_received"}
 END_KINDS = {"call_ended", "stop_received", "socket_closed", "closed_by_agent"}
 # The tools that write to the clinic database (integrations/local_session.py).
 WRITE_TOOLS = {"record_registration", "record_booking", "record_reschedule", "record_cancellation"}
+# Voice-layer credit exhaustion (app/voice/credits.py): the console shows the
+# "demo finished" popup when any call reports it.
+CREDIT_KIND = "voice.credits"
 
 
 def _calls_dir() -> Path:
@@ -44,6 +47,18 @@ def _calls_dir() -> Path:
 
 def _audio_path(call_id: str) -> Path:
     return Path(config.AUDIO_DIR) / f"{call_id}.wav"
+
+
+def _mask_e164(number: Any) -> Any:
+    """+34 612 ··· 678: country code plus first/last three digits. The console's own
+    rendering masks too (frontend/src/lib/format.ts), but the full number must never
+    leave the server: these endpoints are reachable without a login."""
+    if not isinstance(number, str) or not number.startswith("+"):
+        return number
+    digits = "".join(ch for ch in number if ch.isdigit())
+    if len(digits) < 7:
+        return number
+    return f"+{digits[0]}···{digits[-3:]}"
 
 
 def _read(path: Path) -> list[dict[str, Any]]:
@@ -112,9 +127,9 @@ def _verbs(items: list[Any]) -> list[str]:
 
 
 def _action(events: list[dict[str, Any]]) -> str:
-    """What the call did, as the console's one-word column: what it saved, else what it
-    last recorded, else the outcome logged at hang-up."""
-    verbs = _verbs([w.get("action") for w in _of_kind(events, "local_write")])
+    """What the call did, as the console's one-word column: the latest thing it saved, else
+    what it last recorded, else the outcome logged at hang-up."""
+    verbs = _verbs([w.get("action") for w in _of_kind(events, "local_write")[-1:]])
     if not verbs:
         verbs = _verbs([s.get("action") for s in _of_kind(events, "action_staged")[-1:]])
     if not verbs:
@@ -166,6 +181,7 @@ def _summary(path: Path, events: list[dict[str, Any]]) -> dict[str, Any]:
         "action": _action(events),
         "duration_seconds": round(max(0, (ended if ended is not None else max(stamps)) - started), 3) if stamps else None,
         "warnings": len(_warnings(events)),
+        "credits": next(({"provider": e.get("provider"), "detail": e.get("detail")} for e in reversed(events) if e.get("kind") == CREDIT_KIND), None),
         "has_audio": _audio_path(call_id).exists(),
         "run": None,
     }
@@ -209,6 +225,13 @@ def _caller_id(events: list[dict[str, Any]]) -> dict[str, str] | None:
     return {"patient_id": matches[0], "name": name, "source": "caller_id"} if name else None
 
 
+def _mask_event(event: dict[str, Any]) -> dict[str, Any]:
+    """Strip raw caller numbers from one event before it is served."""
+    if event.get("kind") == "call_started" and "from_number" in event:
+        return {**event, "from_number": _mask_e164(event["from_number"])}
+    return event
+
+
 def _detail(path: Path) -> dict[str, Any]:
     events = _read(path)
     call_id = path.stem
@@ -225,7 +248,7 @@ def _detail(path: Path) -> dict[str, Any]:
         "errors": [e for e in events if e.get("kind") in WARNING_KINDS],
         "provenance": _provenance(events),
         "caller_id": _caller_id(events),
-        "events": [e for e in events if e.get("kind") not in NOISE_KINDS],
+        "events": [_mask_event(e) for e in events if e.get("kind") not in NOISE_KINDS],
     }
 
 
