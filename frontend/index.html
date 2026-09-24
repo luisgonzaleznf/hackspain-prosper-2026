@@ -7,7 +7,7 @@
 <meta name="description" content="ROSARIO is a voice receptionist for clinics. It answers the phone, finds the caller in the record, books against real availability, refuses with the clinic's own reason when it must, and keeps a record of why it said every sentence.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ROSARIO">
-<meta property="og:title" content="ROSARIO — the voice receptionist for clinics">
+<meta property="og:title" content="ROSARIO: the voice receptionist for clinics">
 <meta name="theme-color" content="#2d1012">
 <meta property="og:description" content="It answers the phone, finds the caller in the record, books against real availability, and keeps a record of why it said every sentence.">
 <meta property="og:url" content="https://rosario.fyi/">
@@ -15,7 +15,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="ROSARIO — the voice receptionist for clinics">
+<meta name="twitter:title" content="ROSARIO: the voice receptionist for clinics">
 <meta name="twitter:description" content="It answers the phone, finds the caller in the record, books against real availability, and keeps a record of why it said every sentence.">
 <meta name="twitter:image" content="https://rosario.fyi/og-image.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/brand/logos/final/favicon-32.png">
@@ -30,12 +30,12 @@
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="top">
-  <a class="lockup" href="/metrics" aria-label="ROSARIO overview"><i data-mark="dial-rose-ten"></i><span>rosario</span></a>
+  <a class="lockup" href="#waitlist-scrim" aria-label="ROSARIO waitlist" aria-haspopup="dialog" data-waitlist-open><i data-mark="dial-rose-ten"></i><span>rosario</span></a>
   <nav class="top-nav" aria-label="Sections">
-    <a href="/calls">Calls</a>
-    <a href="/cases">Rehearsal</a>
-    <a href="/calendar">Calendar</a>
-    <a href="/brand/identity.html">Identity</a>
+    <a href="#waitlist-scrim" aria-haspopup="dialog" data-waitlist-open>Calls</a>
+    <a href="#waitlist-scrim" aria-haspopup="dialog" data-waitlist-open>Rehearsal</a>
+    <a href="#waitlist-scrim" aria-haspopup="dialog" data-waitlist-open>Calendar</a>
+    <a href="#waitlist-scrim" aria-haspopup="dialog" data-waitlist-open>Identity</a>
     <button type="button" class="btn ghost" data-waitlist-open>Sign in</button>
   </nav>
 </header>
@@ -133,7 +133,7 @@
   <div class="cta-copy" data-reveal>
     <h2>Hear it answer.</h2>
     <p>ROSARIO sits on your existing line. Your number and your diary stay yours.</p>
-    <div class="row"><a class="btn primary" href="/calls">Listen to a call <span class="arrow" aria-hidden="true">→</span></a></div>
+    <div class="row"><a class="btn primary" href="#waitlist-scrim" aria-haspopup="dialog" data-waitlist-open>Listen to a call <span class="arrow" aria-hidden="true">→</span></a></div>
   </div>
   <div class="cta-art"><img src="/brand/imagery/rosary.webp" alt="" width="732" height="1471" loading="lazy" decoding="async"></div>
 </section>
@@ -141,8 +141,8 @@
 </main>
 
 <footer class="foot">
-  <a class="lockup" href="/metrics" aria-label="ROSARIO overview"><i data-mark="dial-rose-ten"></i><span>rosario</span></a>
-  <nav aria-label="ROSARIO"><button type="button" class="link-button" data-waitlist-open>Sign in</button><a href="/calls">Calls</a><a href="/calendar">Calendar</a><a href="/cases">Rehearsal</a><a href="/brand/identity.html">Identity</a></nav>
+  <a class="lockup" href="#waitlist-scrim" aria-label="ROSARIO waitlist" aria-haspopup="dialog" data-waitlist-open><i data-mark="dial-rose-ten"></i><span>rosario</span></a>
+  <nav aria-label="ROSARIO"><button type="button" class="link-button" data-waitlist-open>Sign in</button><a href="#waitlist-scrim" aria-haspopup="dialog" data-waitlist-open>Calls</a><a href="#waitlist-scrim" aria-haspopup="dialog" data-waitlist-open>Calendar</a><a href="#waitlist-scrim" aria-haspopup="dialog" data-waitlist-open>Rehearsal</a><a href="#waitlist-scrim" aria-haspopup="dialog" data-waitlist-open>Identity</a></nav>
   <p>ROSARIO, a voice receptionist for clinics. Madrid, 2026.</p>
 </footer>
 
@@ -181,7 +181,8 @@
   const form = document.getElementById("waitlist-form");
   let lastFocus = null;
 
-  const open = () => {
+  const open = (event) => {
+    event.preventDefault();
     lastFocus = document.activeElement;
     scrim.hidden = false;
     requestAnimationFrame(() => scrim.classList.add("is-open"));
