@@ -1,7 +1,8 @@
 import json
+from unittest.mock import AsyncMock
 
 import pytest
-from app import config
+from app import calls_api, config, prosper
 from app.dashboard import app
 from fastapi.testclient import TestClient
 
@@ -32,6 +33,8 @@ LINES = [
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
+    calls_api._caller_names.clear()
+    monkeypatch.setattr(prosper, "client", lambda: AsyncMock(directory=AsyncMock(return_value=[])))
     calls = tmp_path / "calls"
     calls.mkdir()
     body = "".join(json.dumps(line) + "\n" for line in LINES)
@@ -133,3 +136,48 @@ def test_unknown_call_and_traversal_are_404(client):
     assert client.get("/api/calls/nope").status_code == 404
     assert client.get("/api/calls/nope/audio").status_code == 404
     assert client.get("/api/calls/..%2F..%2Fetc%2Fpasswd").status_code == 404
+
+
+def test_caller_name_resolves_exact_logged_phone_match_and_is_cached(client, monkeypatch):
+    directory = AsyncMock(return_value=[{
+        "patient_id": "P01842", "given_name": "Ana",
+        "first_surname": "García", "second_surname": "López",
+    }])
+    monkeypatch.setattr(prosper, "client", lambda: AsyncMock(directory=directory))
+    body = client.get(f"/api/calls/{CALL}").json()
+    assert body["caller_id"] == {
+        "patient_id": "P01842", "name": "Ana García López", "source": "caller_id",
+    }
+    # The display fallback neither invents a lookup event nor changes the transcript.
+    assert [e["kind"] for e in body["events"]] == [
+        e["kind"] for e in LINES if e["kind"] != "codex"
+    ]
+    assert client.get(f"/api/calls/{CALL}").json()["caller_id"] == body["caller_id"]
+    directory.assert_awaited_once_with(phone="+34600000000")
+
+
+@pytest.mark.parametrize("patients", [[], [{"patient_id": "another", "given_name": "Ana"}], [
+    {"patient_id": "P01842", "given_name": "Ana"}, {"patient_id": "another", "given_name": "Juan"},
+]])
+def test_changed_or_ambiguous_directory_match_does_not_supply_a_name(client, monkeypatch, patients):
+    monkeypatch.setattr(prosper, "client", lambda: AsyncMock(directory=AsyncMock(return_value=patients)))
+    assert client.get(f"/api/calls/{CALL}").json()["caller_id"] is None
+
+
+@pytest.mark.parametrize("matches", [[], ["P01842", "P00001"]])
+def test_no_unique_logged_match_skips_directory_lookup(client, tmp_path, monkeypatch, matches):
+    directory = AsyncMock()
+    monkeypatch.setattr(prosper, "client", lambda: AsyncMock(directory=directory))
+    lines = [LINES[0], {**LINES[1], "matches": matches}, LINES[-1]]
+    (tmp_path / "calls" / f"{CALL}.jsonl").write_text("\n".join(map(json.dumps, lines)))
+    assert client.get(f"/api/calls/{CALL}").json()["caller_id"] is None
+    directory.assert_not_awaited()
+
+
+@pytest.mark.parametrize("error", [TimeoutError(), prosper.ProsperError(503, "Unavailable")])
+def test_directory_failure_keeps_recording_and_transcript_available(client, monkeypatch, error):
+    monkeypatch.setattr(prosper, "client", lambda: AsyncMock(directory=AsyncMock(side_effect=error)))
+    response = client.get(f"/api/calls/{CALL}")
+    assert response.status_code == 200
+    assert response.json()["caller_id"] is None
+    assert response.json()["transcript"][0]["text"] == "Clínica Arenal."

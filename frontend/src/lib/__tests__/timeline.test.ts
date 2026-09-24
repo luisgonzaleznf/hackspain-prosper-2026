@@ -1,7 +1,7 @@
 // Regression: lifecycle labels are event-backed. Run with `pnpm test`.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { outcomeOf, project } from "../timeline.ts";
+import { callerLabel, outcomeOf, project } from "../timeline.ts";
 import { turnsUntil } from "../replay.ts";
 import type { CallDetail, RawEvent } from "../types.ts";
 
@@ -29,6 +29,30 @@ const base: RawEvent[] = [
   { t: 104.2, kind: "transcript", role: "user", text: "Hello, I need an appointment.", _line: 5 },
   { t: 105, kind: "transcript", role: "agent", text: "One moment while I check.", _line: 6 },
 ];
+
+test("caller ID supplies a display name without claiming a patient lookup", () => {
+  const events = [...base, { t: 100.5, kind: "caller_id_lookup", matches: ["P1"], _line: 7 }, { t: 110, kind: "stop_received", _line: 8 }];
+  const call = { ...detail(events), caller_id: { patient_id: "P1", name: "Ana García López", source: "caller_id" as const } };
+  const timeline = project(call);
+  assert.equal(callerLabel(timeline), "Ana García López");
+  assert.equal(timeline.identified, null);
+  assert.equal(timeline.matchCount, null);
+  assert.equal(callerLabel(project({ ...call, caller_id: { ...call.caller_id, patient_id: "P2" } })), "unknown caller");
+  assert.equal(callerLabel(project(detail(events))), "unknown caller");
+  assert.equal(callerLabel(project(detail([...base, { t: 110, kind: "call_ended", _line: 8 }]))), "unknown caller");
+  const patient = { t: 108, kind: "tool", name: "find_patient", args: {}, result: { matches: [{ patient_id: "P2", name: "Juan López" }], count: 1 }, _line: 9 };
+  assert.equal(callerLabel(project({ ...call, events: [...events, patient] })), "Juan López");
+});
+
+test("an accepted registration supplies the name after an empty lookup", () => {
+  const events = [...base,
+    { t: 107, kind: "tool", name: "find_patient", args: {}, result: { matches: [], count: 0 }, _line: 7 },
+    { t: 109, kind: "submit", action: { action: "REGISTER", given_name: "Ana", first_surname: "García", second_surname: "López" }, status: 200, _line: 8 },
+    { t: 110, kind: "call_ended", _line: 9 },
+  ];
+  assert.equal(callerLabel(project(detail(events))), "Ana García López");
+  assert.equal(callerLabel(project(detail(events.map((e) => e.kind === "submit" ? { ...e, status: 422 } : e)))), "not in records");
+});
 
 test("a persisted local registration identifies the caller without a scored submission", () => {
   const registration = {
