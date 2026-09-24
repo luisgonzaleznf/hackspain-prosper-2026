@@ -13,7 +13,7 @@ import { Empty, Label, Mono, Outcome } from "@/components/primitives";
 import { SelectionIndicator } from "@/components/selection-indicator";
 import { dayLabel, duration, latency, maskPhone, wallClock } from "@/lib/format";
 import { isActive, loadDetail, refreshNow, useCallDetail, useCallRecord, useCallsIndex } from "@/lib/store";
-import { outcomeOf } from "@/lib/timeline";
+import { actionVerbs, outcomeOf } from "@/lib/timeline";
 import type { CallSummary } from "@/lib/types";
 import { CallDrawer, CallDuration, callerLabel } from "./detail";
 
@@ -24,23 +24,25 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "registered", label: "Registered" },
   { id: "refused", label: "Declined" },
   { id: "escalated", label: "Escalated" },
-  { id: "failed", label: "Failed submit" },
+  { id: "failed", label: "Write failed" },
 ];
 
+/** Booked and Registered mean saved in the clinic database; a staged verb alone does not count. */
 function matchesFilter(summary: CallSummary, filter: Filter): boolean {
+  const verbs = actionVerbs(summary.action);
   switch (filter) {
     case "all":
       return true;
     case "booked":
-      return summary.action === "BOOK";
+      return summary.status === "saved" && verbs.includes("BOOK");
     case "registered":
-      return summary.action === "REGISTER";
+      return summary.status === "saved" && verbs.includes("REGISTER");
     case "refused":
-      return summary.action === "NO_ACTION";
+      return verbs.includes("NO_ACTION");
     case "escalated":
-      return summary.action === "ESCALATE";
+      return verbs.includes("ESCALATE");
     case "failed":
-      return /^submitted [45]\d{2}$/.test(summary.status);
+      return summary.status === "write failed";
   }
 }
 
@@ -177,7 +179,7 @@ const CallRow = memo(function CallRow({ summary, live = false, selected, compact
             </span>
           </span>
           <span className="min-w-0 justify-self-end md:hidden">
-            {live ? <CallInProgress endedAt={timeline?.endedAt} /> : <Outcome verb={outcome.verb} status={outcome.status} size="sm" />}
+            {live ? <CallInProgress endedAt={timeline?.endedAt} /> : <Outcome verb={outcome.verb} failed={outcome.failed} size="sm" />}
           </span>
           <span className="col-span-3 min-w-0 md:col-span-1">
             {live && compact ? <span className="mb-1 hidden md:flex"><CallInProgress endedAt={timeline?.endedAt} /></span> : null}
@@ -185,7 +187,7 @@ const CallRow = memo(function CallRow({ summary, live = false, selected, compact
           </span>
           {!compact ? (
             <span className="hidden min-w-0 items-center gap-3 md:flex">
-              {live ? <CallInProgress endedAt={timeline?.endedAt} /> : <Outcome verb={outcome.verb} reason={outcome.reason} status={outcome.status} size="sm" />}
+              {live ? <CallInProgress endedAt={timeline?.endedAt} /> : <Outcome verb={outcome.verb} reason={outcome.reason} failed={outcome.failed} size="sm" />}
             </span>
           ) : null}
           {!compact ? (

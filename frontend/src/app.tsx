@@ -70,7 +70,6 @@ export function ToolsShell() {
     <header className="flex shrink-0 items-center justify-between gap-3 border-b border-line-1 px-4 py-3 md:px-8">
       <Link to="/metrics" className="flex min-h-9 items-center gap-2 text-[13px] text-fg-2 hover:text-fg"><ArrowLeftIcon size={15} />Dashboard</Link>
       <nav className="flex items-center gap-4 text-[12px] text-fg-3" aria-label="Secondary tools">
-        <NavLink to="/cases" className={({ isActive }) => isActive ? "text-fg" : "hover:text-fg"}>Rehearsal</NavLink>
         <NavLink to="/talk" className={({ isActive }) => isActive ? "text-fg" : "hover:text-fg"}>Voice demo</NavLink>
         <ThemeToggle compact />
       </nav>

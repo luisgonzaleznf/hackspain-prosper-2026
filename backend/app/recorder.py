@@ -1,17 +1,15 @@
 """Record both legs of a call straight off the wire, and summarise how the call sounded.
 
 The taps sit on the call's WebSocket, below any voice layer, so what is kept is exactly what
-Prosper sent us (the caller) and what we sent Prosper (the agent), each with the monotonic time
+the carrier sent us (the caller) and what we sent back (the agent), each with the monotonic time
 it crossed. During the call the taps only append to lists and log one `first_agent_audio` event.
-After the submit, `save()` runs off the event loop and writes, for every call (gitignored):
+After the outcome is logged, `save()` runs off the event loop and writes, for every call
+(gitignored):
 
 - logs/audio/<call_id>.wav          stereo 8 kHz: left the caller, right the agent, one timeline
 - logs/audio/<call_id>.timing.json  per-frame arrival/send times, for later transport analysis
 
 and returns the summary the server logs to the call's JSONL as `audio.timeline`.
-
-Scored calls show no audio until Monday's reveal, so this is the only way to hear them before the
-freeze.
 """
 
 from __future__ import annotations
@@ -31,8 +29,8 @@ from typing import Any
 
 RATE = 8000
 FRAME = 160  # 20 ms of 8 kHz audio: the unit every metric below is measured in
-AUDIBLE_RMS = 200  # ~-44 dBFS, as in evals/audio.py; Prosper's own threshold is unpublished
-MAX_S = 300  # stop recording after 5 min (Prosper caps calls at 3)
+AUDIBLE_RMS = 200  # ~-44 dBFS, as in evals/audio.py
+MAX_S = 300  # stop recording after 5 min
 STALL_S = (
     0.2  # caller frames arriving this far apart: codex/peer.py drops audio past 200 ms backlog
 )
@@ -44,7 +42,7 @@ BARGE_S = 0.1  # less overlap than this is turn-taking at the seam, not an inter
 
 # Flag thresholds: the lines worth reading first in a batch of calls.
 SLOW_GREETING_S = 5.0
-DEAD_AIR_S = 6.0  # neither side audible; Prosper's silence window is unpublished (evals guess 10 s)
+DEAD_AIR_S = 6.0  # neither side audible; carriers' silence windows vary (evals guess 10 s)
 SLOW_RESPONSE_S = 5.0
 SLOW_YIELD_S = 2.0
 NOISY_SNR_DB = 15.0
@@ -282,7 +280,7 @@ def summarise(
         else None
     )
     # Dead air: neither side audible, which is how evals/caller.py models the silence cut.
-    # (Prosper's rule reads "no audible audio from your agent"; that is longest_silence_s.)
+    # ("No audible audio from the agent" alone is longest_silence_s.)
     dead, dead_at = _longest_run(
         [not (a or c) for a, c in zip(agent_loud, caller_loud, strict=False)]
     )

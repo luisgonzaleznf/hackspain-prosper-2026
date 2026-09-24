@@ -48,31 +48,19 @@ export function ToolName({ name }: { name: string }) {
 }
 
 const OUTCOME_ICON: Record<string, Icon> = { BOOK: CalendarCheckIcon, RESCHEDULE: ArrowsClockwiseIcon, CANCEL: CalendarXIcon, REGISTER: UserPlusIcon, NO_ACTION: ProhibitIcon, ESCALATE: PhoneTransferIcon };
-const OUTCOME_LABEL: Record<string, string> = { BOOK: "Booked", RESCHEDULE: "Moved", CANCEL: "Cancelled", REGISTER: "Registered", NO_ACTION: "Declined", ESCALATE: "Escalated" };
+export const OUTCOME_LABEL: Record<string, string> = { BOOK: "Booked", RESCHEDULE: "Moved", CANCEL: "Cancelled", REGISTER: "Registered", NO_ACTION: "Declined", ESCALATE: "Escalated" };
 
-/** Outcome as icon + word; the reason code follows in mono when there is one. */
-export function Outcome({ verb, reason, status, size = "md", className }: { verb: string; reason?: string | null; status?: number | null; size?: "sm" | "md"; className?: string }) {
-  const Icon = OUTCOME_ICON[verb] ?? WarningIcon;
-  const failed = status != null && status >= 400;
+/** Outcome as icon + word; the reason code follows in mono when there is one. A failed write reads as such. */
+export function Outcome({ verb, reason, failed = false, size = "md", className }: { verb: string; reason?: string | null; failed?: boolean; size?: "sm" | "md"; className?: string }) {
+  const Icon = failed ? WarningIcon : OUTCOME_ICON[verb] ?? WarningIcon;
   const attention = failed || verb === "NO_ACTION" || verb === "ESCALATE";
   return (
-    <span className={clsx("inline-flex min-w-0 items-center gap-2", size === "sm" ? "text-[13px]" : "text-[14px]", className)} title={status != null ? `submitted ${status}` : undefined}>
+    <span className={clsx("inline-flex min-w-0 items-center gap-2", size === "sm" ? "text-[13px]" : "text-[14px]", className)} title={failed ? `Write failed while trying: ${OUTCOME_LABEL[verb] ?? verb}` : undefined}>
       <Icon size={size === "sm" ? 14 : 16} className={clsx("shrink-0", attention ? "text-accent-ink" : "text-fg-2")} />
       <span className={clsx("truncate", failed ? "text-accent-ink" : "text-fg")}>
-        {OUTCOME_LABEL[verb] ?? verb}
-        {failed ? ` (${status})` : ""}
+        {failed ? "Write failed" : OUTCOME_LABEL[verb] ?? verb}
       </span>
-      {reason ? <span className="mono hidden truncate text-[12px] text-fg-3 md:inline">{reason}</span> : null}
-    </span>
-  );
-}
-
-/** Pass / fail glyph for a verdict. */
-export function VerdictMark({ passed, signal, className }: { passed: boolean; signal?: string; className?: string }) {
-  return (
-    <span className={clsx("inline-flex items-center gap-1.5 text-[12px]", passed ? "text-fg-2" : "text-accent-ink", className)} title={signal}>
-      {passed ? <CheckIcon size={14} className="text-accent-ink" /> : <WarningIcon size={14} />}
-      <span className="mono">{passed ? "pass" : signal}</span>
+      {reason && !failed ? <span className="mono hidden truncate text-[12px] text-fg-3 md:inline">{reason}</span> : null}
     </span>
   );
 }

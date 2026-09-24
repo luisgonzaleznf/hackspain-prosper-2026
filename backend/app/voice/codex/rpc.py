@@ -30,7 +30,7 @@ class CodexRpcError(RuntimeError):
 
 
 # Pipecat gives setup 20 seconds; leave room to tear down one stuck process and retry
-# (6 + up to 4 to close + 6 = 16 s). Over 57 scored calls thread/realtime/start answered in a
+# (6 + up to 4 to close + 6 = 16 s). Over 57 test calls thread/realtime/start answered in a
 # median 1.1 s, p90 1.4 s, max 5.1 s (bc8cabf6, which went on to work), so 4 s would have torn
 # down a slow but healthy start; c6fc2af7 never answered at all.
 LIVE_START_TIMEOUT = 6.0
@@ -126,7 +126,7 @@ class CodexAppServer:
         await self.request(
             "initialize",
             {
-                "clientInfo": {"name": "prosper-voice", "version": "0.1"},
+                "clientInfo": {"name": "rosario-voice", "version": "0.1"},
                 "capabilities": {"experimentalApi": True},
             },
             timeout=25,

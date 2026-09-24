@@ -1,11 +1,12 @@
-"""The logic that decides what a call reports: check letters, staging rules, pre-write checks,
-and the hang-up submission. Offline: the Prosper client is replaced by a recorder."""
+"""The logic that decides what a call records: check letters, staging rules, pre-write checks,
+and the outcome logged at hang-up. Offline: no clinic database is read."""
 
 import asyncio
+import json
 from datetime import datetime
 
 import pytest
-from app import clinic, config, prosper
+from app import clinic, config
 from app.session import FALLBACK, CallSession
 from app.tools import call_tool
 
@@ -225,21 +226,16 @@ def test_unknown_tool_and_missing_args_do_not_raise():
     assert "error" in run(call_tool(s, "record_cancellation", {}))
 
 
-# ── hang-up submission ──────────────────────────────────────────────
+# ── hang-up outcome ─────────────────────────────────────────────────
 
 
-class Recorder:
-    def __init__(self):
-        self.sent: list[dict] = []
-
-    async def submit(self, action: dict):
-        self.sent.append(action)
-        return 200, {"record": {}}
+def outcome(s: CallSession) -> list[dict]:
+    """The actions the call's log says it ended with."""
+    lines = (config.CALLS_DIR / f"{s.call_id}.jsonl").read_text().splitlines()
+    return next(e["actions"] for e in map(json.loads, lines) if e["kind"] == "call_ended")
 
 
-def test_corrected_registration_replaces_the_staged_register_and_submits_once(monkeypatch):
-    rec = Recorder()
-    monkeypatch.setattr(prosper, "client", lambda: rec)
+def test_corrected_registration_replaces_the_staged_register_and_is_logged_once():
     s = CallSession(call_id="c")
     first = run(call_tool(s, "record_registration", _register_fields()))
     second = run(
@@ -261,30 +257,30 @@ def test_corrected_registration_replaces_the_staged_register_and_submits_once(mo
         }
     ]
     run(s.finish())
-    assert len(rec.sent) == 1
-    assert rec.sent[0]["action"] == "REGISTER"
-    assert rec.sent[0]["email"] == "ana.corrected@gmail.com"
+    sent = outcome(s)
+    assert len(sent) == 1
+    assert sent[0]["action"] == "REGISTER"
+    assert sent[0]["email"] == "ana.corrected@gmail.com"
 
 
-def test_finish_submits_every_staged_action_once(monkeypatch):
-    rec = Recorder()
-    monkeypatch.setattr(prosper, "client", lambda: rec)
+def test_finish_logs_every_staged_action_once():
     s = CallSession(call_id="c")
     s.stage({"action": "CANCEL", "appointment_id": "A1"})
     s.stage({"action": "CANCEL", "appointment_id": "A2"})
     run(s.finish())
-    run(s.finish())
-    assert rec.sent == [
-        {"action": "CANCEL", "appointment_id": "A1", "call_id": "c"},
-        {"action": "CANCEL", "appointment_id": "A2", "call_id": "c"},
+    assert run(s.finish()) == []
+    assert outcome(s) == [
+        {"action": "CANCEL", "appointment_id": "A1"},
+        {"action": "CANCEL", "appointment_id": "A2"},
     ]
+    lines = (config.CALLS_DIR / "c.jsonl").read_text().splitlines()
+    assert sum(json.loads(line)["kind"] == "call_ended" for line in lines) == 1
 
 
-def test_finish_with_nothing_staged_still_reports(monkeypatch):
-    rec = Recorder()
-    monkeypatch.setattr(prosper, "client", lambda: rec)
-    run(CallSession(call_id="c").finish())
-    assert rec.sent == [{**FALLBACK, "call_id": "c"}]
+def test_finish_with_nothing_staged_still_states_a_reason():
+    s = CallSession(call_id="c")
+    run(s.finish())
+    assert outcome(s) == [FALLBACK]
 
 
 # ── calendar ────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 """Phone-call tools that commit confirmed patient/calendar changes during the call."""
 
 import asyncio
+import re
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from datetime import date, datetime
@@ -9,6 +10,7 @@ from functools import cached_property
 from app import appointment_email, clinic, prompt
 from app.session import CallSession
 
+from integrations import local_clinic
 from integrations.local_clinic import LocalClinic
 from integrations.local_store import LocalStore, normalized, phone_digits
 
@@ -51,7 +53,7 @@ class LocalCallSession(CallSession):
 
     @cached_property
     def clinic_client(self) -> LocalClinic:
-        return LocalClinic(self.store, self.started_at)
+        return local_clinic.client(self.started_at, self.store)
 
     @cached_property
     def verified(self) -> set[str]:
@@ -69,7 +71,7 @@ class LocalCallSession(CallSession):
     saved: dict | None = None
 
     def instructions(self) -> str:
-        # The scored workflow is a named prompt section, not offsets into mutable prose.
+        # The staged-report workflow is a named prompt section, not offsets into mutable prose.
         clinic_rules = prompt.RULES.replace(prompt.STAGED_WRITE_RULES, "").replace(
             "it replaces ALL actions.", "it does not undo saved actions."
         )
@@ -113,11 +115,12 @@ class LocalCallSession(CallSession):
         if len(matches) != 1 or not args.get("name"):
             return
         patient = self.patients[matches[0]["patient_id"]]
-        words = {normalized(w) for w in args["name"].split()}
+        # Hyphens split words too: "García-Moreno" on file is said "García Moreno".
+        words = {normalized(w) for w in re.split(r"[\s-]+", args["name"]) if normalized(w)}
         on_file = {
             normalized(w)
             for k in ("given_name", "first_surname", "second_surname")
-            for w in patient[k].split()
+            for w in re.split(r"[\s-]+", patient[k])
         }
         if len(words) < 2 or not words <= on_file:
             return
@@ -294,33 +297,25 @@ class LocalCallSession(CallSession):
     async def finish_demo(self, *, source: str = "browser") -> list[dict]:
         # Local writes already happened. Email only the currently saved booking,
         # never an earlier slot that was moved or cancelled during this call.
-        diary = self.store.appointments()
-        self.actions = [
-            action
-            for action in self.actions
-            if action["action"] not in {"BOOK", "RESCHEDULE"}
-            or any(
+        def saved(action: dict) -> bool:
+            if action["action"] == "BOOK":
+                patient_id = action["patient_id"]
+            else:
+                patient_id = self.appointments.get(action["appointment_id"], {}).get("patient_id")
+            return any(
                 appointment["start_time"] == action["slot"]
                 and appointment["provider_id"] == action["provider_id"]
                 and appointment["location_id"] == action["location_id"]
                 and (
-                    appointment["patient_id"] == action.get("patient_id")
-                    if action["action"] == "BOOK"
-                    else appointment["appointment_id"] == action["appointment_id"]
+                    action["action"] == "BOOK"
+                    or appointment["appointment_id"] == action["appointment_id"]
                 )
-                for appointment in diary
+                for appointment in (self.store.appointments(patient_id) if patient_id else [])
             )
+
+        self.actions = [
+            action
+            for action in self.actions
+            if action["action"] not in {"BOOK", "RESCHEDULE"} or saved(action)
         ]
         return await super().finish_demo(source=source)
-
-    async def finish(self) -> list[dict]:
-        if self.finished:
-            return []
-        self.finished = True
-        self.log(
-            "call_ended",
-            source="twilio",
-            actions=self.actions or [self.fallback()],
-            submitted=False,
-        )
-        return []

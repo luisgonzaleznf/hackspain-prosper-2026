@@ -1,0 +1,2494 @@
+{
+ "provenance": "Synthetic patients of the HackSpain 2026 Prosper platform world (the organisers' generated clinic), recovered read-only from the team's own logs, case files and git history. Only the fields the seed needs; no call data, no caller numbers, no local registrations.",
+ "patients": [
+  {
+   "patient_id": "P00001",
+   "given_name": "Josefa",
+   "first_surname": "Domínguez",
+   "second_surname": "Navarro",
+   "national_id": "48064716Y",
+   "date_of_birth": "2001-09-19",
+   "phone": "711330529",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Nothing since April 2025, but an established patient. Seen once, by Dra. Carmen Ortiz Vidal. Calling from somewhere busy; expect to repeat the date.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00002",
+   "given_name": "Sonia",
+   "first_surname": "López",
+   "second_surname": "Rubio",
+   "national_id": "17326155W",
+   "date_of_birth": "2011-02-13",
+   "phone": "764048832",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Their most recent visit was November 2025. Has been seen four times, in paediatrics, general practice and gynaecology; no usual doctor. Holds a referral for Orthopaedics; no need to ask whether they have one. Will ask what to bring and how early to arrive.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00003",
+   "given_name": "Lucas",
+   "first_surname": "Jones",
+   "second_surname": "Smith",
+   "national_id": "Z5361712A",
+   "date_of_birth": "1980-04-04",
+   "phone": "757036760",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Their most recent visit was November 2025. Two visits, most recently with Dr. Martín Sáez. Says the identifier as a run of digits; read it back grouped.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00004",
+   "given_name": "Teresa",
+   "first_surname": "López",
+   "second_surname": "García",
+   "national_id": "60153984Z",
+   "date_of_birth": "1996-08-14",
+   "phone": "669394942",
+   "insurer": "asisa",
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Nothing since April 2025, but an established patient. One visit only, with Dra. Isabel Montoro. Asks whether an appointment can be moved once it is made.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00005",
+   "given_name": "Ignacio",
+   "first_surname": "Vázquez",
+   "second_surname": "Moreno",
+   "national_id": "65699248R",
+   "date_of_birth": "1939-12-09",
+   "phone": "731169716",
+   "insurer": "cigna",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "The chart goes quiet after August 2025. Four visits, the first of them back in January 2024. Already has an appointment on the books -- check it before adding another. Will ask which entrance and which floor.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00006",
+   "given_name": "Ignacio",
+   "first_surname": "Díaz",
+   "second_surname": "Marín",
+   "national_id": "29087618R",
+   "date_of_birth": "1973-03-08",
+   "phone": "607455484",
+   "insurer": "asisa",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Has not been in since May 2025. Has been seen three times, in orthopaedics, physiotherapy and general practice; no usual doctor. A GP referral for Orthopaedics is on file -- the gated specialties need one. Rings from work; keep it short and confirm once.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00007",
+   "given_name": "Manuela",
+   "first_surname": "Sánchez",
+   "second_surname": "Muñoz",
+   "national_id": "21921013N",
+   "date_of_birth": "2011-11-14",
+   "phone": "636308034",
+   "insurer": "asisa",
+   "sex": "F",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Still attending; the last visit was September 2025. Two visits, most recently with Dr. Javier Ocaña. Will ask what is available soonest before anything else.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00008",
+   "given_name": "Mario",
+   "first_surname": "Delgado",
+   "second_surname": "Medina",
+   "national_id": "62937630Q",
+   "date_of_birth": "2021-02-06",
+   "phone": "655913877",
+   "insurer": "caser",
+   "sex": "M",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Not been in since September 2024. Seen once, by Dr. Javier Ocaña. Holds a referral for Dermatology; no need to ask whether they have one. The caller gives their own name first; the patient is the child.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00009",
+   "given_name": "Sonia",
+   "first_surname": "Álvarez",
+   "second_surname": "Medina",
+   "national_id": "62819257R",
+   "date_of_birth": "2017-05-12",
+   "phone": "746987792",
+   "insurer": "privado",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Last seen December 2025. Has been seen twice, in paediatrics and orthopaedics; no usual doctor. A GP referral for Orthopaedics is on file -- the gated specialties need one. The caller gives their own name first; the patient is the child.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00010",
+   "given_name": "Antonia",
+   "first_surname": "Gil",
+   "second_surname": "Muñoz",
+   "national_id": "93804259R",
+   "date_of_birth": "2012-01-23",
+   "phone": "738597198",
+   "insurer": "asisa",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Seen here before, but there is no visit on the chart to read back. Calling from somewhere busy; expect to repeat the date.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00011",
+   "given_name": "Chloe",
+   "first_surname": "Roberts",
+   "second_surname": "Smith",
+   "national_id": "Z4237244M",
+   "date_of_birth": "1996-09-01",
+   "phone": "708729566",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Has not been in since July 2025. Four visits across general practice and orthopaedics, with no one regular doctor. Will ask which entrance and which floor.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00012",
+   "given_name": "Amelia",
+   "first_surname": "Hughes",
+   "second_surname": "White",
+   "national_id": "13309713G",
+   "date_of_birth": "1981-04-08",
+   "phone": "712676131",
+   "insurer": "sanitas",
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "First contact with the clinic; the record is empty behind them. Will ask what is available soonest before anything else.",
+   "has_visited_before": false,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00013",
+   "given_name": "Ella",
+   "first_surname": "Davies",
+   "second_surname": "White",
+   "national_id": "20495496N",
+   "date_of_birth": "2012-03-18",
+   "phone": "655274801",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "New to the clinic -- the appointment on file is their first visit, with Dra. Carmen Ortiz Vidal. Repeats a time back as morning or afternoon; confirm the exact hour.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00014",
+   "given_name": "Ramón",
+   "first_surname": "Serrano",
+   "second_surname": "Vázquez",
+   "national_id": "84881312L",
+   "date_of_birth": "2012-07-27",
+   "phone": "658692508",
+   "insurer": "mapfre",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics"
+   ],
+   "note": "An old patient of the clinic; nothing since May 2024. Seen once, by Dr. Javier Ocaña. A GP referral for Dermatology is on file -- the gated specialties need one. Will ask which entrance and which floor.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00015",
+   "given_name": "Josefa",
+   "first_surname": "Sánchez",
+   "second_surname": "Gutiérrez",
+   "national_id": "49526979K",
+   "date_of_birth": "1967-03-20",
+   "phone": "755842366",
+   "insurer": "adeslas",
+   "sex": "F",
+   "referrals": [],
+   "note": "First contact with the clinic; the record is empty behind them. Asks whether an appointment can be moved once it is made.",
+   "has_visited_before": false,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00016",
+   "given_name": "Elizabeth",
+   "first_surname": "Robinson",
+   "second_surname": "White",
+   "national_id": "X7669216G",
+   "date_of_birth": "1980-11-03",
+   "phone": "755277004",
+   "insurer": "axa",
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "orthopaedics"
+   ],
+   "note": "Nothing since August 2025, but an established patient. Three visits, the first of them back in January 2025. Holds a referral for Dermatology; no need to ask whether they have one. Asks for a reference number at the end of the call.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00017",
+   "given_name": "Carmen",
+   "first_surname": "Sanz",
+   "second_surname": "Álvarez",
+   "national_id": "56742196T",
+   "date_of_birth": "2004-05-20",
+   "phone": "623632778",
+   "insurer": "dkv",
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "On file, never attended. Treat everything as a first visit. A GP referral for Physiotherapy is on file -- the gated specialties need one. Books for a partner as often as for themselves; settle who the patient is.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00018",
+   "given_name": "Gonzalo",
+   "first_surname": "Torres",
+   "second_surname": "Vázquez",
+   "national_id": "53798337A",
+   "date_of_birth": "1982-02-05",
+   "phone": "666018892",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "An old patient of the clinic; nothing since December 2024. Seen once, by Dra. Laura Benítez Roca. Rings from work; keep it short and confirm once.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00019",
+   "given_name": "Yolanda",
+   "first_surname": "López",
+   "second_surname": "Martín",
+   "national_id": "07988351Z",
+   "date_of_birth": "1977-03-01",
+   "phone": "758694077",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [],
+   "note": "Last seen December 2025. Five visits, nearly all of them with Dra. Carmen Ortiz Vidal. Rings from work; keep it short and confirm once.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00020",
+   "given_name": "Alejandro",
+   "first_surname": "Medina",
+   "second_surname": "Sánchez",
+   "national_id": "51675813B",
+   "date_of_birth": "2020-03-28",
+   "phone": "667156163",
+   "insurer": "axa",
+   "sex": "M",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Never been seen here; two first visits are already booked, the first of them with D. Álvaro Cid. A GP referral for Physiotherapy is on file -- the gated specialties need one. A parent rings and may raise a sibling too; keep clear which child each detail belongs to.",
+   "has_visited_before": false,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00021",
+   "given_name": "Chloe",
+   "first_surname": "Hall",
+   "second_surname": "Wood",
+   "national_id": "X3644640Z",
+   "date_of_birth": "1981-05-02",
+   "phone": "630504540",
+   "insurer": "caser",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "New to the clinic; no visit history. Asks whether they can be seen outside working hours.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00022",
+   "given_name": "Pedro",
+   "first_surname": "Vázquez",
+   "second_surname": "Rubio",
+   "national_id": "96535718A",
+   "date_of_birth": "1982-08-05",
+   "phone": "768772453",
+   "insurer": "caser",
+   "sex": "M",
+   "referrals": [],
+   "note": "An old patient of the clinic; nothing since November 2024. Seen once, by Dr. Emilio Iglesia. Spells their surname unprompted, and it is worth taking the spelling.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00023",
+   "given_name": "Sonia",
+   "first_surname": "Vázquez",
+   "second_surname": "Alonso",
+   "national_id": "86522117G",
+   "date_of_birth": "1943-01-01",
+   "phone": "740021904",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "An old patient of the clinic; nothing since May 2024. A single visit on the chart, with D. Álvaro Cid. Answers before the question is finished; check they heard the whole of it.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00024",
+   "given_name": "Sara",
+   "first_surname": "Blanco",
+   "second_surname": "Serrano",
+   "national_id": "60638160V",
+   "date_of_birth": "1961-08-26",
+   "phone": "791455718",
+   "insurer": "sanitas",
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "The chart goes quiet after July 2025. Three visits across general practice and orthopaedics, with no one regular doctor. Goes quiet while they check a diary; the pause is not a dropped line.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00025",
+   "given_name": "Agustín",
+   "first_surname": "Alonso",
+   "second_surname": "Hernández",
+   "national_id": "09349470Q",
+   "date_of_birth": "2026-05-08",
+   "phone": "760299789",
+   "insurer": "mapfre",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "An existing patient with nothing on the chart behind them. A GP referral for Orthopaedics is on file -- the gated specialties need one. The parent has the child's details to hand but not always their own.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00026",
+   "given_name": "Cristina",
+   "first_surname": "Gutiérrez",
+   "second_surname": "Ortega",
+   "national_id": "10876392Z",
+   "date_of_birth": "1989-04-11",
+   "phone": "700377820",
+   "insurer": "dkv",
+   "sex": "F",
+   "referrals": [],
+   "note": "The chart goes quiet after August 2025. Four visits across general practice and orthopaedics, with no one regular doctor. Will ask which entrance and which floor.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00027",
+   "given_name": "Víctor",
+   "first_surname": "Ortega",
+   "second_surname": "Álvarez",
+   "national_id": "44523427G",
+   "date_of_birth": "1940-11-19",
+   "phone": "715941688",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "First contact with the clinic; the record is empty behind them. A GP referral for Orthopaedics is on file -- the gated specialties need one. Mishears numbers said at speed -- say the identifier back digit by digit.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00028",
+   "given_name": "Alejandro",
+   "first_surname": "Ruiz",
+   "second_surname": "Fernández",
+   "national_id": "Y8519297L",
+   "date_of_birth": "1937-10-24",
+   "phone": "776357216",
+   "insurer": "cigna",
+   "sex": "M",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Last seen September 2025. Six visits on the chart, spread across general practice, dermatology and gynaecology. A GP referral for Dermatology is on file -- the gated specialties need one. Writes it down while you wait; leave a pause after the date.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00029",
+   "given_name": "Raquel",
+   "first_surname": "Gil",
+   "second_surname": "Gómez",
+   "national_id": "53563366T",
+   "date_of_birth": "2008-05-28",
+   "phone": "656059258",
+   "insurer": "dkv",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Registered but never seen -- nothing on the chart yet. Gets the date right and the weekday wrong; say both back.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00030",
+   "given_name": "Roberto",
+   "first_surname": "Fernández",
+   "second_surname": "Vázquez",
+   "national_id": "66247986M",
+   "date_of_birth": "2018-10-10",
+   "phone": "653371200",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [],
+   "note": "The chart goes quiet after January 2025. One visit only, with Dra. Nuria Peral. The caller gives their own name first; the patient is the child.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00031",
+   "given_name": "Álvaro",
+   "first_surname": "Alonso",
+   "second_surname": "Ramírez",
+   "national_id": "01085260M",
+   "date_of_birth": "1984-10-05",
+   "phone": "640175266",
+   "insurer": "nueva_mutua",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics"
+   ],
+   "note": "Lapsed -- the chart stops at February 2024. A single visit on the chart, with Dra. Carmen Ortiz Vidal. Goes quiet while they check a diary; the pause is not a dropped line.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00032",
+   "given_name": "Joaquín",
+   "first_surname": "Morales",
+   "second_surname": "Muñoz",
+   "national_id": "97541050M",
+   "date_of_birth": "2013-04-21",
+   "phone": "611875810",
+   "insurer": "cigna",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Last seen December 2025. Three visits, the first of them back in February 2025. There is something ahead of them on the diary; they may mean that. A parent who asks whether the child needs to bring anything.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00033",
+   "given_name": "Cristina",
+   "first_surname": "Domínguez",
+   "second_surname": "Alonso",
+   "national_id": "81007141Z",
+   "date_of_birth": "2016-01-21",
+   "phone": "638994362",
+   "insurer": "dkv",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "On file, never attended. Treat everything as a first visit. A parent who asks whether the child needs to bring anything.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00034",
+   "given_name": "Daniel",
+   "first_surname": "Ruiz",
+   "second_surname": "Molina",
+   "national_id": "95172713R",
+   "date_of_birth": "1932-05-23",
+   "phone": "767864476",
+   "insurer": "caser",
+   "sex": "M",
+   "referrals": [],
+   "note": "Has not been in since July 2025. A regular of Dr. Pablo Requena, three visits in all. Will ask what to bring and how early to arrive.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00035",
+   "given_name": "Ana",
+   "first_surname": "Álvarez",
+   "second_surname": "Álvarez",
+   "national_id": "25865607Z",
+   "date_of_birth": "1968-09-28",
+   "phone": "741302240",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "First contact with the clinic; the record is empty behind them. A GP referral for Orthopaedics is on file -- the gated specialties need one. Asks whether they can be seen outside working hours.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00036",
+   "given_name": "Benjamin",
+   "first_surname": "Harris",
+   "second_surname": "Davies",
+   "national_id": "44717296Y",
+   "date_of_birth": "2015-11-04",
+   "phone": "793488358",
+   "insurer": "privado",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Lapsed -- the chart stops at May 2024. Seen once, by Dr. Javier Ocaña. The child is audible in the background; expect to repeat things.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00037",
+   "given_name": "Fernando",
+   "first_surname": "Alonso",
+   "second_surname": "Ruiz",
+   "national_id": "09141173F",
+   "date_of_birth": "1995-03-03",
+   "phone": "741351172",
+   "insurer": "asisa",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "New to the clinic; no visit history. Goes quiet while they check a diary; the pause is not a dropped line.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00038",
+   "given_name": "Manuela",
+   "first_surname": "Muñoz",
+   "second_surname": "Torres",
+   "national_id": "86768968L",
+   "date_of_birth": "2019-04-18",
+   "phone": "642235892",
+   "insurer": "privado",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Nothing since July 2025, but an established patient. A single visit on the chart, with Dr. Emilio Iglesia. A parent rings and may raise a sibling too; keep clear which child each detail belongs to.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00039",
+   "given_name": "Begoña",
+   "first_surname": "Alonso",
+   "second_surname": "Pérez",
+   "national_id": "46277433F",
+   "date_of_birth": "1994-08-06",
+   "phone": "796037980",
+   "insurer": "nueva_mutua",
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Last seen December 2025. Seen once, by Dra. Carmen Ortiz Vidal. Talks over the top of you; confirm each detail on its own.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00040",
+   "given_name": "Oscar",
+   "first_surname": "Baker",
+   "second_surname": "Davies",
+   "national_id": "Y7556753W",
+   "date_of_birth": "2003-06-28",
+   "phone": "687100486",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "Lapsed -- the chart stops at July 2024. A single visit on the chart, with Dra. Carmen Ortiz Vidal. Every visit so far has been at Arenal Centro, if they say the usual place. On speakerphone; expect a lag and some noise.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00041",
+   "given_name": "Juan",
+   "first_surname": "Alonso",
+   "second_surname": "Sanz",
+   "national_id": "97729355D",
+   "date_of_birth": "2005-03-24",
+   "phone": "672767918",
+   "insurer": "nueva_mutua",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Registered but never seen -- nothing on the chart yet. Asks whether they can be seen outside working hours.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00042",
+   "given_name": "Rosa",
+   "first_surname": "Romero",
+   "second_surname": "Ruiz",
+   "national_id": "88602941H",
+   "date_of_birth": "2003-10-20",
+   "phone": "620877561",
+   "insurer": "axa",
+   "sex": "F",
+   "referrals": [],
+   "note": "Never been seen here; their first visit is booked with Dr. Pablo Requena. Spells their surname unprompted, and it is worth taking the spelling.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00043",
+   "given_name": "María",
+   "first_surname": "Navarro",
+   "second_surname": "Moreno",
+   "national_id": "88540381H",
+   "date_of_birth": "2017-07-17",
+   "phone": "716882605",
+   "insurer": "privado",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "The chart goes quiet after July 2025. A single visit on the chart, with Dra. Nuria Peral. A parent rings and may raise a sibling too; keep clear which child each detail belongs to.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00044",
+   "given_name": "Álvaro",
+   "first_surname": "García",
+   "second_surname": "Morales",
+   "national_id": "02593792J",
+   "date_of_birth": "1981-09-24",
+   "phone": "664718409",
+   "insurer": "cigna",
+   "sex": "M",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "On file, never attended. Treat everything as a first visit. Says the identifier as a run of digits; read it back grouped.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00045",
+   "given_name": "Soledad",
+   "first_surname": "Ramírez",
+   "second_surname": "Castro",
+   "national_id": "02173512N",
+   "date_of_birth": "1977-05-16",
+   "phone": "638495971",
+   "insurer": "sanitas",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Last seen December 2025. Coming here since December 2024 -- three visits. Holds a referral for Orthopaedics; no need to ask whether they have one. Corrects themselves mid-sentence -- take the last answer, not the first.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00046",
+   "given_name": "Irene",
+   "first_surname": "Morales",
+   "second_surname": "Sánchez",
+   "national_id": "11194117V",
+   "date_of_birth": "1986-03-16",
+   "phone": "775025385",
+   "insurer": "sanitas",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Has not been in since May 2025. A single visit on the chart, with Dra. Carmen Ortiz Vidal. Holds a referral for Orthopaedics; no need to ask whether they have one. Spells their surname unprompted, and it is worth taking the spelling.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00047",
+   "given_name": "William",
+   "first_surname": "Walker",
+   "second_surname": "Hughes",
+   "national_id": "77859984Q",
+   "date_of_birth": "2022-03-28",
+   "phone": "694203189",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "No history behind them, two appointments ahead; the next is with Dr. Javier Ocaña. Holds a referral for Physiotherapy; no need to ask whether they have one. A parent rings and may raise a sibling too; keep clear which child each detail belongs to.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00048",
+   "given_name": "Guillermo",
+   "first_surname": "Sanz",
+   "second_surname": "Iglesias",
+   "national_id": "03606872N",
+   "date_of_birth": "1944-08-07",
+   "phone": "761260075",
+   "insurer": "privado",
+   "sex": "M",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Their most recent visit was September 2025. Has been seen four times, in gynaecology, orthopaedics and general practice; no usual doctor. Will keep the call going -- steer back to what is being booked.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00049",
+   "given_name": "Luis",
+   "first_surname": "Gutiérrez",
+   "second_surname": "Pérez",
+   "national_id": "Y3698856X",
+   "date_of_birth": "2012-06-14",
+   "phone": "681560968",
+   "insurer": "adeslas",
+   "sex": "M",
+   "referrals": [],
+   "note": "Nothing since April 2025, but an established patient. One visit only, with Dr. Javier Ocaña. Rings from work; keep it short and confirm once.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00050",
+   "given_name": "Tomás",
+   "first_surname": "Martínez",
+   "second_surname": "González",
+   "national_id": "22051519Q",
+   "date_of_birth": "1979-08-26",
+   "phone": "785473662",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Not been in since November 2024. Two visits, most recently with Dra. Nuria Peral. A GP referral for Orthopaedics is on file -- the gated specialties need one. Books for a partner as often as for themselves; settle who the patient is.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00051",
+   "given_name": "Concepción",
+   "first_surname": "Rodríguez",
+   "second_surname": "Muñoz",
+   "national_id": "46893377B",
+   "date_of_birth": "1979-06-06",
+   "phone": "785751209",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "orthopaedics"
+   ],
+   "note": "Lapsed -- the chart stops at June 2024. Five visits on the chart, spread across gynaecology, orthopaedics and general practice. There is something ahead of them on the diary; they may mean that. Names whoever they are calling about before themselves; settle who the patient is early.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00052",
+   "given_name": "Catherine",
+   "first_surname": "Wilson",
+   "second_surname": "Thompson",
+   "national_id": "Z3758273D",
+   "date_of_birth": "1973-05-01",
+   "phone": "663964490",
+   "insurer": "asisa",
+   "sex": "F",
+   "referrals": [],
+   "note": "Registered but never seen -- nothing on the chart yet. Will ask what is available soonest before anything else.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00053",
+   "given_name": "Yolanda",
+   "first_surname": "Díaz",
+   "second_surname": "Molina",
+   "national_id": "X4183488H",
+   "date_of_birth": "1968-01-02",
+   "phone": "704721659",
+   "insurer": "axa",
+   "sex": "F",
+   "referrals": [],
+   "note": "Still attending; the last visit was December 2025. Has been seen four times, in general practice and orthopaedics; no usual doctor. Asks whether they can be seen outside working hours.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00054",
+   "given_name": "Miguel",
+   "first_surname": "Martín",
+   "second_surname": "Navarro",
+   "national_id": "41160341R",
+   "date_of_birth": "1986-07-07",
+   "phone": "747149511",
+   "insurer": "adeslas",
+   "sex": "M",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Never been seen here; their first visit is booked with Dra. Laura Benítez Roca. Holds a referral for Dermatology; no need to ask whether they have one. Goes quiet while they check a diary; the pause is not a dropped line.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00055",
+   "given_name": "Gloria",
+   "first_surname": "Torres",
+   "second_surname": "Ramírez",
+   "national_id": "93468400B",
+   "date_of_birth": "1973-01-23",
+   "phone": "654246795",
+   "insurer": "adeslas",
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Last seen November 2025. Three visits, nearly all of them with Dr. Emilio Iglesia. A GP referral for Physiotherapy is on file -- the gated specialties need one. Asks for a reference number at the end of the call.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00056",
+   "given_name": "Soledad",
+   "first_surname": "Pérez",
+   "second_surname": "Castro",
+   "national_id": "99684560F",
+   "date_of_birth": "1965-12-04",
+   "phone": "710573950",
+   "insurer": "cigna",
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "New to the clinic -- the appointment on file is their first visit, with Dr. Martín Sáez. A GP referral for Physiotherapy is on file -- the gated specialties need one. Says the identifier as a run of digits; read it back grouped.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00057",
+   "given_name": "Gloria",
+   "first_surname": "González",
+   "second_surname": "Blanco",
+   "national_id": "15750638P",
+   "date_of_birth": "1999-06-15",
+   "phone": "717149893",
+   "insurer": "dkv",
+   "sex": "F",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Still attending; the last visit was October 2025. Four visits, most recently with Dr. Pablo Requena. Repeats a time back as morning or afternoon; confirm the exact hour.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00058",
+   "given_name": "Mercedes",
+   "first_surname": "Martín",
+   "second_surname": "Marín",
+   "national_id": "70911176Z",
+   "date_of_birth": "1989-09-11",
+   "phone": "765411176",
+   "insurer": "cigna",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Registered but never seen -- nothing on the chart yet. A GP referral for Orthopaedics is on file -- the gated specialties need one. Will ask what is available soonest before anything else.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00059",
+   "given_name": "Francisco",
+   "first_surname": "Castro",
+   "second_surname": "Marín",
+   "national_id": "69380773P",
+   "date_of_birth": "2025-01-28",
+   "phone": "634368510",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics"
+   ],
+   "note": "Their most recent visit was November 2025. Seen once, by Dr. Javier Ocaña. The parent has the child's details to hand but not always their own.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00060",
+   "given_name": "Sara",
+   "first_surname": "Sánchez",
+   "second_surname": "Molina",
+   "national_id": "80507825M",
+   "date_of_birth": "2019-05-16",
+   "phone": "741596883",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "orthopaedics"
+   ],
+   "note": "New to the clinic -- the appointment on file is their first visit, with Dra. Marta Sáenz. A GP referral for Dermatology is on file -- the gated specialties need one. The child is audible in the background; expect to repeat things.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00061",
+   "given_name": "Irene",
+   "first_surname": "Ortega",
+   "second_surname": "Pérez",
+   "national_id": "65256541K",
+   "date_of_birth": "1990-10-07",
+   "phone": "677472636",
+   "insurer": "dkv",
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "Their most recent visit was November 2025. Coming here since December 2024 -- three visits. A GP referral for Dermatology is on file -- the gated specialties need one. Gets the date right and the weekday wrong; say both back.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00062",
+   "given_name": "Joseph",
+   "first_surname": "Parker",
+   "second_surname": "Williams",
+   "national_id": "X6634895Q",
+   "date_of_birth": "1977-10-28",
+   "phone": "789066560",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "On file, never attended. Treat everything as a first visit. A GP referral for Physiotherapy is on file -- the gated specialties need one. Talks over the top of you; confirm each detail on its own.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00063",
+   "given_name": "Amelia",
+   "first_surname": "Brown",
+   "second_surname": "Cooper",
+   "national_id": "X4273977W",
+   "date_of_birth": "1980-05-03",
+   "phone": "719303392",
+   "insurer": "sanitas",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Last seen October 2025. One visit only, with Dr. Pablo Requena. Their whole history is at Arenal Norte -- that is what they mean by there. Volunteers nothing; ask for each detail directly rather than waiting.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00064",
+   "given_name": "Rosa",
+   "first_surname": "Sanz",
+   "second_surname": "Molina",
+   "national_id": "64060814H",
+   "date_of_birth": "1953-12-23",
+   "phone": "796444975",
+   "insurer": "nueva_mutua",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "On file, never attended. Treat everything as a first visit. Read the appointment back before ending the call; they check it and will not ask.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00065",
+   "given_name": "Emma",
+   "first_surname": "Wright",
+   "second_surname": "Baker",
+   "national_id": "X7275867R",
+   "date_of_birth": "2005-11-08",
+   "phone": "686163578",
+   "insurer": "sanitas",
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "New to the clinic -- the appointment on file is their first visit, with Dr. Martín Sáez. Volunteers nothing; ask for each detail directly rather than waiting.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00066",
+   "given_name": "Roberto",
+   "first_surname": "Blanco",
+   "second_surname": "Romero",
+   "national_id": "83208495S",
+   "date_of_birth": "1964-08-18",
+   "phone": "685724543",
+   "insurer": "adeslas",
+   "sex": "M",
+   "referrals": [],
+   "note": "Nothing since June 2025, but an established patient. Three visits, nearly all of them with Dra. Laura Benítez Roca. Will keep the call going -- steer back to what is being booked.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00067",
+   "given_name": "Alejandro",
+   "first_surname": "Ramírez",
+   "second_surname": "Pérez",
+   "national_id": "36304709Z",
+   "date_of_birth": "2008-07-04",
+   "phone": "755314042",
+   "insurer": "mapfre",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "Still attending; the last visit was October 2025. Has been seen twice, in general practice and dermatology; no usual doctor. Says the identifier as a run of digits; read it back grouped.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00068",
+   "given_name": "Óscar",
+   "first_surname": "Ortega",
+   "second_surname": "Ramos",
+   "national_id": "61967209B",
+   "date_of_birth": "1962-11-11",
+   "phone": "668409611",
+   "insurer": "cigna",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "Lapsed -- the chart stops at December 2024. Eight visits on the chart, spread across gynaecology, physiotherapy, general practice and dermatology. Holds a referral for Dermatology; no need to ask whether they have one. Rings from work; keep it short and confirm once.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00069",
+   "given_name": "Josefa",
+   "first_surname": "González",
+   "second_surname": "Ruiz",
+   "national_id": "49055974X",
+   "date_of_birth": "1972-11-08",
+   "phone": "795903969",
+   "insurer": "adeslas",
+   "sex": "F",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Not been in since November 2024. Six visits, nearly all of them with Dra. Laura Benítez Roca. Seen at more than one site -- Arenal Centro and Arenal Sur -- so the usual place settles nothing; ask which. Talks over the top of you; confirm each detail on its own.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00070",
+   "given_name": "Montserrat",
+   "first_surname": "Navarro",
+   "second_surname": "Castro",
+   "national_id": "53695233P",
+   "date_of_birth": "1968-11-13",
+   "phone": "689606465",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Last seen September 2025. Three visits, the first of them back in July 2025. On speakerphone; expect a lag and some noise.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00071",
+   "given_name": "Francisca",
+   "first_surname": "González",
+   "second_surname": "Rodríguez",
+   "national_id": "80390906H",
+   "date_of_birth": "1934-11-23",
+   "phone": "774265668",
+   "insurer": "asisa",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "On file, never attended. Treat everything as a first visit. Holds a referral for Orthopaedics; no need to ask whether they have one. Read the appointment back before ending the call; they check it and will not ask.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00072",
+   "given_name": "Lucía",
+   "first_surname": "Marín",
+   "second_surname": "Muñoz",
+   "national_id": "67212867J",
+   "date_of_birth": "1989-06-12",
+   "phone": "775905818",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Registered but never seen -- nothing on the chart yet. Will ask what it costs under their policy before agreeing to anything.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00073",
+   "given_name": "Antonio",
+   "first_surname": "Díaz",
+   "second_surname": "Alonso",
+   "national_id": "92893336Q",
+   "date_of_birth": "2023-01-27",
+   "phone": "601235608",
+   "insurer": "mapfre",
+   "sex": "M",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "New to the clinic; no visit history. A parent rings and may raise a sibling too; keep clear which child each detail belongs to.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00074",
+   "given_name": "Mario",
+   "first_surname": "Rodríguez",
+   "second_surname": "Torres",
+   "national_id": "23197665A",
+   "date_of_birth": "2011-05-20",
+   "phone": "679992342",
+   "insurer": "cigna",
+   "sex": "M",
+   "referrals": [],
+   "note": "Nothing since May 2025, but an established patient. One visit only, with Dra. Isabel Montoro. Names whoever they are calling about before themselves; settle who the patient is early.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00075",
+   "given_name": "Álvaro",
+   "first_surname": "Fernández",
+   "second_surname": "González",
+   "national_id": "09914360A",
+   "date_of_birth": "1997-05-24",
+   "phone": "687972771",
+   "insurer": "privado",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "An old patient of the clinic; nothing since November 2024. Two visits across gynaecology and physiotherapy, with no one regular doctor. A GP referral for Dermatology is on file -- the gated specialties need one. Calling from somewhere busy; expect to repeat the date.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00076",
+   "given_name": "Charlotte",
+   "first_surname": "Taylor",
+   "second_surname": "Williams",
+   "national_id": "Z4469594D",
+   "date_of_birth": "2025-05-24",
+   "phone": "706084256",
+   "insurer": "sanitas",
+   "sex": "F",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Their most recent visit was October 2025. A single visit on the chart, with Dra. Elena Iglesias. Booked by a grandparent, who may not know the insurer -- ask.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00077",
+   "given_name": "Beatriz",
+   "first_surname": "Blanco",
+   "second_surname": "Fernández",
+   "national_id": "56473205V",
+   "date_of_birth": "1961-08-28",
+   "phone": "672511698",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Their most recent visit was October 2025. Seen once, by Dr. Martín Sáez. A GP referral for Orthopaedics is on file -- the gated specialties need one. Will ask what is available soonest before anything else.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00078",
+   "given_name": "Enrique",
+   "first_surname": "Serrano",
+   "second_surname": "Serrano",
+   "national_id": "86032480Z",
+   "date_of_birth": "1999-02-04",
+   "phone": "764238565",
+   "insurer": "mapfre",
+   "sex": "M",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Has not been in since April 2025. Two visits, most recently with Dra. Laura Benítez Roca. A GP referral for Physiotherapy is on file -- the gated specialties need one. Asks whether they can be seen outside working hours.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00079",
+   "given_name": "Begoña",
+   "first_surname": "Rubio",
+   "second_surname": "Gil",
+   "national_id": "23617931J",
+   "date_of_birth": "2009-08-10",
+   "phone": "770127023",
+   "insurer": "mapfre",
+   "sex": "F",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Nothing since July 2025, but an established patient. Coming here since July 2024 -- three visits. Gets the date right and the weekday wrong; say both back.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00080",
+   "given_name": "Pedro",
+   "first_surname": "Ortega",
+   "second_surname": "Muñoz",
+   "national_id": "72259096L",
+   "date_of_birth": "1970-07-12",
+   "phone": "784779977",
+   "insurer": "adeslas",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "The chart goes quiet after February 2025. One visit only, with Dr. Martín Sáez. Read the appointment back before ending the call; they check it and will not ask.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00081",
+   "given_name": "Óscar",
+   "first_surname": "Moreno",
+   "second_surname": "González",
+   "national_id": "30427338V",
+   "date_of_birth": "1987-05-12",
+   "phone": "661833590",
+   "insurer": "dkv",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Known to the clinic; no history on file to read back. Asks for a reference number at the end of the call.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00082",
+   "given_name": "Gonzalo",
+   "first_surname": "Gómez",
+   "second_surname": "Gil",
+   "national_id": "26127055K",
+   "date_of_birth": "1991-04-26",
+   "phone": "696065717",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "On file, never attended. Treat everything as a first visit. A GP referral for Orthopaedics is on file -- the gated specialties need one. Will ask what to bring and how early to arrive.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00083",
+   "given_name": "Hannah",
+   "first_surname": "Evans",
+   "second_surname": "Robinson",
+   "national_id": "Z1534052A",
+   "date_of_birth": "1942-02-09",
+   "phone": "614020630",
+   "insurer": "dkv",
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Not been in since October 2024. A single visit on the chart, with Dr. Emilio Iglesia. Asks for a confirmation by text afterwards.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00084",
+   "given_name": "Roberto",
+   "first_surname": "Sanz",
+   "second_surname": "Ruiz",
+   "national_id": "59973857T",
+   "date_of_birth": "1997-07-26",
+   "phone": "718024121",
+   "insurer": "dkv",
+   "sex": "M",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Nothing since April 2025, but an established patient. One visit only, with Dra. Carmen Ortiz Vidal. Asks for a reference number at the end of the call.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00085",
+   "given_name": "Raúl",
+   "first_surname": "Fernández",
+   "second_surname": "Sánchez",
+   "national_id": "34187189N",
+   "date_of_birth": "1940-08-16",
+   "phone": "660219120",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [],
+   "note": "Not been in since October 2024. Seen once, by Dra. Laura Benítez Roca. Their whole history is at Arenal Norte -- that is what they mean by there. Writes it down while you wait; leave a pause after the date.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00086",
+   "given_name": "Óscar",
+   "first_surname": "García",
+   "second_surname": "Moreno",
+   "national_id": "66340413H",
+   "date_of_birth": "2024-07-07",
+   "phone": "773344501",
+   "insurer": "dkv",
+   "sex": "M",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Last seen October 2025. Five visits, nearly all of them with Dra. Marta Sáenz. A parent who asks whether the child needs to bring anything.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00087",
+   "given_name": "Manuel",
+   "first_surname": "Sánchez",
+   "second_surname": "Medina",
+   "national_id": "92797330N",
+   "date_of_birth": "2005-12-10",
+   "phone": "780410707",
+   "insurer": "adeslas",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "New to the clinic; no visit history. Mishears numbers said at speed -- say the identifier back digit by digit.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00088",
+   "given_name": "Megan",
+   "first_surname": "Harris",
+   "second_surname": "Wilson",
+   "national_id": "X8425451E",
+   "date_of_birth": "1990-09-24",
+   "phone": "619480730",
+   "insurer": "asisa",
+   "sex": "F",
+   "referrals": [],
+   "note": "Last seen October 2025. Coming here since December 2024 -- five visits. Seen at more than one site -- Arenal Norte and Arenal Centro -- so the usual place settles nothing; ask which. Talks over the top of you; confirm each detail on its own.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00089",
+   "given_name": "Harry",
+   "first_surname": "Taylor",
+   "second_surname": "Hall",
+   "national_id": "X9541575W",
+   "date_of_birth": "2017-12-28",
+   "phone": "702412020",
+   "insurer": "cigna",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Last seen September 2025. Seen once, by Dr. Emilio Iglesia. A GP referral for Orthopaedics is on file -- the gated specialties need one. A parent who asks whether the child needs to bring anything.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00090",
+   "given_name": "Encarnación",
+   "first_surname": "Ramírez",
+   "second_surname": "González",
+   "national_id": "50228290Q",
+   "date_of_birth": "1975-07-03",
+   "phone": "664345082",
+   "insurer": "nueva_mutua",
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "On file, never attended. Treat everything as a first visit. Names whoever they are calling about before themselves; settle who the patient is early.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00091",
+   "given_name": "Concepción",
+   "first_surname": "Gómez",
+   "second_surname": "Blanco",
+   "national_id": "89291028Z",
+   "date_of_birth": "1955-08-18",
+   "phone": "635208838",
+   "insurer": "sanitas",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Nothing since July 2025, but an established patient. A single visit on the chart, with Dra. Laura Benítez Roca. Slow to settle into the call; give them a moment before the first question.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00092",
+   "given_name": "Richard",
+   "first_surname": "Cooper",
+   "second_surname": "Wright",
+   "national_id": "Y9133449W",
+   "date_of_birth": "2014-06-19",
+   "phone": "740389317",
+   "insurer": "dkv",
+   "sex": "M",
+   "referrals": [],
+   "note": "Has not been in since July 2025. Seen once, by Dra. Nuria Peral. Every visit so far has been at Arenal Norte, if they say the usual place. The child is audible in the background; expect to repeat things.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00093",
+   "given_name": "Montserrat",
+   "first_surname": "Muñoz",
+   "second_surname": "Muñoz",
+   "national_id": "76963472K",
+   "date_of_birth": "2005-02-04",
+   "phone": "715728395",
+   "insurer": "adeslas",
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "Their most recent visit was November 2025. Eight visits, the first of them back in November 2024. Will ask what to bring and how early to arrive.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00094",
+   "given_name": "José",
+   "first_surname": "Hernández",
+   "second_surname": "García",
+   "national_id": "54827290M",
+   "date_of_birth": "1932-09-02",
+   "phone": "787692658",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Still attending; the last visit was November 2025. Coming here since November 2024 -- six visits. Repeats a time back as morning or afternoon; confirm the exact hour.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00095",
+   "given_name": "Jack",
+   "first_surname": "Johnson",
+   "second_surname": "Williams",
+   "national_id": "Y2532672H",
+   "date_of_birth": "1943-05-28",
+   "phone": "657528086",
+   "insurer": "asisa",
+   "sex": "M",
+   "referrals": [],
+   "note": "Their most recent visit was October 2025. Has been seen twice, in orthopaedics and general practice; no usual doctor. Will ask what to bring and how early to arrive.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00096",
+   "given_name": "Antonia",
+   "first_surname": "Sanz",
+   "second_surname": "Moreno",
+   "national_id": "15962944R",
+   "date_of_birth": "1976-06-27",
+   "phone": "648038566",
+   "insurer": "cigna",
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Never been seen here; their first visit is booked with D. Álvaro Cid. Holds a referral for Physiotherapy; no need to ask whether they have one. Read the appointment back before ending the call; they check it and will not ask.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00097",
+   "given_name": "Mario",
+   "first_surname": "Serrano",
+   "second_surname": "Rodríguez",
+   "national_id": "05132800M",
+   "date_of_birth": "2013-01-19",
+   "phone": "727118118",
+   "insurer": "dkv",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "The chart goes quiet after March 2025. Two visits, most recently with Dra. Marta Sáenz. Their history runs across Arenal Sur and Arenal Centro; do not assume which one they mean. A parent is always the caller; the child never rings.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00098",
+   "given_name": "Harry",
+   "first_surname": "Roberts",
+   "second_surname": "Smith",
+   "national_id": "X8558356X",
+   "date_of_birth": "1968-02-02",
+   "phone": "710488929",
+   "insurer": "mapfre",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Their most recent visit was September 2025. Two visits across gynaecology and general practice, with no one regular doctor. Will ask what it costs under their policy before agreeing to anything.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00099",
+   "given_name": "Manuela",
+   "first_surname": "Castro",
+   "second_surname": "Sanz",
+   "national_id": "Y7447522K",
+   "date_of_birth": "1988-10-19",
+   "phone": "646952835",
+   "insurer": "cigna",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "Lapsed -- the chart stops at November 2024. Four visits on file; Dr. Martín Sáez saw them last. Says the identifier as a run of digits; read it back grouped.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00100",
+   "given_name": "María",
+   "first_surname": "Fernández",
+   "second_surname": "Vázquez",
+   "national_id": "43595719R",
+   "date_of_birth": "1983-02-15",
+   "phone": "693990120",
+   "insurer": "asisa",
+   "sex": "F",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "First contact with the clinic; the record is empty behind them. Volunteers nothing; ask for each detail directly rather than waiting.",
+   "has_visited_before": false,
+   "case_identity": true,
+   "source": "chart"
+  },
+  {
+   "patient_id": "P00120",
+   "given_name": "Montserrat",
+   "first_surname": "Jiménez",
+   "second_surname": "Iglesias",
+   "national_id": "41291192M",
+   "date_of_birth": "1968-04-09",
+   "insurer": "sanitas",
+   "phone": null,
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Registered but never seen -- nothing on the chart yet. Repeats a time back as morning or afternoon; confirm the exact hour.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00121",
+   "given_name": "Sarah",
+   "first_surname": "Wilson",
+   "second_surname": "Collins",
+   "national_id": "Y4997270M",
+   "date_of_birth": "1968-07-26",
+   "phone": "765705143",
+   "insurer": "caser",
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "An old patient of the clinic; nothing since February 2024. One visit only, with Dr. Pablo Requena. Mishears numbers said at speed -- say the identifier back digit by digit.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P00145",
+   "given_name": "Eva",
+   "first_surname": "Martínez",
+   "second_surname": "Jiménez",
+   "national_id": "79728885Y",
+   "date_of_birth": "1974-05-06",
+   "insurer": "dkv",
+   "phone": null,
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Nothing since August 2025, but an established patient. Has been seen five times, in general practice and dermatology; no usual doctor. A GP referral for Dermatology is on file -- the gated specialties need one. Will ask what to bring and how early to arrive.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00159",
+   "given_name": "Beatriz",
+   "first_surname": "Sánchez",
+   "second_surname": "Medina",
+   "national_id": "96546624F",
+   "date_of_birth": "1970-09-18",
+   "insurer": "cigna",
+   "phone": null,
+   "sex": "F",
+   "referrals": [],
+   "note": "Last seen December 2025. Four visits on the chart, spread across general practice and gynaecology. Asks whether they can be seen outside working hours.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00161",
+   "given_name": "Rafael",
+   "first_surname": "Molina",
+   "second_surname": "Martínez",
+   "national_id": "41552247X",
+   "date_of_birth": "1982-03-12",
+   "insurer": "adeslas",
+   "phone": null,
+   "sex": "M",
+   "referrals": [],
+   "note": "Their most recent visit was October 2025. A regular of Dra. Nuria Peral, three visits in all. Their history runs across Arenal Sur and Arenal Norte; do not assume which one they mean. Read the appointment back before ending the call; they check it and will not ask.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00196",
+   "given_name": "Lola",
+   "first_surname": "Vázquez",
+   "second_surname": "Morales",
+   "national_id": "56372431Y",
+   "date_of_birth": "1990-01-15",
+   "phone": "657106004",
+   "insurer": null,
+   "sex": "F",
+   "referrals": null,
+   "note": "",
+   "has_visited_before": null,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P00293",
+   "given_name": "Amparo",
+   "first_surname": "Medina",
+   "second_surname": "Domínguez",
+   "national_id": "92641944Z",
+   "date_of_birth": "1996-12-17",
+   "phone": "730951532",
+   "insurer": null,
+   "sex": "F",
+   "referrals": null,
+   "note": "",
+   "has_visited_before": null,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P00301",
+   "given_name": "Andrés",
+   "first_surname": "Álvarez",
+   "second_surname": "Marín",
+   "national_id": "38787912E",
+   "date_of_birth": "1979-10-14",
+   "phone": "798724522",
+   "insurer": null,
+   "sex": "M",
+   "referrals": null,
+   "note": "",
+   "has_visited_before": null,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P00330",
+   "given_name": "Guillermo",
+   "first_surname": "Muñoz",
+   "second_surname": "Torres",
+   "national_id": "73709137W",
+   "date_of_birth": "1982-12-22",
+   "phone": "714604353",
+   "insurer": "adeslas",
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics"
+   ],
+   "note": "Never been seen here; their first visit is booked with Dra. Carmen Ortiz Vidal. Spells their surname unprompted, and it is worth taking the spelling.",
+   "has_visited_before": false,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P00332",
+   "given_name": "Francisco",
+   "first_surname": "Rubio",
+   "second_surname": "García",
+   "national_id": "29805303V",
+   "date_of_birth": "2017-09-19",
+   "insurer": "mapfre",
+   "phone": null,
+   "sex": "M",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Not been in since May 2024. Seen once, by Dr. Emilio Iglesia. A GP referral for Physiotherapy is on file -- the gated specialties need one. Booked by a grandparent, who may not know the insurer -- ask.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00358",
+   "given_name": "Rosario",
+   "first_surname": "Sanz",
+   "second_surname": "González",
+   "national_id": "82380806G",
+   "date_of_birth": "1983-04-21",
+   "phone": "616820852",
+   "insurer": "nueva_mutua",
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "orthopaedics"
+   ],
+   "note": "On file, never attended. Treat everything as a first visit. A GP referral for Dermatology is on file -- the gated specialties need one. On speakerphone; expect a lag and some noise.",
+   "has_visited_before": false,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P00390",
+   "given_name": "Jack",
+   "first_surname": "Davies",
+   "second_surname": "Smith",
+   "national_id": "47763585Z",
+   "date_of_birth": "1938-10-16",
+   "insurer": "nueva_mutua",
+   "phone": null,
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Their most recent visit was December 2025. Three visits, the first of them back in October 2025. Already has an appointment on the books -- check it before adding another. Will ask what to bring and how early to arrive.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00402",
+   "given_name": "Alicia",
+   "first_surname": "Medina",
+   "second_surname": "García",
+   "national_id": "93310759N",
+   "date_of_birth": "1932-02-25",
+   "phone": "730210583",
+   "insurer": "axa",
+   "sex": "F",
+   "referrals": [],
+   "note": "An old patient of the clinic; nothing since July 2024. One visit only, with Dr. Pablo Requena. Repeats numbers back wrong the first time; confirm the second.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P00476",
+   "given_name": "Miguel",
+   "first_surname": "Fernández",
+   "second_surname": "López",
+   "national_id": "Z4814060G",
+   "date_of_birth": "2001-05-17",
+   "insurer": "privado",
+   "phone": null,
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics"
+   ],
+   "note": "Still attending; the last visit was October 2025. Four visits, most recently with Dr. Pablo Requena. A GP referral for Dermatology is on file -- the gated specialties need one. Books for a partner as often as for themselves; settle who the patient is.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00480",
+   "given_name": "Concepción",
+   "first_surname": "Molina",
+   "second_surname": "Suárez",
+   "national_id": "09777211A",
+   "date_of_birth": "1967-10-08",
+   "insurer": "sanitas",
+   "phone": null,
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "An existing patient with nothing on the chart behind them. Holds a referral for Dermatology; no need to ask whether they have one. Volunteers nothing; ask for each detail directly rather than waiting.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00492",
+   "given_name": "Javier",
+   "first_surname": "Martín",
+   "second_surname": "Delgado",
+   "national_id": "68155424F",
+   "date_of_birth": "2004-10-20",
+   "insurer": "mapfre",
+   "phone": null,
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "Last seen November 2025. Coming here since January 2024 -- four visits. A GP referral for Dermatology is on file -- the gated specialties need one. Calling from somewhere busy; expect to repeat the date.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00493",
+   "given_name": "Javier",
+   "first_surname": "Suárez",
+   "second_surname": "Iglesias",
+   "national_id": "94823784M",
+   "date_of_birth": "2020-05-02",
+   "insurer": "cigna",
+   "phone": null,
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics"
+   ],
+   "note": "New to the clinic -- nothing behind them and two appointments ahead, the soonest with Dr. Javier Ocaña. A GP referral for Dermatology is on file -- the gated specialties need one. A parent is always the caller; the child never rings.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00535",
+   "given_name": "Silvia",
+   "first_surname": "Moreno",
+   "second_surname": "Sanz",
+   "national_id": "89645804S",
+   "date_of_birth": "1968-02-10",
+   "insurer": "sanitas",
+   "phone": null,
+   "sex": "F",
+   "referrals": [],
+   "note": "Last seen October 2025. Two visits on file; Dra. Laura Benítez Roca saw them last. Asks whether they can be seen outside working hours.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00612",
+   "given_name": "Jesús",
+   "first_surname": "García",
+   "second_surname": "Serrano",
+   "national_id": "98325894C",
+   "date_of_birth": "2004-12-16",
+   "insurer": "sanitas",
+   "phone": null,
+   "sex": "M",
+   "referrals": [],
+   "note": "An old patient of the clinic; nothing since May 2024. Two visits on the chart, spread across gynaecology and orthopaedics. Their whole history is at Arenal Centro -- that is what they mean by there. Read the appointment back before ending the call; they check it and will not ask.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00625",
+   "given_name": "Grace",
+   "first_surname": "Lewis",
+   "second_surname": "Lewis",
+   "national_id": "Z5983742K",
+   "date_of_birth": "1990-09-02",
+   "insurer": "axa",
+   "phone": null,
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "Last seen December 2025. A single visit on the chart, with Dr. Martín Sáez. Holds a referral for Dermatology; no need to ask whether they have one. On speakerphone; expect a lag and some noise.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00630",
+   "given_name": "Marta",
+   "first_surname": "Romero",
+   "second_surname": "Fernández",
+   "national_id": "49725372Q",
+   "date_of_birth": "1983-09-06",
+   "insurer": "axa",
+   "phone": null,
+   "sex": "F",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "On file, never attended. Treat everything as a first visit. A GP referral for Orthopaedics is on file -- the gated specialties need one. Asks for a reference number at the end of the call.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00683",
+   "given_name": "María",
+   "first_surname": "Romero",
+   "second_surname": "Marín",
+   "national_id": "26802077Q",
+   "date_of_birth": "1989-11-24",
+   "insurer": "cigna",
+   "phone": null,
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "Their most recent visit was September 2025. Has been seen twice, in physiotherapy and general practice; no usual doctor. Spells their surname unprompted, and it is worth taking the spelling.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00711",
+   "given_name": "Álvaro",
+   "first_surname": "Díaz",
+   "second_surname": "González",
+   "national_id": "80088454Q",
+   "date_of_birth": "1974-07-19",
+   "insurer": "cigna",
+   "phone": null,
+   "sex": "M",
+   "referrals": [],
+   "note": "Nothing since March 2025, but an established patient. Four visits, the first of them back in October 2024. On speakerphone; expect a lag and some noise.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00780",
+   "given_name": "Jesús",
+   "first_surname": "Díaz",
+   "second_surname": "Martín",
+   "national_id": "Z3075442W",
+   "date_of_birth": "1945-08-10",
+   "insurer": "cigna",
+   "phone": null,
+   "sex": "M",
+   "referrals": [],
+   "note": "Nothing since March 2025, but an established patient. Coming here since June 2024 -- three visits. Will keep the call going -- steer back to what is being booked.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00867",
+   "given_name": "Antonia",
+   "first_surname": "Iglesias",
+   "second_surname": "Rodríguez",
+   "national_id": "86790513J",
+   "date_of_birth": "1999-04-24",
+   "insurer": "adeslas",
+   "phone": null,
+   "sex": "F",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "The chart goes quiet after May 2025. Coming here since February 2025 -- five visits. Will keep the call going -- steer back to what is being booked.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P00958",
+   "given_name": "Sarah",
+   "first_surname": "Evans",
+   "second_surname": "Baker",
+   "national_id": "Z8195906E",
+   "date_of_birth": "2004-05-09",
+   "insurer": "dkv",
+   "phone": null,
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Has not been in since June 2025. Two visits, most recently with Dra. Carmen Ortiz Vidal. Will ask what it costs under their policy before agreeing to anything.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P01002",
+   "given_name": "Sara",
+   "first_surname": "Fernández",
+   "second_surname": "Castro",
+   "national_id": "71162756C",
+   "date_of_birth": "1969-02-19",
+   "insurer": "dkv",
+   "phone": null,
+   "sex": "F",
+   "referrals": [],
+   "note": "Their most recent visit was December 2025. Six visits across general practice and gynaecology, with no one regular doctor. Seen at more than one site -- Arenal Sur, Arenal Norte and Arenal Centro -- so the usual place settles nothing; ask which. Repeats a time back as morning or afternoon; confirm the exact hour.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P01082",
+   "given_name": "Alicia",
+   "first_surname": "Muñoz",
+   "second_surname": "Sanz",
+   "national_id": "79855994V",
+   "date_of_birth": "1936-10-03",
+   "insurer": "mapfre",
+   "phone": null,
+   "sex": "F",
+   "referrals": [],
+   "note": "Registered but never seen -- nothing on the chart yet. Talks over the top of you; confirm each detail on its own.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P01445",
+   "given_name": "Irene",
+   "first_surname": "Gil",
+   "second_surname": "Molina",
+   "national_id": "02211235S",
+   "date_of_birth": "1962-05-10",
+   "insurer": "asisa",
+   "phone": null,
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "Last seen November 2025. Six visits across general practice, orthopaedics and dermatology, with no one regular doctor. A GP referral for Dermatology is on file -- the gated specialties need one. Will keep the call going -- steer back to what is being booked.",
+   "has_visited_before": true,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P01539",
+   "given_name": "Jesús",
+   "first_surname": "Álvarez",
+   "second_surname": "Muñoz",
+   "national_id": "91113710S",
+   "date_of_birth": "2000-08-18",
+   "insurer": "adeslas",
+   "phone": null,
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "No history behind them, one appointment ahead: Dra. Carmen Ortiz Vidal. Goes quiet while they check a diary; the pause is not a dropped line.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P01808",
+   "given_name": "Pablo",
+   "first_surname": "Díaz",
+   "second_surname": "Suárez",
+   "national_id": "64845495P",
+   "date_of_birth": "1976-08-04",
+   "insurer": "axa",
+   "phone": null,
+   "sex": "M",
+   "referrals": [
+    "dermatology",
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "New to the clinic; no visit history. Mishears numbers said at speed -- say the identifier back digit by digit.",
+   "has_visited_before": false,
+   "case_identity": false,
+   "source": "agent view"
+  },
+  {
+   "patient_id": "P01842",
+   "given_name": "Joaquín",
+   "first_surname": "Ramírez",
+   "second_surname": "Delgado",
+   "national_id": "20206861G",
+   "date_of_birth": "1993-10-11",
+   "phone": "642674973",
+   "insurer": "privado",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics"
+   ],
+   "note": "An old patient of the clinic; nothing since June 2024. Four visits on the chart, spread across general practice and gynaecology. Goes quiet while they check a diary; the pause is not a dropped line.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P01843",
+   "given_name": "Andrés",
+   "first_surname": "Rubio",
+   "second_surname": "Vázquez",
+   "national_id": "63663395Q",
+   "date_of_birth": "1968-01-23",
+   "phone": "737358708",
+   "insurer": "dkv",
+   "sex": "M",
+   "referrals": [],
+   "note": "Last seen September 2025. Coming here since July 2024 -- five visits. On speakerphone; expect a lag and some noise.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P01846",
+   "given_name": "Vicente",
+   "first_surname": "Álvarez",
+   "second_surname": "Castro",
+   "national_id": "31179247X",
+   "date_of_birth": "1987-03-09",
+   "phone": "764918391",
+   "insurer": "axa",
+   "sex": "M",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Not been in since December 2024. Two visits across gynaecology and physiotherapy, with no one regular doctor. A GP referral for Physiotherapy is on file -- the gated specialties need one. Will keep the call going -- steer back to what is being booked.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P01847",
+   "given_name": "Mario",
+   "first_surname": "Gómez",
+   "second_surname": "Blanco",
+   "national_id": "X2245876H",
+   "date_of_birth": "1965-02-24",
+   "phone": "763783288",
+   "insurer": "asisa",
+   "sex": "M",
+   "referrals": [
+    "physiotherapy"
+   ],
+   "note": "Registered but never seen -- nothing on the chart yet. Holds a referral for Physiotherapy; no need to ask whether they have one. Asks for a confirmation by text afterwards.",
+   "has_visited_before": false,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P01850",
+   "given_name": "Emilio",
+   "first_surname": "Rubio",
+   "second_surname": "Jiménez",
+   "national_id": "50714604H",
+   "date_of_birth": "1996-06-09",
+   "phone": "781850784",
+   "insurer": "mapfre",
+   "sex": "M",
+   "referrals": [
+    "orthopaedics",
+    "physiotherapy"
+   ],
+   "note": "Has not been in since August 2025. Two visits on file; Dr. Pablo Requena saw them last. Asks whether they can be seen outside working hours.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P01971",
+   "given_name": "Jessica",
+   "first_surname": "Roberts",
+   "second_surname": "Smith",
+   "national_id": "98789619L",
+   "date_of_birth": "1982-01-14",
+   "phone": "706799885",
+   "insurer": "axa",
+   "sex": "F",
+   "referrals": [
+    "dermatology",
+    "physiotherapy"
+   ],
+   "note": "First contact with the clinic; the record is empty behind them. Holds a referral for Dermatology; no need to ask whether they have one. Names whoever they are calling about before themselves; settle who the patient is early.",
+   "has_visited_before": false,
+   "case_identity": true,
+   "source": "case persona"
+  },
+  {
+   "patient_id": "P02809",
+   "given_name": "Sergio",
+   "first_surname": "Blanco",
+   "second_surname": "Gómez",
+   "national_id": "16259086H",
+   "date_of_birth": "1954-07-17",
+   "phone": "671227039",
+   "insurer": "sanitas",
+   "sex": "M",
+   "referrals": [
+    "dermatology"
+   ],
+   "note": "Last seen September 2025. Has been seen three times, in orthopaedics, dermatology and gynaecology; no usual doctor. Does not use email; everything has to be confirmed on the call itself.",
+   "has_visited_before": true,
+   "case_identity": true,
+   "source": "case persona"
+  }
+ ]
+}

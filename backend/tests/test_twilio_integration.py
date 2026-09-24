@@ -54,18 +54,14 @@ def test_webhook_rejects_missing_call_metadata():
     )
 
 
-def test_phone_demo_records_outcome_without_submitting_to_scorer(monkeypatch, tmp_path):
+def test_phone_call_logs_its_outcome_once(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "CALLS_DIR", tmp_path)
     session = TwilioCallSession(call_id="CA123")
     session.actions = [{"action": "NO_ACTION", "reason": "out_of_scope"}]
-    submit = AsyncMock()
-    monkeypatch.setattr(session, "_submit_once_retrying", submit)
     assert asyncio.run(session.finish()) == []
     assert asyncio.run(session.finish()) == []
-    submit.assert_not_called()
     events = [json.loads(line) for line in (tmp_path / "CA123.jsonl").read_text().splitlines()]
     assert [event["kind"] for event in events] == ["demo_outcome", "call_ended"]
-    assert all(event["submitted"] is False for event in events)
     assert all(event["source"] == "twilio" for event in events)
     assert events[-1]["actions"] == session.actions
 
@@ -76,7 +72,6 @@ def test_twilio_start_enables_human_tools_for_gptlive_only_when_configured(monke
     monkeypatch.setattr(config, "APPOINTMENT_EMAILS_ENABLED", True)
     monkeypatch.setattr(config, "RESEND_API_KEY", "test-secret")
     monkeypatch.setattr(config, "RESEND_FROM_EMAIL", "Rosario <citas@example.org>")
-    monkeypatch.setattr(config, "EVAL_MODE", False)
 
     session = asyncio.run(TwilioCallSession.start(call_id="CA123"))
     assert session.demo_mode is True
@@ -91,8 +86,8 @@ def test_twilio_start_enables_human_tools_for_gptlive_only_when_configured(monke
     register_pipecat_tools(LLM(), session)
     assert set(registered) == {tool["name"] for tool in session.tool_specs(tools_for_session(session))}
     assert {"set_appointment_email", "confirm_customer_account"} <= registered.keys()
-    scored = asyncio.run(CallSession.start(call_id="scored"))
-    assert scored.demo_mode is False
-    assert "set_appointment_email" not in {tool["name"] for tool in tools_for_session(scored)}
-    monkeypatch.setattr(config, "EVAL_MODE", True)
+    plain = asyncio.run(CallSession.start(call_id="plain"))
+    assert plain.demo_mode is False
+    assert "set_appointment_email" not in {tool["name"] for tool in tools_for_session(plain)}
+    monkeypatch.setattr(config, "APPOINTMENT_EMAILS_ENABLED", False)
     assert "set_appointment_email" not in {tool["name"] for tool in session.tool_specs(tools_for_session(session))}

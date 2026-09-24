@@ -301,7 +301,7 @@ class DemoSessionRegistry:
         actions: Sequence[Mapping[str, Any]] = (),
         evidence: Sequence[DemoActionEvidence] = (),
     ) -> DemoSnapshot:
-        """Complete a demo, expose safe evidence, and persist it without submitting anything."""
+        """Complete a demo, expose safe evidence, and persist it to the demo ledger."""
         with self._lock:
             try:
                 snapshot = self._sessions[session_id]

@@ -3,8 +3,7 @@
 GPT-Live-1 (OpenAI's full-duplex voice model) driven through the local Codex CLI, so it runs on a
 ChatGPT/Codex **subscription with no API key**. Default voice in `app/config.py`.
 
-    VOICE=codex make serve                                    # ws://:7860/ws
-    uv run python scripts/sim_caller.py simple_booking        # eval against published cases
+    VOICE=codex make serve                                    # :7860, /integrations/twilio/ws
 
 Requires the Codex CLI ≥ 0.154, logged in with ChatGPT (`codex login`), on the machine running
 the server. Pattern taken from `reference/gpt-live-voice` (copied, not imported).
@@ -49,6 +48,6 @@ Two models per call, both on the subscription:
 
 ## Limits
 
-- The subscription is meant for the account holder's own use; the scorer and jury calling it
-  is a grey area. It shares the weekly allowance with Codex coding on the same account.
+- The subscription is meant for the account holder's own use; other people calling it is a
+  grey area. It shares the weekly allowance with Codex coding on the same account.
 - The CLI's `realtime_conversation` feature is experimental; a CLI update can change the protocol.

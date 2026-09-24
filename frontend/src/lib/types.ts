@@ -35,12 +35,16 @@ export interface RunRef {
   suite_total?: number | null;
 }
 
+/** `status` is "in progress", "ended", "saved" (at least one write) or "write failed". */
+export type CallStatus = "in progress" | "ended" | "saved" | "write failed";
+
 export interface CallSummary {
   call_id: string;
   started_at: number;
   modified_at: number;
   modified_iso: string | null;
-  status: string;
+  status: CallStatus | string;
+  /** Verbs written, joined with "+" ("REGISTER+BOOK"); else the last staged verb. */
   action: string;
   duration_seconds: number | null;
   warnings: number;
@@ -89,11 +93,19 @@ export interface ToolEvent extends RawEvent {
   result: unknown;
 }
 
+/** Legacy: call logs written before the clinic database still carry these. */
 export interface SubmitEvent extends RawEvent {
   kind: "submit";
   action: ClinicAction;
   status: number;
   response: unknown;
+}
+
+/** One committed write to the clinic database (`local_write` in the call log). */
+export interface LocalWriteEvent extends RawEvent {
+  kind: "local_write";
+  action: ClinicAction;
+  result: Record<string, unknown> | null;
 }
 
 export interface StagedEvent extends RawEvent {
@@ -102,10 +114,11 @@ export interface StagedEvent extends RawEvent {
   all_staged: ClinicAction[];
 }
 
+/** A saved write traced back to the staged action and the lookup before it. */
 export interface ProvenanceChain {
   lookup: ToolEvent | null;
   recorded: RawEvent | null;
-  submit: SubmitEvent | null;
+  write: LocalWriteEvent | null;
   action: ClinicAction;
 }
 
@@ -118,32 +131,9 @@ export interface CallDetail {
   transcript: TranscriptEvent[];
   tools: ToolEvent[];
   staged_actions: StagedEvent[];
-  submissions: SubmitEvent[];
+  /** Successful writes to the clinic database, in log order. */
+  writes: LocalWriteEvent[];
   errors: RawEvent[];
   provenance: ProvenanceChain[];
   events: RawEvent[];
-}
-
-// Public practice cases (trimmed copy of the platform roster in src/data).
-export interface ProtectedValue {
-  kind: "national_id" | "phone" | string;
-  value: string;
-}
-
-export interface PublicCase {
-  id: string;
-  problem_id: string;
-  language: string;
-  summary: string;
-  reference_time: string;
-  protected: ProtectedValue[];
-  expected: { acceptable: { actions: ClinicAction[] }[] };
-  persona: {
-    name: string;
-    phone: string;
-    voice: string;
-    description: string;
-    objectives: string[] | null;
-  };
-  audio: { background: string; signal_to_noise_db: number | null; seed: string };
 }

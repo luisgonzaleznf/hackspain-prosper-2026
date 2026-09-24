@@ -1,22 +1,14 @@
 import asyncio
+import json
 
 import pytest
-from app import config, prosper
+from app import config
 from app.session import CallSession
 
 
 @pytest.mark.parametrize("count", [5, 10, 20])
-def test_burst_sessions_do_not_share_actions_lookups_or_submissions(monkeypatch, tmp_path, count):
+def test_burst_sessions_do_not_share_actions_lookups_or_outcomes(monkeypatch, tmp_path, count):
     monkeypatch.setattr(config, "CALLS_DIR", tmp_path)
-    submitted = []
-
-    class Recorder:
-        async def submit(self, payload):
-            await asyncio.sleep(0)
-            submitted.append(payload)
-            return 200, {}
-
-    monkeypatch.setattr(prosper, "client", Recorder)
     sessions = [CallSession(call_id=f"burst-{i}") for i in range(count)]
     for i, session in enumerate(sessions):
         session.remember_patients([{"patient_id": f"P{i}"}])
@@ -28,9 +20,13 @@ def test_burst_sessions_do_not_share_actions_lookups_or_submissions(monkeypatch,
         await asyncio.gather(*(session.finish() for session in sessions))
 
     asyncio.run(finish_all())
-    assert len(submitted) == count
     for i, session in enumerate(sessions):
         assert list(session.patients) == [f"P{i}"]
         assert list(session.appointments) == [f"A{i}"]
         assert session.searches[0]["slots_found"] == i
-        assert {"action": "CANCEL", "appointment_id": f"A{i}", "call_id": f"burst-{i}"} in submitted
+        events = [
+            json.loads(line) for line in (tmp_path / f"burst-{i}.jsonl").read_text().splitlines()
+        ]
+        ended = [e for e in events if e["kind"] == "call_ended"]
+        assert len(ended) == 1
+        assert ended[0]["actions"] == [{"action": "CANCEL", "appointment_id": f"A{i}"}]

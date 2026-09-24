@@ -1,247 +1,154 @@
-"""Local-only console view of the agent's appointments; no public voice-server route.
+"""Local-only console view of the clinic diary; no public voice-server route.
 
-Two feeds, merged into one calendar:
+    GET /api/clinic/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD   (default today-7 .. today+35)
 
-- the SQLite overlay: bookings the Twilio receptionist wrote for real (`source: "local"`);
-- Prosper's `/api/v1/submissions`: every BOOK, RESCHEDULE and CANCEL this API key reported
-  and the scorer accepted (`source: "prosper"`). Prosper's EHR is read-only, so its
-  per-patient diary never shows these; the submissions list is the only Prosper-side record.
-
-Prosper names patients and appointments by id only. A name comes from the call's own log when
-it lives on this host (find_patient / list_appointments results), else from an exact directory
-lookup seeded with the published practice personas — a demo shortcut, never the record itself.
+One window of the diary from the clinic database: every appointment in it (booked and
+cancelled), the doctors and sites to filter by, and the absences and closures to paint.
+A record with a `callId` was booked, moved or cancelled by a call; the rest is the diary.
 """
 
-import asyncio
 import json
-import time
-from datetime import datetime
-from pathlib import Path
+from datetime import date, datetime, timedelta
 
-from app import clinic, config, prosper
-from fastapi import APIRouter
+from app import clinic, config
+from fastapi import APIRouter, HTTPException, Query
 from loguru import logger
 
 from integrations.local_store import LocalStore
 
 router = APIRouter(prefix="/api/clinic")
 
-PUBLIC_CASES = Path(__file__).resolve().parents[1] / "docs/prosper/data/public-cases.json"
-SUBMISSIONS_LIMIT = 200  # Prosper's cap
-SUBMISSIONS_TTL = 10.0  # seconds; the console polls every 5 s and Prosper is not ours to hammer
-CALENDAR_KINDS = {"BOOK", "RESCHEDULE", "CANCEL"}
-
-_names: dict[str, str] | None = None  # patient_id -> full name, built once per process
-_names_lock = asyncio.Lock()
-_submissions: tuple[float, list[dict]] | None = None
+DAYS_BEFORE, DAYS_AFTER = 7, 35  # the default window around today
+MAX_DAYS = 62
 
 
 def _day(slot: str | None) -> str | None:
     return datetime.fromisoformat(slot).astimezone(config.TZ).date().isoformat() if slot else None
 
 
-def _catalogue_names(catalogue: dict | None) -> dict[str, str]:
-    if not catalogue:
-        return {}
-    return {p["id"]: p["name"] for p in catalogue["providers"]} | {
-        loc["id"]: loc["name"] for loc in catalogue["locations"]
-    }
-
-
-def _logged(call_id: str) -> bool:
+def _logged(call_id: str | None) -> bool:
     return bool(call_id) and (config.CALLS_DIR / f"{call_id}.jsonl").is_file()
 
 
-def _local_records(names: dict[str, str]) -> list[dict]:
-    records = []
-    for a in LocalStore().appointments(include_cancelled=True):
-        records.append(
-            {
-                "id": a["appointment_id"],
-                "appointmentId": a["appointment_id"],
-                "callId": a["call_id"],
-                "kind": "CANCEL" if a["status"] == "cancelled" else "BOOK",
-                "recordedAt": a["updated_at"],
-                "slot": a["start_time"],
-                "previousSlot": None,
-                "day": _day(a["start_time"]),
-                "patient": a["patient_name"],
-                "patientId": a["patient_id"],
-                "caller": None,
-                "provider": a.get("provider_name", a["provider_id"]),
-                "site": names.get(a["location_id"], a["location_id"]),
-                "supersededBy": None,
-                "practice": False,
-                "persisted": True,
-                "source": "local",
-                "callLogged": _logged(a["call_id"]),
-            }
-        )
-    return records
+def _end(a: dict) -> str | None:
+    if not a.get("start_time") or not a.get("duration_minutes"):
+        return None
+    start = datetime.fromisoformat(a["start_time"])
+    return (start + timedelta(minutes=int(a["duration_minutes"]))).isoformat(timespec="seconds")
 
 
-def _call_log(call_id: str) -> dict:
-    """What the call itself looked up, when its log is on this host: patient names by id and
-    the appointments it listed (a RESCHEDULE/CANCEL names only an appointment_id)."""
-    facts: dict = {"logged": _logged(call_id), "patients": {}, "appointments": {}}
-    if not facts["logged"]:
-        return facts
-    for line in (config.CALLS_DIR / f"{call_id}.jsonl").read_text(errors="replace").splitlines():
-        try:
-            event = json.loads(line)
-        except ValueError:
-            continue
-        if not isinstance(event, dict) or event.get("kind") != "tool":
-            continue
-        result = event.get("result") if isinstance(event.get("result"), dict) else {}
-        if event.get("name") == "find_patient":
-            for match in result.get("matches") or []:
-                if isinstance(match, dict) and match.get("patient_id") and match.get("name"):
-                    facts["patients"][match["patient_id"]] = match["name"]
-        elif event.get("name") == "list_appointments":
-            for appointment in result.get("appointments") or []:
-                if isinstance(appointment, dict) and appointment.get("appointment_id"):
-                    facts["appointments"][appointment["appointment_id"]] = appointment
-    return facts
-
-
-def _persona_national_ids() -> list[str]:
-    """Every DNI/NIE the published practice cases mention: callers and the patients they call for."""
-    try:
-        cases = json.loads(PUBLIC_CASES.read_text())["cases"]
-    except (OSError, ValueError, KeyError, TypeError):
-        return []
-    ids: list[str] = []
-    for case in cases:
-        data = ((case or {}).get("persona") or {}).get("data") or {}
-        for key, value in data.items():
-            if key.endswith("national_id") and isinstance(value, str) and value not in ids:
-                ids.append(value)
-    return ids
-
-
-async def _patient_names() -> dict[str, str]:
-    """patient_id -> full name for the practice personas: one exact directory lookup each, once.
-
-    Cached for the process once any lookup succeeds; a fully failed batch is retried next time.
-    """
-    global _names
-    async with _names_lock:
-        if _names is not None:
-            return _names
-        names: dict[str, str] = {}
-        failures = 0
-        client = prosper.client()
-        limiter = asyncio.Semaphore(8)
-
-        async def lookup(national_id: str) -> None:
-            nonlocal failures
-            async with limiter:
-                try:
-                    matches = await client.directory(national_id=national_id)
-                except Exception as e:  # a missing name never hides an appointment
-                    failures += 1
-                    logger.warning(f"calendar: directory lookup failed: {e!r}")
-                    return
-            for m in matches:
-                full = f"{m.get('given_name', '')} {m.get('first_surname', '')} {m.get('second_surname', '')}"
-                if m.get("patient_id") and full.strip():
-                    names[m["patient_id"]] = " ".join(full.split())
-
-        await asyncio.gather(*(lookup(nid) for nid in _persona_national_ids()))
-        if names or not failures:
-            _names = names
-        return names
-
-
-async def _submissions_feed() -> list[dict]:
-    global _submissions
-    now = time.monotonic()
-    if _submissions and now - _submissions[0] < SUBMISSIONS_TTL:
-        return _submissions[1]
-    feed = await prosper.client().submissions(SUBMISSIONS_LIMIT)
-    _submissions = (now, feed)
-    return feed
-
-
-async def _prosper_records(catalogue: dict[str, str]) -> list[dict]:
-    submissions = await _submissions_feed()
-    names = await _patient_names()
-    records = []
-    for submission in submissions:
-        call_id = str(submission.get("call_id") or "")
-        received = submission.get("received_at")
-        recorded_at = datetime.fromisoformat(received).timestamp() if received else 0.0
-        actions = ((submission.get("record") or {}).get("actions")) or []
-        log = _call_log(call_id)
-        for index, action in enumerate(actions):
-            kind = action.get("action")
-            if kind not in CALENDAR_KINDS:
-                continue
-            appointment_id = action.get("appointment_id")
-            known = log["appointments"].get(appointment_id, {}) if appointment_id else {}
-            patient_id = action.get("patient_id") or known.get("patient_id")
-            slot = action.get("slot") if kind != "CANCEL" else known.get("start_time")
-            provider_id = action.get("provider_id") or known.get("provider_id")
-            location_id = action.get("location_id") or known.get("location_id")
-            patient = (
-                log["patients"].get(patient_id)
-                or names.get(patient_id)
-                or patient_id
-                or (f"Appointment {appointment_id}" if appointment_id else "Patient not identified")
-            )
-            records.append(
-                {
-                    "id": f"prosper:{call_id}:{index}",
-                    "appointmentId": appointment_id,
-                    "callId": call_id,
-                    "kind": kind,
-                    "recordedAt": recorded_at,
-                    "slot": slot,
-                    "previousSlot": known.get("start_time") if kind == "RESCHEDULE" else None,
-                    "day": _day(slot),
-                    "patient": patient,
-                    "patientId": patient_id,
-                    "caller": None,
-                    "provider": catalogue.get(provider_id, provider_id),
-                    "site": catalogue.get(location_id, location_id),
-                    "supersededBy": None,
-                    "practice": False,
-                    "persisted": False,
-                    "source": "prosper",
-                    "callLogged": log["logged"],
-                }
-            )
-    return records
+def _record(a: dict, names: dict[str, str]) -> dict:
+    call_id = a.get("call_id")
+    provider_id = a.get("provider_id")
+    location_id = a.get("location_id")
+    return {
+        "id": a["appointment_id"],
+        "appointmentId": a["appointment_id"],
+        "callId": call_id,
+        "kind": "CANCEL" if a.get("status") == "cancelled" else "BOOK",
+        "recordedAt": a.get("updated_at"),
+        "slot": a.get("start_time"),
+        "previousSlot": None,
+        "day": _day(a.get("start_time")),
+        "patient": a.get("patient_name") or a.get("patient_id"),
+        "patientId": a.get("patient_id"),
+        "caller": None,
+        "provider": a.get("provider_name") or names.get(provider_id or "", provider_id),
+        "site": names.get(location_id or "", location_id),
+        "supersededBy": None,
+        "practice": False,
+        "persisted": True,
+        "providerId": provider_id,
+        "specialtyId": a.get("specialty_id"),
+        "durationMinutes": a.get("duration_minutes"),
+        "end": _end(a),
+        "appointmentType": a.get("appointment_type_id"),
+        "status": a.get("status"),
+        "source": "call" if call_id else "diary",
+        "callLogged": _logged(call_id),
+    }
 
 
 def _order(record: dict) -> tuple[float, float]:
     slot = record.get("slot")
     return (
         datetime.fromisoformat(slot).timestamp() if slot else float("inf"),
-        record["recordedAt"],
+        record.get("recordedAt") or 0.0,
     )
 
 
-@router.get("/calendar")
-async def calendar() -> dict:
-    catalogue: dict[str, str] = {}
+def _window(start: str | None, end: str | None) -> tuple[date, date]:
+    today = datetime.now(config.TZ).date()
     try:
-        catalogue = _catalogue_names(await clinic.catalogue())
+        first = date.fromisoformat(start) if start else today - timedelta(days=DAYS_BEFORE)
+        last = date.fromisoformat(end) if end else today + timedelta(days=DAYS_AFTER)
+    except ValueError:
+        raise HTTPException(422, "from and to must be YYYY-MM-DD") from None
+    if last < first:
+        raise HTTPException(422, "to is before from")
+    if (last - first).days + 1 > MAX_DAYS:
+        raise HTTPException(422, f"at most {MAX_DAYS} days at a time")
+    return first, last
+
+
+@router.get("/calendar")
+async def calendar(
+    start: str | None = Query(None, alias="from"), end: str | None = Query(None, alias="to")
+) -> dict:
+    first, last = _window(start, end)
+    span = (first.isoformat(), last.isoformat())
+    catalogue: dict = {}
+    try:
+        catalogue = await clinic.catalogue()
     except Exception as e:  # ids still make a usable calendar
         logger.warning(f"calendar: clinic catalogue unavailable: {e!r}")
-    records = _local_records(catalogue)
-    feed: dict = {"ok": True, "count": 0, "detail": None}
-    try:
-        reported = await _prosper_records(catalogue)
-    except Exception as e:  # the saved bookings must show even when Prosper does not answer
-        logger.warning(f"calendar: Prosper submissions unavailable: {e!r}")
-        feed = {"ok": False, "count": 0, "detail": str(e)}
-        reported = []
-    saved = {(r["callId"], r["kind"], r["slot"]) for r in records}
-    reported = [r for r in reported if (r["callId"], r["kind"], r["slot"]) not in saved]
-    feed["count"] = len(reported)
+    providers = [
+        {
+            "id": p["id"],
+            "name": p["name"],
+            "specialtyId": p.get("specialty_id"),
+            "specialtyName": p.get("specialty_name"),
+        }
+        for p in catalogue.get("providers", [])
+    ]
+    locations = [{"id": loc["id"], "name": loc["name"]} for loc in catalogue.get("locations", [])]
+    names = {p["id"]: p["name"] for p in providers} | {loc["id"]: loc["name"] for loc in locations}
+    store = LocalStore()
+    with store.connect() as db:
+        absences = [
+            {
+                "providerId": row["provider_id"],
+                "start": row["start_date"],
+                "end": row["end_date"],
+                "startTime": row["start_time"],
+                "endTime": row["end_time"],
+                "reason": row["reason"],
+            }
+            for row in db.execute(
+                "SELECT provider_id, start_date, end_date, start_time, end_time, reason "
+                "FROM absences WHERE start_date <= ? AND end_date >= ? "
+                "ORDER BY start_date, provider_id",
+                (span[1], span[0]),
+            )
+        ]
+        closures = [
+            {"date": row["date"], "locationId": row["location_id"], "name": row["name"]}
+            for row in db.execute(
+                "SELECT date, location_id, name FROM closures WHERE date BETWEEN ? AND ? "
+                "ORDER BY date, location_id",
+                span,
+            )
+        ]
+        rows = db.execute(
+            "SELECT data, status FROM appointments WHERE start_date BETWEEN ? AND ?", span
+        ).fetchall()
+    records = [_record({**json.loads(row["data"]), "status": row["status"]}, names) for row in rows]
     return {
-        "records": sorted(records + reported, key=_order),
-        "sources": {"local": len(records), "prosper": feed},
+        "from": span[0],
+        "to": span[1],
+        "providers": providers,
+        "locations": locations,
+        "absences": absences,
+        "closures": closures,
+        "records": sorted(records, key=_order),
     }

@@ -1,18 +1,21 @@
+"""Phone calls end to end against a real (temporary) clinic database: register, verify, search,
+book, move, cancel, and what the console calendar then shows."""
+
 import asyncio
-import json
 from concurrent.futures import ThreadPoolExecutor
-from copy import deepcopy
 from datetime import datetime
 
 import pytest
-from app import clinic, config, prosper
+from app import clinic, config
 from app.session import CallSession
 from app.tools import TOOLS, call_tool
-from integrations import clinic_api
 from integrations.local_store import LocalStore
 from integrations.twilio import TwilioCallSession
 
-NOW = datetime(2026, 9, 20, 10, tzinfo=config.TZ)
+from clinic_fixture import booked, patient, seeded
+
+NOW = datetime(2026, 9, 20, 10, tzinfo=config.TZ)  # a Sunday; Monday 21 Sep is searched
+DAY = "2026-09-21"
 PROFILE = {
     "given_name": "Ana",
     "first_surname": "García",
@@ -20,100 +23,50 @@ PROFILE = {
     "national_id": "48064716Y",
     "date_of_birth": "1988-03-14",
     "phone": "612345678",
-    "email": "ana@example.test",
+    "email": "ana@mail.es",
     "insurer": "privado",
 }
-REMOTE_PATIENT = {
-    **PROFILE,
-    "patient_id": "P001",
-    "national_id": "12345678Z",
-    "phone": "600123456",
-    "has_visited_before": False,
-    "referrals": [],
-    "note": "",
-}
-TYPE = {
-    "id": "first_visit",
-    "name": "First Visit",
-    "duration_minutes": 30,
-    "guidance": "New patients",
-    "new_patient_requirement": "new_only",
-}
-SLOTS = [
-    {
+# Already on file: same name as the caller who registers, another DNI and phone.
+SEEDED = patient(
+    "P001",
+    **{k: PROFILE[k] for k in ("given_name", "first_surname", "second_surname", "date_of_birth")},
+    national_id="12345678Z",
+    phone="600123456",
+    insurer="privado",
+    has_visited_before=False,
+)
+BLOCKER = patient("P09999", national_id="11111111H", phone="699000111")
+# Dr. Sáez sits at Sur on Mondays 09-13. The diary leaves 09:00-10:00 and 10:30-11:00 free, so a
+# 30-minute first visit fits at 09:00, 09:15, 09:30 and 10:30.
+DIARY = [
+    booked(f"A9{i:02d}", "P09999", "PR03", "sur", f"{DAY}T{hhmm}:00+02:00")
+    for i, hhmm in enumerate(
+        ["10:00", "10:15", "11:00", "11:15", "11:30", "11:45", "12:00", "12:15", "12:30", "12:45"]
+    )
+]
+FREE = ["09:00", "09:15", "09:30", "10:30"]
+
+
+def slot(at: str) -> dict:
+    return {
         "provider_id": "PR03",
-        "provider_name": "Doctor Sáez",
-        "location_id": "sur",
+        "provider_name": "Dr. Martín Sáez",
         "specialty_id": "general_practice",
+        "location_id": "sur",
         "appointment_type_id": "first_visit",
-        "start_time": f"2026-09-21T{time}:00+02:00",
+        "start_time": f"{DAY}T{at}:00+02:00",
         "duration_minutes": 30,
         "payable_with": ["privado"],
     }
-    for time in ["09:00", "09:15", "09:30", "10:00"]
-]
-CATALOGUE = {
-    "providers": [{"id": "PR03", "name": "Doctor Sáez", "specialty_id": "general_practice"}],
-    "locations": [{"id": "sur", "name": "Arenal Sur"}],
-    "specialties": [
-        {
-            "id": "general_practice",
-            "min_age_months": 168,
-            "max_age_months": None,
-            "referral_required": False,
-        }
-    ],
-}
-
-
-class Remote:
-    def __init__(self):
-        self.slots = deepcopy(SLOTS)
-        self.diary = []
-        self.submits = []
-        self.searches = []
-        self.submissions_feed = []
-
-    async def directory(self, **query):
-        if query.get("national_id") == REMOTE_PATIENT["national_id"] or query.get("phone") in {
-            REMOTE_PATIENT["phone"],
-            "+34" + REMOTE_PATIENT["phone"],
-        }:
-            return [dict(REMOTE_PATIENT)]
-        return []
-
-    async def availability(self, *args, **kwargs):
-        self.searches.append(kwargs)
-        return {
-            "slots": deepcopy(self.slots),
-            "blocked": [],
-            "providers": [],
-            "appointment_type": TYPE,
-        }
-
-    async def appointments(self, patient_id, when="upcoming"):
-        return deepcopy(self.diary)
-
-    async def submit(self, payload):
-        self.submits.append(payload)
-        return 200, {}
-
-    async def submissions(self, limit=200):
-        return deepcopy(self.submissions_feed)
 
 
 @pytest.fixture
 def setup(tmp_path, monkeypatch):
-    monkeypatch.setenv("LOCAL_CLINIC_DB", str(tmp_path / "clinic.sqlite3"))
     monkeypatch.setattr(config, "CALLS_DIR", tmp_path / "calls")
-    monkeypatch.setattr(clinic, "_catalogue", deepcopy(CATALOGUE))
-    remote = Remote()
-    monkeypatch.setattr(prosper, "client", lambda: remote)
-    # The console calendar caches Prosper's feed and the persona name directory per process.
-    monkeypatch.setattr(clinic_api, "_names", None)
-    monkeypatch.setattr(clinic_api, "_submissions", None)
-    monkeypatch.setattr(clinic_api, "PUBLIC_CASES", tmp_path / "public-cases.json")
-    return remote
+    store = seeded(patients=[SEEDED, BLOCKER], appointments=DIARY)
+    # The catalogue as of the call's day, fixed for the test (the wall clock moves on).
+    monkeypatch.setattr(clinic, "_catalogue", clinic.build(store, NOW.date()))
+    return store
 
 
 def run(session, tool_name, **args):
@@ -126,29 +79,37 @@ def register(session, **overrides):
     return result["patient_id"]
 
 
-def search(session, patient):
+def search(session, patient_id, **extra):
     result = run(
         session,
         "search_availability",
-        patient_id=patient,
-        specialty_id="general_practice",
-        date_from="2026-09-21",
-        date_to="2026-09-21",
+        **{
+            "patient_id": patient_id,
+            "provider_id": "PR03",
+            "location_id": "sur",
+            "date_from": DAY,
+            "date_to": DAY,
+            **extra,
+        },
     )
     assert "error" not in result, result
     return result
 
 
-def book(session, patient, at="09:00", **overrides):
+def times(result):
+    return [s["slot"][11:16] for s in result["earliest_slots"]]
+
+
+def book(session, patient_id, at="09:00", **overrides):
     return run(
         session,
         "record_booking",
         **{
-            "patient_id": patient,
+            "patient_id": patient_id,
             "provider_id": "PR03",
             "location_id": "sur",
             "appointment_type_id": "first_visit",
-            "slot": f"2026-09-21T{at}:00+02:00",
+            "slot": f"{DAY}T{at}:00+02:00",
             "policy_id": "privado",
             "confirmed": True,
             **overrides,
@@ -169,118 +130,111 @@ def identify(session, national_id=PROFILE["national_id"]):
 def test_register_book_and_recall_in_new_call(setup):
     first = TwilioCallSession(call_id="CA-first", started_at=NOW)
     assert "error" in run(first, "record_registration", **PROFILE)
-    patient = register(first)
-    assert search(first, patient)["slots_found"] == 4
-    booked = book(first, patient)
-    assert booked["persisted"] is True
-    assert book(first, patient)["appointment_id"] == booked["appointment_id"]
-    assert len(first.store.appointments()) == 1
-    assert [s["slot"][11:16] for s in search(first, patient)["earliest_slots"]] == [
-        "09:30",
-        "10:00",
-    ]
+    patient_id = register(first)
+    assert times(search(first, patient_id)) == FREE
+    booking = book(first, patient_id)
+    assert booking["persisted"] is True
+    assert book(first, patient_id)["appointment_id"] == booking["appointment_id"]
+    assert len(first.store.appointments(patient_id)) == 1
+    assert times(search(first, patient_id)) == ["09:30", "10:30"]
     asyncio.run(first.finish())
     second = asyncio.run(
         TwilioCallSession.start(call_id="CA-second", from_number="+34612345678", started_at=NOW)
     )
-    assert second.caller_matches[0]["patient_id"] == patient
-    assert "error" in run(second, "list_appointments", patient_id=patient)
-    assert identify(second)["verified_patient_ids"] == [patient]
-    diary = run(second, "list_appointments", patient_id=patient)["appointments"]
-    assert diary[0]["appointment_id"] == booked["appointment_id"]
-    assert setup.submits == []
-    assert setup.searches[0]["patient_id"] is None  # never send local IDs to Prosper
+    assert second.caller_matches[0]["patient_id"] == patient_id
+    assert "error" in run(second, "list_appointments", patient_id=patient_id)
+    assert identify(second)["verified_patient_ids"] == [patient_id]
+    diary = run(second, "list_appointments", patient_id=patient_id)["appointments"]
+    assert diary[0]["appointment_id"] == booking["appointment_id"]
 
 
 def test_reschedule_cancel_and_release_local_slot(setup):
     session = TwilioCallSession(call_id="CA-move", started_at=NOW)
-    patient = register(session)
-    search(session, patient)
-    appointment_id = book(session, patient)["appointment_id"]
-    search(session, patient)
+    patient_id = register(session)
+    search(session, patient_id)
+    appointment_id = book(session, patient_id)["appointment_id"]
+    search(session, patient_id)
     moved = run(
         session,
         "record_reschedule",
         appointment_id=appointment_id,
         provider_id="PR03",
         location_id="sur",
-        slot=SLOTS[3]["start_time"],
+        slot=slot("10:30")["start_time"],
         policy_id="privado",
         confirmed=True,
     )
     assert moved["appointment_id"] == appointment_id
     # Moving back to a former time is a real change, not a replay of an old result.
-    search(session, patient)
+    search(session, patient_id)
     back = run(
         session,
         "record_reschedule",
         appointment_id=appointment_id,
         provider_id="PR03",
         location_id="sur",
-        slot=SLOTS[0]["start_time"],
+        slot=slot("09:00")["start_time"],
         policy_id="privado",
         confirmed=True,
     )
-    assert back["appointment"]["start_time"] == SLOTS[0]["start_time"]
+    assert back["appointment"]["start_time"] == slot("09:00")["start_time"]
     cancelled = run(session, "record_cancellation", appointment_id=appointment_id, confirmed=True)
     assert cancelled["appointment"]["status"] == "cancelled"
-    assert run(session, "list_appointments", patient_id=patient)["appointments"] == []
-    assert search(session, patient)["slots_found"] == 4
+    assert run(session, "list_appointments", patient_id=patient_id)["appointments"] == []
+    assert times(search(session, patient_id)) == FREE
 
 
-def test_existing_prosper_patient_uses_local_calendar_overlay(setup):
-    session = TwilioCallSession(call_id="CA-remote", started_at=NOW)
-    assert identify(session, REMOTE_PATIENT["national_id"])["verified_patient_ids"] == ["P001"]
+def test_seeded_patient_books_and_sees_it_in_a_later_call(setup):
+    session = TwilioCallSession(call_id="CA-seeded", started_at=NOW)
+    assert identify(session, SEEDED["national_id"])["verified_patient_ids"] == ["P001"]
     search(session, "P001")
-    booked = book(session, "P001")
-    assert booked["persisted"]
-    assert setup.searches[0]["patient_id"] == "P001"
-    second = TwilioCallSession(call_id="CA-remote-2", started_at=NOW)
-    identify(second, REMOTE_PATIENT["national_id"])
-    assert (
-        run(second, "list_appointments", patient_id="P001")["appointments"][0]["appointment_id"]
-        == booked["appointment_id"]
-    )
-    assert setup.submits == []
+    booking = book(session, "P001")
+    assert booking["persisted"]
+    second = TwilioCallSession(call_id="CA-seeded-2", started_at=NOW)
+    identify(second, SEEDED["national_id"])
+    listed = run(second, "list_appointments", patient_id="P001")["appointments"]
+    assert [a["appointment_id"] for a in listed] == [booking["appointment_id"]]
 
 
 def test_duplicate_registration_and_identity_guard(setup):
     first = TwilioCallSession(call_id="CA-one", started_at=NOW)
-    patient = register(first)
+    patient_id = register(first)
     second = TwilioCallSession(call_id="CA-two", started_at=NOW)
     assert "error" in run(second, "record_registration", **PROFILE, confirmed=True)
     assert "error" in run(
         second,
         "record_registration",
-        **{**PROFILE, "national_id": REMOTE_PATIENT["national_id"]},
+        **{**PROFILE, "national_id": SEEDED["national_id"]},
         confirmed=True,
     )
     run(second, "find_patient", national_id=PROFILE["national_id"])
-    search(second, patient)
-    assert "error" in book(second, patient)
-    assert "error" in book(second, patient, confirmed=False)
-    assert first.store.appointments() == []
+    search(second, patient_id)
+    assert "error" in book(second, patient_id)
+    assert "error" in book(second, patient_id, confirmed=False)
+    assert first.store.appointments(patient_id) == []
     identify(second)
-    assert book(second, patient)["persisted"]
+    assert book(second, patient_id)["persisted"]
 
 
-def test_rechecks_remote_availability_before_write(setup):
+def test_rechecks_availability_before_write(setup):
     session = TwilioCallSession(call_id="CA-stale", started_at=NOW)
-    patient = register(session)
-    search(session, patient)
-    setup.slots = []
-    assert "error" in book(session, patient)
-    assert session.store.appointments() == []
+    patient_id = register(session)
+    search(session, patient_id)
+    # Another caller takes 09:00 between the offer and the caller's yes.
+    taken = booked("A999", "P09999", "PR03", "sur", slot("09:00")["start_time"])
+    seeded(store=setup, appointments=[taken])
+    assert "error" in book(session, patient_id)
+    assert session.store.appointments(patient_id) == []
 
 
-def test_local_age_and_referral_rules(setup, monkeypatch):
+def test_local_age_and_referral_rules(setup):
     session = TwilioCallSession(call_id="CA-child", started_at=NOW)
-    patient = register(session, date_of_birth="2020-01-01")
-    result = search(session, patient)
+    patient_id = register(session, date_of_birth="2020-01-01")
+    result = search(session, patient_id)
     assert result["slots_found"] == 0
     assert result["blocked"][0]["restriction"] == "not_eligible_age"
     clinic._catalogue["specialties"][0].update(min_age_months=0, referral_required=True)
-    result = search(session, patient)
+    result = search(session, patient_id)
     assert result["slots_found"] == 0
     assert result["blocked"][0]["restriction"] == "referral_required"
 
@@ -288,43 +242,46 @@ def test_local_age_and_referral_rules(setup, monkeypatch):
 def test_db_serializes_two_callers_competing_for_overlapping_slots(setup):
     store = LocalStore()
     profile = {**PROFILE, "action": "REGISTER"}
-    patient = store.save("create", profile)["patient"]
+    registered = store.save("create", profile)["patient"]
 
-    def attempt(index):
+    def attempt(at):
         action = {
             "action": "BOOK",
-            "patient_id": patient["patient_id"],
+            "patient_id": registered["patient_id"],
             "provider_id": "PR03",
             "location_id": "sur",
-            "slot": SLOTS[index]["start_time"],
+            "slot": slot(at)["start_time"],
             "policy_id": "privado",
         }
         try:
-            return LocalStore().save(f"race-{index}", action, patient=patient, slot=SLOTS[index])
+            return LocalStore().save(f"race-{at}", action, patient=registered, slot=slot(at))
         except ValueError as error:
             return {"error": str(error)}
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(attempt, [0, 1]))
+        results = list(pool.map(attempt, ["09:00", "09:15"]))
     assert sum("appointment_id" in r for r in results) == 1
-    assert len(LocalStore().appointments()) == 1
+    assert len(LocalStore().appointments(registered["patient_id"])) == 1
 
 
-def test_local_cancellation_masks_prosper_appointment(setup):
-    original = {**SLOTS[0], "appointment_id": "A001", "patient_id": "P001"}
-    setup.diary = [original]
+def test_cancelling_a_seeded_appointment_frees_its_slot(setup):
+    mine = booked("A001", "P001", "PR03", "sur", slot("09:00")["start_time"], "first_visit")
+    seeded(store=setup, appointments=[mine])
     session = TwilioCallSession(call_id="CA-cancel", started_at=NOW)
-    identify(session, REMOTE_PATIENT["national_id"])
-    run(session, "list_appointments", patient_id="P001")
+    identify(session, SEEDED["national_id"])
+    listed = run(session, "list_appointments", patient_id="P001")["appointments"]
+    assert [a["appointment_id"] for a in listed] == ["A001"]
+    assert "09:00" not in times(search(session, "P001"))
     result = run(session, "record_cancellation", appointment_id="A001", confirmed=True)
     assert result["persisted"]
     assert run(session, "list_appointments", patient_id="P001")["appointments"] == []
-    assert setup.diary == [original]
-    assert setup.submits == []
+    assert times(search(session, "P001")) == FREE
+    row = LocalStore().appointments("P001", include_cancelled=True)[0]
+    assert (row["status"], row["call_id"], row["source"]) == ("cancelled", "CA-cancel", "local")
 
 
-def test_scored_tools_keep_original_contract_and_clear_does_not_undo_saved(setup):
-    assert CallSession(call_id="scored").tool_specs(TOOLS) is TOOLS
+def test_plain_tools_keep_original_contract_and_clear_does_not_undo_saved(setup):
+    assert CallSession(call_id="plain").tool_specs(TOOLS) is TOOLS
     session = TwilioCallSession(call_id="local", started_at=NOW)
     local = session.tool_specs(TOOLS)
     assert (
@@ -335,12 +292,12 @@ def test_scored_tools_keep_original_contract_and_clear_does_not_undo_saved(setup
         "confirmed"
         not in next(t for t in TOOLS if t["name"] == "record_booking")["parameters"]["required"]
     )
-    patient = register(session)
-    search(session, patient)
-    book(session, patient)
+    patient_id = register(session)
+    search(session, patient_id)
+    book(session, patient_id)
     assert "error" in run(session, "clear_recorded_actions")
     run(session, "record_no_action", reason="out_of_scope")
-    assert len(session.store.appointments()) == 1
+    assert len(session.store.appointments(patient_id)) == 1
 
 
 def test_two_registrations_and_explicit_correction(setup):
@@ -350,175 +307,93 @@ def test_two_registrations_and_explicit_correction(setup):
     assert first != second
     corrected = register(session, patient_id=first, email="corrected@example.test")
     assert corrected == first
-    assert len(LocalStore().patients()) == 2
+    assert {p["patient_id"] for p in LocalStore().patients()} >= {first, second}
     assert LocalStore().patient(second)["given_name"] == "Pedro"
     assert LocalStore().patient(first)["email"] == "corrected@example.test"
+    assert LocalStore().patient(first)["insurer_authorizations"] == []
 
 
-def test_console_exposes_saved_calendar_only_locally(setup):
+def test_console_calendar_shows_the_diary_window_and_call_bookings(setup):
     from app.dashboard import app as dashboard
     from app.server import app as voice
     from fastapi.testclient import TestClient
 
+    seeded(
+        store=setup,
+        absences=[("PR05", "2026-09-20", "2026-09-22", None, None, "congress")],
+        closures=[("2026-10-12", None, "Fiesta Nacional")],
+    )
     session = TwilioCallSession("CAcalendar", started_at=NOW)
-    patient = register(session)
-    search(session, patient)
-    appointment = book(session, patient)["appointment_id"]
-    response = TestClient(dashboard).get("/api/clinic/calendar")
-    assert response.status_code == 200
-    body = response.json()
-    record = body["records"][0]
-    assert record["appointmentId"] == appointment
+    patient_id = register(session)
+    search(session, patient_id)
+    appointment = book(session, patient_id)["appointment_id"]
+    client = TestClient(dashboard)
+    body = client.get("/api/clinic/calendar", params={"from": DAY, "to": DAY}).json()
+    assert (body["from"], body["to"]) == (DAY, DAY)
+    assert {p["id"] for p in body["providers"]} >= {"PR03", "PR05"}
+    assert {"id": "sur", "name": "Arenal Sur"} in body["locations"]
+    assert body["absences"] == [
+        {
+            "providerId": "PR05",
+            "start": "2026-09-20",
+            "end": "2026-09-22",
+            "startTime": None,
+            "endTime": None,
+            "reason": "congress",
+        }
+    ]
+    assert body["closures"] == []  # 12 Oct is outside this window
+    assert len(body["records"]) == len(DIARY) + 1
+    record = next(r for r in body["records"] if r["appointmentId"] == appointment)
     assert record["persisted"] is True
-    assert record["source"] == "local"
-    assert record["day"] == "2026-09-21"
+    assert record["source"] == "call"
+    assert record["callId"] == "CAcalendar"
+    assert record["day"] == DAY
     assert record["patient"] == "Ana García López"
-    assert record["site"] == "Arenal Sur"
+    assert (record["provider"], record["providerId"], record["site"]) == (
+        "Dr. Martín Sáez",
+        "PR03",
+        "Arenal Sur",
+    )
+    assert (record["end"], record["durationMinutes"]) == (f"{DAY}T09:30:00+02:00", 30)
+    assert (record["appointmentType"], record["status"], record["kind"]) == (
+        "first_visit",
+        "booked",
+        "BOOK",
+    )
     assert record["callLogged"] is True
-    assert body["sources"] == {"local": 1, "prosper": {"ok": True, "count": 0, "detail": None}}
+    diary = next(r for r in body["records"] if r["appointmentId"] == "A900")
+    assert (diary["source"], diary["callId"], diary["callLogged"]) == ("diary", None, False)
+    assert [r["slot"] for r in body["records"]] == sorted(r["slot"] for r in body["records"])
+    later = client.get("/api/clinic/calendar", params={"from": "2026-10-12", "to": "2026-10-12"})
+    assert later.json()["closures"] == [
+        {"date": "2026-10-12", "locationId": None, "name": "Fiesta Nacional"}
+    ]
     assert TestClient(voice).get("/api/clinic/calendar").status_code == 404
 
 
-HARNESS_FEED = [
-    {
-        "call_id": "harness-book",
-        "received_at": "2026-09-20T03:23:20.697498Z",
-        "record": {
-            "actions": [
-                {
-                    "action": "BOOK",
-                    "patient_id": "P001",
-                    "provider_id": "PR03",
-                    "location_id": "sur",
-                    "appointment_type_id": "first_visit",
-                    "slot": "2026-09-22T09:00:00+02:00",
-                    "policy_id": "privado",
-                }
-            ]
-        },
-    },
-    {
-        "call_id": "harness-move",
-        "received_at": "2026-09-20T03:12:46.895273Z",
-        "record": {
-            "actions": [
-                {
-                    "action": "RESCHEDULE",
-                    "appointment_id": "A001498",
-                    "provider_id": "PR03",
-                    "location_id": "sur",
-                    "slot": "2026-10-13T13:15:00+02:00",
-                    "policy_id": "mapfre",
-                }
-            ]
-        },
-    },
-    {
-        "call_id": "harness-cancel",
-        "received_at": "2026-09-20T03:09:57.138786Z",
-        "record": {
-            "actions": [
-                {"action": "CANCEL", "appointment_id": "A001335"},
-                {"action": "NO_ACTION", "reason": "not_applicable"},
-            ]
-        },
-    },
-]
-MOVE_LOG = [
-    {
-        "t": 1.0,
-        "kind": "tool",
-        "name": "find_patient",
-        "args": {},
-        "result": {
-            "matches": [{"patient_id": "P00023", "name": "Sonia Vázquez Alonso"}],
-            "count": 1,
-        },
-    },
-    {
-        "t": 2.0,
-        "kind": "tool",
-        "name": "list_appointments",
-        "args": {},
-        "result": {
-            "appointments": [
-                {
-                    "appointment_id": "A001498",
-                    "patient_id": "P00023",
-                    "start_time": "2026-10-13T11:45:00+02:00",
-                    "provider_id": "PR07",
-                    "location_id": "norte",
-                }
-            ]
-        },
-    },
-]
-
-
-def test_console_calendar_merges_prosper_submissions(setup, tmp_path):
+def test_console_calendar_tolerates_sparse_rows_and_bad_windows(setup):
     from app.dashboard import app as dashboard
     from fastapi.testclient import TestClient
 
-    setup.submissions_feed = deepcopy(HARNESS_FEED)
-    # The persona directory: one practice case names the remote patient's DNI.
-    clinic_api.PUBLIC_CASES.write_text(
-        json.dumps(
-            {
-                "cases": [
-                    {"persona": {"data": {"patient_national_id": REMOTE_PATIENT["national_id"]}}}
-                ]
-            }
-        )
-    )
-    # Only the reschedule call was served from this host, so only its log is here.
-    config.CALLS_DIR.mkdir(parents=True)
-    (config.CALLS_DIR / "harness-move.jsonl").write_text(
-        "".join(json.dumps(event) + "\n" for event in MOVE_LOG)
-    )
-    session = TwilioCallSession("CAcalendar", started_at=NOW)
-    patient = register(session)
-    search(session, patient)
-    book(session, patient)
-
-    body = TestClient(dashboard).get("/api/clinic/calendar").json()
-    assert body["sources"] == {"local": 1, "prosper": {"ok": True, "count": 3, "detail": None}}
-    assert [r["source"] for r in body["records"]] == ["local", "prosper", "prosper", "prosper"]
-    by_call = {r["callId"]: r for r in body["records"]}
-    booked = by_call["harness-book"]
-    assert booked["kind"] == "BOOK" and booked["day"] == "2026-09-22"
-    assert booked["patient"] == "Ana García López"  # via the persona-seeded directory
-    assert (booked["provider"], booked["site"]) == ("Doctor Sáez", "Arenal Sur")
-    assert booked["persisted"] is False and booked["callLogged"] is False
-    moved = by_call["harness-move"]
-    assert moved["kind"] == "RESCHEDULE" and moved["day"] == "2026-10-13"
-    assert moved["patient"] == "Sonia Vázquez Alonso"  # from this host's call log
-    assert moved["previousSlot"] == "2026-10-13T11:45:00+02:00"
-    assert moved["callLogged"] is True
-    cancelled = by_call["harness-cancel"]
-    assert cancelled["kind"] == "CANCEL" and cancelled["day"] is None
-    assert cancelled["patient"] == "Appointment A001335"
-    assert cancelled["appointmentId"] == "A001335"
-
-
-def test_console_calendar_survives_prosper_outage(setup, monkeypatch):
-    from app.dashboard import app as dashboard
-    from fastapi.testclient import TestClient
-
-    async def down(limit=200):
-        raise prosper.ProsperError(503, "maintenance")
-
-    monkeypatch.setattr(setup, "submissions", down)
-    session = TwilioCallSession("CAcalendar", started_at=NOW)
-    patient = register(session)
-    search(session, patient)
-    book(session, patient)
-
-    response = TestClient(dashboard).get("/api/clinic/calendar")
-    assert response.status_code == 200
-    body = response.json()
-    assert [r["source"] for r in body["records"]] == ["local"]
-    assert body["sources"]["prosper"]["ok"] is False
-    assert "503" in body["sources"]["prosper"]["detail"]
+    sparse = booked("A500", "P001", "PR03", "sur", f"{DAY}T09:00:00+02:00", "first_visit")
+    for key in ("updated_at", "call_id", "provider_name"):
+        sparse.pop(key)
+    cancelled = {**sparse, "appointment_id": "A501", "status": "cancelled"}
+    seeded(store=setup, appointments=[sparse, cancelled])
+    client = TestClient(dashboard)
+    body = client.get("/api/clinic/calendar", params={"from": DAY, "to": DAY}).json()
+    rows = {r["appointmentId"]: r for r in body["records"]}
+    assert rows["A500"]["recordedAt"] is None
+    assert rows["A500"]["provider"] == "Dr. Martín Sáez"
+    assert (rows["A501"]["kind"], rows["A501"]["status"]) == ("CANCEL", "cancelled")
+    for window in (
+        {"from": "2026-09-01", "to": "2026-12-31"},  # over 62 days
+        {"from": "2026-09-22", "to": DAY},
+        {"from": "tomorrow"},
+    ):
+        assert client.get("/api/clinic/calendar", params=window).status_code == 422
+    assert client.get("/api/clinic/calendar").status_code == 200  # today-7 .. today+35
 
 
 @pytest.mark.parametrize("cancel", [False, True])
@@ -533,20 +408,19 @@ def test_persisted_booking_emails_only_if_still_active(
     monkeypatch.setattr(config, "APPOINTMENT_EMAILS_ENABLED", True)
     monkeypatch.setattr(config, "RESEND_API_KEY", "test-key")
     monkeypatch.setattr(config, "RESEND_FROM_EMAIL", "clinic@example.test")
-    monkeypatch.setattr(config, "EVAL_MODE", False)
     sender = AsyncMock(return_value="test-email-id")
     monkeypatch.setattr(appointment_email, "send_message", sender)
     session = TwilioCallSession("CApersisted-email", started_at=NOW)
     if existing_patient:
-        patient = register(TwilioCallSession("CAearlier-registration", started_at=NOW))
+        patient_id = register(TwilioCallSession("CAearlier-registration", started_at=NOW))
         found = identify(session)
-        assert found["verified_patient_ids"] == [patient]
+        assert found["verified_patient_ids"] == [patient_id]
     else:
-        patient = register(session)
-    search(session, patient)
-    booked = book(session, patient)
-    appointment = booked["appointment_id"]
-    assert booked["appointment_email"] == {"patient_id": patient, "status": "on_file"}
+        patient_id = register(session)
+    search(session, patient_id)
+    booking = book(session, patient_id)
+    appointment = booking["appointment_id"]
+    assert booking["appointment_email"] == {"patient_id": patient_id, "status": "on_file"}
     assert session.appointment_emails == {}  # No model-supplied recipient or confirmation.
     if cancel:
         run(session, "record_cancellation", appointment_id=appointment, confirmed=True)
@@ -554,15 +428,30 @@ def test_persisted_booking_emails_only_if_still_active(
     assert sender.await_count == (0 if cancel else 1)
     if not cancel:
         assert sender.call_args.args[0]["to"] == [PROFILE["email"]]
-    assert len(LocalStore().appointments()) == (0 if cancel else 1)
+    assert len(LocalStore().appointments(patient_id)) == (0 if cancel else 1)
 
 
-def test_local_prompt_separates_persisted_writes_from_scored_registration(setup, monkeypatch):
+def test_local_prompt_separates_persisted_writes_from_staged_registration(setup, monkeypatch):
     monkeypatch.setattr(clinic, "_catalogue", None)
-    scored = CallSession(call_id="scored-prompt").instructions()
+    staged = CallSession(call_id="staged-prompt").instructions()
     local = TwilioCallSession(call_id="local-prompt").instructions()
-    assert "Do not book them anything." in scored
+    assert "Do not book them anything." in staged
     assert "Do not book them anything." not in local
     assert "do not wait for confirmation" not in local
     assert "the new patient CAN book" in local
     assert "confirmed=true" in local
+
+
+def test_a_hyphenated_surname_is_verified_from_its_spoken_words(setup):
+    chart = patient(
+        "P002",
+        given_name="Luis",
+        first_surname="García-Moreno",
+        second_surname="Pérez",
+        national_id="22222222J",
+        date_of_birth="1970-01-01",
+    )
+    seeded(store=setup, patients=[chart])
+    session = TwilioCallSession(call_id="CA-hyphen", started_at=NOW)
+    found = run(session, "find_patient", name="Luis García Moreno", date_of_birth="1970-01-01")
+    assert found["verified_patient_ids"] == ["P002"]

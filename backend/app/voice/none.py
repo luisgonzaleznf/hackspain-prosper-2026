@@ -1,6 +1,6 @@
-"""VOICE=none — a silent stand-in for plumbing tests only (handshake → session → submit on hang-up).
+"""VOICE=none — a silent stand-in for plumbing tests only (handshake → session → outcome on hang-up).
 
-It never speaks, so on a real Prosper call it is cut off for silence. Use a real voice layer there.
+It never speaks, so a real caller hangs up on the silence. Use a real voice layer there.
 """
 
 from pipecat.pipeline.pipeline import Pipeline

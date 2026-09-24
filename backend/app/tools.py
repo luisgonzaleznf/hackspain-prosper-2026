@@ -4,10 +4,11 @@
     await call_tool(session, name, args) -> dict      never raises; errors come back as {"error": ...}
     register_pipecat_tools(llm, session) -> ToolsSchema   convenience for pipecat LLM services
 
-Lookups hit the live clinic API. The record_* tools only STAGE an outcome (see session.py), and
-only after checking it against what this call actually looked up: a patient from find_patient,
-a slot from search_availability, an appointment from list_appointments. That is the
-"check before any write" invariant: the model cannot report something the clinic never offered.
+Lookups read the clinic database through `session.clinic_client`. The record_* tools only
+STAGE an outcome (see session.py), and only after checking it against what this call actually
+looked up: a patient from find_patient, a slot from search_availability, an appointment from
+list_appointments. That is the "check before any write" invariant: the model cannot record
+something the clinic never offered.
 """
 
 import re
@@ -17,7 +18,8 @@ from difflib import SequenceMatcher
 from math import asin, cos, isfinite, radians, sin, sqrt
 from typing import Any
 
-from app import appointment_email, clinic, customer_accounts, directions, prosper
+from app import appointment_email, clinic, customer_accounts, directions
+from app.clinic import ClinicError
 from app.session import CallSession
 
 REASONS = [
@@ -64,7 +66,7 @@ SPECIALTIES = [
 ]
 LOCATIONS = ["centro", "norte", "sur"]
 # Languages a doctor may speak (catalogue codes). Every provider speaks Spanish; only four
-# speak Catalan (problem 11: "the provider you book has to speak their language").
+# speak Catalan (a caller may need "a doctor who speaks my language").
 LANGUAGE_NAMES = {
     "es": "Spanish",
     "ca": "Catalan",
@@ -73,9 +75,9 @@ LANGUAGE_NAMES = {
     "gl": "Galician",
 }
 # Languages the filter actually means something for. English and Spanish are no-ops (every
-# doctor speaks Spanish; 69 of 73 public cases are English callers, and a realtime model does
-# not enforce the schema's enum) so a model passing language="en" just because the call is in
-# English must not hide every doctor who doesn't happen to list "en".
+# doctor speaks Spanish; many callers speak English, and a realtime model does not enforce the
+# schema's enum) so a model passing language="en" just because the call is in English must not
+# hide every doctor who doesn't happen to list "en".
 LANGUAGES = ["ca", "eu", "gl"]
 REGISTER_FIELDS = [
     "given_name",
@@ -289,8 +291,8 @@ TOOLS: list[dict] = [
     {
         "name": "record_booking",
         "description": (
-            "Record the booking to report when the call ends, after the caller has agreed to the "
-            "exact slot. It replaces any earlier booking recorded for the same patient."
+            "Record the booking, after the caller has agreed to the exact slot. It replaces any "
+            "earlier booking recorded for the same patient."
         ),
         "parameters": {
             "type": "object",
@@ -658,7 +660,7 @@ def _staged(session: CallSession, action: dict) -> dict:
     result: dict[str, Any] = {
         "recorded": action,
         "everything_recorded": staged,
-        "note": "Recorded. It is reported when the call ends; confirm it to the caller.",
+        "note": "Recorded. Confirm it to the caller.",
     }
     patient_id = appointment_email.patient_for_action(session, action)
     if (
@@ -745,23 +747,22 @@ async def _find_patient(session: CallSession, args: dict) -> dict:
 
 
 def _id_decides(query: dict[str, str]) -> bool:
-    """A DNI/NIE belongs to one person, so it alone finds them. The fuzzy name search is what
-    makes /directory slow (~450 ms with a name, ~140 ms without, warm connection)."""
+    """A DNI/NIE belongs to one person, so it alone finds them, without the name search."""
     if "national_id" not in query or "phone" in query:
-        return False  # phone matching is Prosper's own digit rule: leave it to /directory
+        return False  # phone matching is the directory's own digit rule: leave it to it
     dob = query.get("date_of_birth")
     if dob:
         try:
             date.fromisoformat(dob)
         except ValueError:
-            return False  # let /directory reject a malformed date the way it always has
+            return False  # a malformed date simply matches nobody in the directory
     return True
 
 
 async def _by_national_id(session: CallSession, query: dict[str, str]) -> list[dict]:
     """Patients with this DNI/NIE: one this call already holds (caller ID, an earlier lookup),
-    else /directory asked for the ID alone. A given date of birth still excludes, exactly as
-    /directory applies it; the spoken name never filters (see _same_person)."""
+    else the directory asked for the ID alone. A given date of birth still excludes, exactly as
+    the directory applies it; the spoken name never filters (see _same_person)."""
     nid = query["national_id"]
     held = [
         p
@@ -895,6 +896,10 @@ async def _search_availability(session: CallSession, args: dict) -> dict:
         notes.append(f"Nothing is booked today, so the search starts {date_from.isoformat()}.")
     if date_to < date_from:
         date_to = date_from
+    ends = ((clinic.cached() or {}).get("calendar") or {}).get("ends")
+    if ends and date_from <= date.fromisoformat(ends) < date_to:
+        date_to = date.fromisoformat(ends)
+        notes.append(f"The bookable calendar ends {ends}, so this search stops there.")
     if (date_to - date_from).days > 13:
         date_to = date_from + timedelta(days=13)
         notes.append(f"Windows are capped at 14 days, so this one ends {date_to.isoformat()}.")
@@ -908,7 +913,7 @@ async def _search_availability(session: CallSession, args: dict) -> dict:
             patient_id=args.get("patient_id"),
             insurers=args.get("insurers"),
         )
-    except prosper.ProsperError as e:
+    except ClinicError as e:
         return {"error": f"The clinic system refused the search ({e.status}): {e.detail}"}
     slots = sorted(data["slots"], key=lambda s: datetime.fromisoformat(s["start_time"]))
     if after is not None:
@@ -926,11 +931,11 @@ async def _search_availability(session: CallSession, args: dict) -> dict:
     # passing a language nobody asked to filter on.
     language = str(args.get("language") or "").strip().lower()
     if language not in LANGUAGES:
-        # English is deliberately not filterable: 21 published English-language cases accept a
-        # doctor who speaks no English (PR07, PR08, PR09, PR10), so filtering on "en" would hide
-        # the expected answer across ten problems. A caller who genuinely asks for an
-        # English-speaking doctor is answered from THE CLINIC catalogue instead, which lists every
-        # provider's languages -- say so rather than dropping the request in silence.
+        # English is deliberately not filterable: an English-speaking caller can see a doctor who
+        # speaks no English (PR07, PR08, PR09, PR10), so filtering on "en" would hide most of the
+        # diary. A caller who genuinely asks for an English-speaking doctor is answered from THE
+        # CLINIC catalogue instead, which lists every provider's languages -- say so rather than
+        # dropping the request in silence.
         if language == "en":
             who = _speakers(clinic.cached(), "en")
             names = ", ".join(sorted(who)) if who else "see THE CLINIC"
@@ -998,21 +1003,42 @@ async def _search_availability(session: CallSession, args: dict) -> dict:
             "Offer another provider or site if the rule allows, otherwise record_no_action with "
             "that restriction id."
         )
-    # A provider on leave can still return slots after the leave ends, with `blocked` empty.
-    # Doctor & Site wants the same specialty at the same site, so say so on the result.
+    # A provider away for part of the window still has slots outside it, with `blocked` empty,
+    # so the result says so. Only an absence that overlaps the searched days counts.
     pid = args.get("provider_id")
     prov = next((p for p in (clinic.cached() or {}).get("providers", []) if p["id"] == pid), None)
-    leave = prov and prov.get("leave")
-    if leave and date.fromisoformat(leave["end"]) >= date_from:
+    absences: list = []
+    if prov:
+        absences = prov["absences"] if "absences" in prov else [prov.get("leave")]
+    away = [
+        a
+        for a in absences
+        if a
+        and not a.get("start_time")
+        and date.fromisoformat(a["start"]) <= date_to
+        and date.fromisoformat(a["end"]) >= date_from
+    ]
+    if prov and away:
+        leave = {k: away[0][k] for k in ("start", "end", "reason")}
         sites = ", ".join(sorted({s["location_id"] for s in prov["schedules"]}))
         result["provider_on_leave"] = {**leave, "provider_id": pid, "provider_name": prov["name"]}
-        notes.append(
-            f"{prov['name']} is on leave until {leave['end']} ({leave['reason']}). Tell the caller, "
-            f"then search specialty_id={prov['specialty_id']} at the site they asked for (his: {sites}) "
-            "without provider_id, and offer the earliest slot with another doctor there. Book him "
-            "after his leave only if the caller refuses everyone else; if they will see nobody, "
-            "record_no_action(provider_on_leave)."
-        )
+        if date.fromisoformat(leave["start"]) <= date_from:
+            notes.append(
+                f"{prov['name']} is on leave until {leave['end']} ({leave['reason']}). Tell the "
+                f"caller, then search specialty_id={prov['specialty_id']} at the site they asked "
+                f"for (theirs: {sites}) without provider_id, and offer the earliest slot with "
+                "another doctor there. Book them after the leave only if the caller refuses "
+                "everyone else; if they will see nobody, record_no_action(provider_on_leave)."
+            )
+        else:
+            notes.append(
+                f"{prov['name']} is away from {leave['start']} to {leave['end']} "
+                f"({leave['reason']}); the slots listed are outside that. If the caller needs a "
+                f"day inside it, tell them, then search specialty_id={prov['specialty_id']} at "
+                f"the site they asked for (theirs: {sites}) without provider_id and offer "
+                "another doctor there; if they will see nobody, "
+                "record_no_action(provider_on_leave)."
+            )
     if notes:
         result["notes"] = notes
     return result
@@ -1187,7 +1213,7 @@ async def call_tool(session: CallSession, name: str, args: dict | None) -> dict:
             result = await session.execute_tool(name, args, handler)
         except KeyError as e:
             result = {"error": f"Missing argument {e}."}
-        except prosper.ProsperError as e:
+        except ClinicError as e:
             result = {"error": f"The clinic system answered {e.status}: {e.detail}"}
         except Exception as e:  # network trouble etc.: tell the model, keep the call alive
             session.log("tool_error", name=name, error_type=type(e).__name__, error=str(e))

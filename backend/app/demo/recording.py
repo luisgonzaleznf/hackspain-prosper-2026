@@ -1,4 +1,4 @@
-"""Record browser transport audio without changing the scored voice pipeline."""
+"""Record browser transport audio without changing the phone voice pipeline."""
 
 import asyncio
 import audioop

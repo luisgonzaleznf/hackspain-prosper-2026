@@ -10,15 +10,14 @@ import { Link } from "react-router";
 import { CallInProgress } from "@/components/call-status";
 import { CallTimeline, type TimelineHandle } from "@/components/call-timeline";
 import { LoadingConversation, LoadingTimeline } from "@/components/loading";
-import { CopyButton, Empty, KeyValue, Label, Mono, Outcome, PillSelect, ReasonCode, VerdictMark } from "@/components/primitives";
+import { CopyButton, Empty, KeyValue, Label, Mono, Outcome, PillSelect, ReasonCode } from "@/components/primitives";
 import { SelectionIndicator } from "@/components/selection-indicator";
 import { StageIndicator } from "@/components/stage";
 import { Transcript } from "@/components/transcript";
 import { api } from "@/lib/api";
-import { attribute, problemOf, verdictFor } from "@/lib/cases";
 import { duration, maskNationalId, maskPhone, offset, slotLabel, wallClockSeconds } from "@/lib/format";
 import { useSlideIn } from "@/lib/motion";
-import { isNoise, outcomeOf, type Decision, type Timeline } from "@/lib/timeline";
+import { isNoise, outcomeOf, savedWrite, type Decision, type Timeline } from "@/lib/timeline";
 import { isActive, loadDetail, type CallRecord } from "@/lib/store";
 import type { CallSummary, ClinicAction, RawEvent } from "@/lib/types";
 
@@ -101,7 +100,7 @@ export function CallDrawer({ record, onClose, prev, next, basePath }: { record: 
           <h2 className="truncate text-[18px] font-light text-fg">{timeline ? callerLabel(timeline) : detailError ? "Call unavailable" : "Loading call"}</h2>
           {!unknown ? <p className="mt-1 text-[12px] text-fg-3">{wallClockSeconds(summary.started_at)} <span className="ml-3 mono tabular"><CallDuration summary={summary} endedAt={timeline?.endedAt} />{live ? " elapsed" : ""}</span></p> : null}
         </div>
-        {!unknown ? live ? <CallInProgress endedAt={timeline?.endedAt} /> : <Outcome verb={outcome.verb} reason={outcome.reason} status={outcome.status} /> : null}
+        {!unknown ? live ? <CallInProgress endedAt={timeline?.endedAt} /> : <Outcome verb={outcome.verb} reason={outcome.reason} failed={outcome.failed} /> : null}
         <button type="button" className="pill pill-quiet pill-sm pill-icon" onClick={onClose} aria-label="Close call">
           <XIcon size={14} />
         </button>
@@ -163,8 +162,6 @@ function TranscriptTab({ timeline, live, query, onQuery, expandAll, onExpandAll,
 function ReportTab({ record }: { record: CallRecord }) {
   const { detail, summary, timeline } = record;
   if (!detail || !timeline) return null;
-  const attributed = attribute(summary, timeline);
-  const verdict = attributed ? verdictFor(attributed.testCase, detail) : null;
   return (
     <div className="grid gap-6">
       <section>
@@ -175,31 +172,43 @@ function ReportTab({ record }: { record: CallRecord }) {
           ["duration", duration(summary.duration_seconds)],
           ["caller", maskPhone(timeline.fromNumber)],
           ["stage", timeline.stage],
+          ["status", summary.status],
           ["engine", timeline.engine ?? "Not recorded"],
           ["model", timeline.model ?? "Not recorded"],
           ...(timeline.agentSeconds != null ? [["speech", `${Math.round(timeline.agentSeconds)}s ROSARIO / ${timeline.callerSeconds == null ? "not recorded" : `${Math.round(timeline.callerSeconds)}s`} caller`] as [string, string]] : []),
         ]} />
       </section>
       <section>
-        <h3 className="text-[16px] font-light text-fg">What was sent</h3>
-        {detail.submissions.length === 0 ? <Empty>Nothing submitted yet.</Empty> : null}
+        <h3 className="text-[16px] font-light text-fg">Saved to the clinic</h3>
+        {detail.writes.length === 0 ? <Empty>{summary.status === "write failed" ? "A write to the clinic database failed and nothing was saved." : "Nothing was written to the clinic database on this call."}</Empty> : null}
+        {detail.warnings.filter((warning) => warning.startsWith("write failed")).map((warning) => <p key={warning} className="mono text-[12px] text-accent-ink">{warning}</p>)}
         <div className="mt-3 grid gap-3">
-          {detail.submissions.map((s, i) => (
-            <div key={`${s._line ?? i}`} className="tile px-4 py-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <Outcome verb={s.action.action} status={s.status} />
-                <Mono dim className="ml-auto">
-                  {wallClockSeconds(s.t)}
-                </Mono>
+          {detail.writes.map((write, i) => {
+            const result = write.result ?? {};
+            const appointment = result.appointment as Record<string, unknown> | undefined;
+            return (
+              <div key={`${write._line ?? i}`} className="tile px-4 py-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Outcome verb={String(write.action.action)} failed={!savedWrite(write)} />
+                  <Mono dim className="ml-auto">
+                    {wallClockSeconds(write.t)}
+                  </Mono>
+                </div>
+                {write.action.reason ? <ReasonCode code={write.action.reason} className="mt-2" /> : null}
+                <ActionTable action={write.action} className="mt-3" />
+                <KeyValue className="mt-3" rows={[
+                  ...(typeof result.appointment_id === "string" ? [["appointment_id", result.appointment_id] as [string, string]] : []),
+                  ...(typeof result.patient_id === "string" ? [["patient_id", result.patient_id] as [string, string]] : []),
+                  ...(typeof appointment?.status === "string" ? [["saved_status", appointment.status] as [string, string]] : []),
+                  ...(typeof result.error === "string" ? [["error", result.error] as [string, string]] : []),
+                ]} />
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-[12px] text-fg-2">Saved record</summary>
+                  <pre className="mono mt-2 overflow-x-auto rounded-tags bg-fill-chip p-3 text-[11px] leading-[1.5] text-fg-2">{JSON.stringify(write.result, null, 2)}</pre>
+                </details>
               </div>
-              {s.action.reason ? <ReasonCode code={s.action.reason} className="mt-2" /> : null}
-              <ActionTable action={s.action} className="mt-3" />
-              <details className="mt-3">
-                <summary className="cursor-pointer text-[12px] text-fg-2">Platform reply</summary>
-                <pre className="mono mt-2 overflow-x-auto rounded-tags bg-fill-chip p-3 text-[11px] leading-[1.5] text-fg-2">{JSON.stringify(s.response, null, 2)}</pre>
-              </details>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -220,11 +229,11 @@ function ReportTab({ record }: { record: CallRecord }) {
                 <ChainNode label="Recorded action" ok={!!chain.recorded}>
                   {chain.recorded ? <ActionTable action={(chain.recorded as unknown as { action: ClinicAction }).action} /> : null}
                 </ChainNode>
-                <ChainNode label="Final submit" ok={!!chain.submit}>
-                  {chain.submit ? (
+                <ChainNode label="Saved write" ok={!!chain.write}>
+                  {chain.write ? (
                     <>
-                      <span className={clsx("mono text-[12px]", chain.submit.status >= 400 ? "text-accent-ink" : "text-fg")}>status {chain.submit.status}</span>
-                      <ActionTable action={chain.submit.action} className="mt-2" />
+                      <span className={clsx("mono text-[12px]", savedWrite(chain.write) ? "text-fg" : "text-accent-ink")}>{savedWrite(chain.write) ? `saved ${wallClockSeconds(chain.write.t)}` : "write failed"}</span>
+                      <ActionTable action={chain.write.action} className="mt-2" />
                     </>
                   ) : null}
                 </ChainNode>
@@ -232,53 +241,6 @@ function ReportTab({ record }: { record: CallRecord }) {
             ))}
           </div>
         </section>
-      ) : null}
-
-      {attributed && verdict ? (
-        <section>
-          <h3 className="text-[16px] font-light text-fg">Platform verdict</h3>
-          <p className="mt-1 text-[13px] text-fg-2">
-            Scored offline with the leaderboard's rules against <span className="mono text-fg">{attributed.testCase.id}</span> ({problemOf(attributed.testCase.problem_id).name}).
-          </p>
-          <div className="tile mt-3 px-4 py-3">
-            <div className="flex items-center gap-3">
-              <VerdictMark passed={verdict.passed} signal={verdict.signal} />
-              {verdict.matchedAlternative ? <span className="text-[12px] text-fg-2">matched alternative {verdict.matchedAlternative}</span> : null}
-            </div>
-            {verdict.differences.length > 0 ? (
-              <ul className="mono mt-3 grid list-none gap-1 p-0 text-[12px] text-fg-2">
-                {verdict.differences.map((d) => (
-                  <li key={d}>{d}</li>
-                ))}
-              </ul>
-            ) : null}
-            {verdict.leaks.map((l) => (
-              <p key={l} className="mono mt-2 text-[12px] text-accent-ink">
-                {l}
-              </p>
-            ))}
-            {verdict.caveats.map((c) => (
-              <p key={c} className="mt-2 text-[12px] text-fg-3">
-                {c}
-              </p>
-            ))}
-          </div>
-          <details className="mt-3">
-            <summary className="cursor-pointer text-[12px] text-fg-2">Accepted answers for this case</summary>
-            <div className="mt-2 grid gap-2">
-              {attributed.testCase.expected.acceptable.map((alt, i) => (
-                <div key={i} className="tile px-4 py-3">
-                  <Label>alternative {i + 1}</Label>
-                  {alt.actions.map((a, j) => (
-                    <ActionTable key={j} action={a} className="mt-2" />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </details>
-        </section>
-      ) : detail.submissions.length > 0 ? (
-        <p className="text-[12px] text-fg-3">Not a practice case (no run reference and no unique persona number), so no verdict.</p>
       ) : null}
     </div>
   );
@@ -312,7 +274,7 @@ function PatientTab({ timeline }: { timeline: Timeline }) {
   const matches = ((find?.raw as { result?: { matches?: Record<string, unknown>[] } } | undefined)?.result?.matches ?? []) as Record<string, unknown>[];
   const validate = timeline.decisions.filter((d) => d.kind === "tool" && d.label === "validate_registration_details");
   const localRegistration = timeline.decisions.findLast((d) => d.kind === "tool" && d.label === "record_registration" && (d.raw.result as { persisted?: boolean } | undefined)?.persisted === true);
-  const registered = (localRegistration?.raw.result as { recorded?: ClinicAction } | undefined)?.recorded ?? timeline.submitted.find((s) => s.action.action === "REGISTER")?.action;
+  const registered = (localRegistration?.raw.result as { recorded?: ClinicAction } | undefined)?.recorded ?? timeline.writes.find((write) => write.action.action === "REGISTER")?.action;
   return (
     <div className="grid gap-4">
       <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-[13px]">
@@ -410,7 +372,7 @@ export function callerLabel(timeline: Timeline | null): string {
   if (timeline.identified) return timeline.identified.name;
   if (timeline.matchCount != null && timeline.matchCount > 1) return `${timeline.matchCount} matches`;
   if (timeline.matchCount === 0) return "not in records";
-  const registered = timeline.submitted.find((s) => s.action.action === "REGISTER")?.action;
+  const registered = timeline.writes.find((write) => write.action.action === "REGISTER")?.action;
   if (registered) return `${String(registered.given_name ?? "")} ${String(registered.first_surname ?? "")}`.trim();
   return timeline.stage === "GREET" || timeline.stage === "IDENTIFY" ? "identifying" : "unknown caller";
 }

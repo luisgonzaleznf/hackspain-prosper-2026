@@ -2,9 +2,10 @@ import asyncio
 from datetime import datetime
 
 import pytest
-from app import config, prosper
+from app import config
 from app.session import CallSession
 from app.tools import TOOLS, call_tool
+from integrations import local_clinic
 
 NOW = datetime(2026, 9, 19, 9, 0, tzinfo=config.TZ)
 AFTER = "2026-10-14T10:45:00+02:00"
@@ -30,7 +31,7 @@ SLOTS = [
 ]
 
 
-class FakeProsper:
+class FakeClinic:
     def __init__(self, slots):
         self.slots = slots
         self.request = None
@@ -54,8 +55,8 @@ def calls_dir(tmp_path, monkeypatch):
 
 
 def search(monkeypatch, slots=SLOTS, **extra):
-    fake = FakeProsper(slots)
-    monkeypatch.setattr(prosper, "client", lambda: fake)
+    fake = FakeClinic(slots)
+    monkeypatch.setattr(local_clinic, "client", lambda *_, **__: fake)
     session = CallSession(call_id="00000000-0000-0000-0000-0000000000rr", started_at=NOW)
     args = {
         "provider_id": "PR11",

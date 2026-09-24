@@ -2,18 +2,21 @@
 
 The console was built against this log format: `frontend/src/lib/types.ts` says the
 field names are the backend's, verbatim, and every event kind it projects
-(`transcript`, `tool`, `submit`, `action_staged`) is one `app/session.py` writes. So this
+(`transcript`, `tool`, `action_staged`, `local_write`) is one the sessions write. So this
 is an adapter over files we already own, not an integration.
 
     GET /api/calls            -> {calls_dir, calls: [CallSummary]}
     GET /api/calls/{id}       -> CallDetail
     GET /api/calls/{id}/audio -> the call's WAV, when one was recorded
 
-Never mount this on the Prosper call server: that app goes under a public tunnel during a
-run, and this exposes every transcript. `app/dashboard.py` serves it on its own port.
+A call's outcome is what it saved to the clinic database: its `local_write` events.
+
+Never mount this on the voice server: that app goes under a public tunnel, and this exposes
+every transcript. `app/dashboard.py` serves it on its own port.
 """
 
 import json
+import sqlite3
 import wave
 from datetime import UTC, datetime
 from pathlib import Path
@@ -21,6 +24,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+from integrations.local_store import LocalStore, full_name, phone_digits
 
 from app import config
 
@@ -29,6 +33,8 @@ NOISE_KINDS = {"codex", "usage"}
 # What the console renders as a warning badge on a call.
 WARNING_KINDS = {"fallback", "error", "socket_closed", "stop_received"}
 END_KINDS = {"call_ended", "stop_received", "socket_closed", "closed_by_agent"}
+# The tools that write to the clinic database (integrations/local_session.py).
+WRITE_TOOLS = {"record_registration", "record_booking", "record_reschedule", "record_cancellation"}
 
 
 def _calls_dir() -> Path:
@@ -60,6 +66,21 @@ def _of_kind(events: list[dict[str, Any]], kind: str) -> list[dict[str, Any]]:
     return [e for e in events if e.get("kind") == kind]
 
 
+def _write_errors(events: list[dict[str, Any]]) -> list[str]:
+    """Confirmed writes the clinic database refused (a missing confirmation is not one)."""
+    out = []
+    for event in events:
+        if event.get("kind") == "tool" and event.get("name") in WRITE_TOOLS:
+            result, args = event.get("result"), event.get("args")
+            if not isinstance(result, dict) or not isinstance(args, dict):
+                continue
+            if result.get("error") and args.get("confirmed") is True:
+                out.append(str(result["error"]))
+        elif event.get("kind") == "tool_error" and event.get("name") in WRITE_TOOLS:
+            out.append(str(event.get("error") or ""))
+    return out
+
+
 def _warnings(events: list[dict[str, Any]]) -> list[str]:
     out = []
     for event in events:
@@ -67,29 +88,37 @@ def _warnings(events: list[dict[str, Any]]) -> list[str]:
         if kind in WARNING_KINDS:
             detail = event.get("reason") or event.get("error") or event.get("detail") or ""
             out.append(f"{kind}: {detail}".strip().rstrip(":"))
-        elif kind == "submit" and int(event.get("status") or 0) >= 400:
-            out.append(f"submit rejected: HTTP {event.get('status')}")
+    out += [f"write failed: {error}".strip().rstrip(":") for error in _write_errors(events)]
     return out
 
 
 def _status(events: list[dict[str, Any]]) -> str:
-    submits = _of_kind(events, "submit")
-    if submits:
-        codes = [int(s.get("status") or 0) for s in submits]
-        return "submitted" if all(200 <= c < 300 for c in codes) else "rejected"
-    if any(e.get("kind") in END_KINDS for e in events):
-        return "ended"
-    # The console's Calls screen keys off this exact string (`isActive` in
-    # frontend/src/lib/store.ts); do not reword it.
-    return "in progress"
+    """'in progress' while the call is live, then 'saved' (it wrote to the clinic database),
+    'write failed' (it tried and nothing was saved) or 'ended'."""
+    if not any(e.get("kind") in END_KINDS for e in events):
+        # The console's Calls screen keys off this exact string (`isActive` in
+        # frontend/src/lib/store.ts); do not reword it.
+        return "in progress"
+    if _of_kind(events, "local_write"):
+        return "saved"
+    if _write_errors(events):
+        return "write failed"
+    return "ended"
+
+
+def _verbs(items: list[Any]) -> list[str]:
+    return [str((a or {}).get("action", "")) for a in items if isinstance(a, dict)]
 
 
 def _action(events: list[dict[str, Any]]) -> str:
-    """What the call did, as the console's one-word column."""
-    verbs = [str((s.get("action") or {}).get("action", "")) for s in _of_kind(events, "submit")]
+    """What the call did, as the console's one-word column: what it saved, else what it
+    last recorded, else the outcome logged at hang-up."""
+    verbs = _verbs([w.get("action") for w in _of_kind(events, "local_write")])
     if not verbs:
-        staged = _of_kind(events, "action_staged")
-        verbs = [str((s.get("action") or {}).get("action", "")) for s in staged[-1:]]
+        verbs = _verbs([s.get("action") for s in _of_kind(events, "action_staged")[-1:]])
+    if not verbs:
+        ended = _of_kind(events, "call_ended")
+        verbs = _verbs(ended[-1].get("actions") or []) if ended else []
     verbs = [v for v in verbs if v]
     return "+".join(dict.fromkeys(verbs)) if verbs else "—"
 
@@ -137,22 +166,46 @@ def _summary(path: Path, events: list[dict[str, Any]]) -> dict[str, Any]:
         "duration_seconds": round(max(0, (ended if ended is not None else max(stamps)) - started), 3) if stamps else None,
         "warnings": len(_warnings(events)),
         "has_audio": _audio_path(call_id).exists(),
-        "run": None,  # Prosper does not tell us its run id on the call.
+        "run": None,
     }
 
 
 def _provenance(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Tie each submitted action back to the staging event and the lookup behind it."""
+    """Tie each saved write back to the staging event and the lookup behind it."""
     staged = _of_kind(events, "action_staged")
     tools = _of_kind(events, "tool")
     chains = []
-    for submit in _of_kind(events, "submit"):
-        action = submit.get("action") or {}
-        recorded = next((s for s in staged if (s.get("action") or {}) == action), None)
-        before = recorded.get("_line") if recorded else submit.get("_line")
-        lookup = next((t for t in reversed(tools) if t.get("_line", 0) < (before or 0)), None)
-        chains.append({"lookup": lookup, "recorded": recorded, "submit": submit, "action": action})
+    for write in _of_kind(events, "local_write"):
+        action = write.get("action") or {}
+        line = write.get("_line", 0)
+        # A write is saved inside the record_* tool, just before its action_staged event.
+        recorded = next(
+            (s for s in staged if (s.get("action") or {}) == action and s.get("_line", 0) > line),
+            None,
+        )
+        lookup = next((t for t in reversed(tools) if t.get("_line", 0) < line), None)
+        chains.append({"lookup": lookup, "recorded": recorded, "write": write, "action": action})
     return chains
+
+
+def _caller_id(events: list[dict[str, Any]]) -> dict[str, str] | None:
+    """The one chart caller ID found, named for display from the clinic directory. A hint
+    about who owns the line, never verified identity."""
+    started = next((e for e in events if e.get("kind") == "call_started"), {})
+    lookup = next((e for e in events if e.get("kind") == "caller_id_lookup"), {})
+    phone, matches = started.get("from_number"), lookup.get("matches")
+    if not isinstance(phone, str) or not phone or not isinstance(matches, list):
+        return None
+    if len(matches) != 1 or not isinstance(matches[0], str):
+        return None
+    try:
+        patient = LocalStore().patient(matches[0])
+    except sqlite3.Error:
+        return None  # the transcript stays usable without the directory
+    if not patient or phone_digits(str(patient.get("phone") or "")) != phone_digits(phone):
+        return None
+    name = full_name(patient)
+    return {"patient_id": matches[0], "name": name, "source": "caller_id"} if name else None
 
 
 def _detail(path: Path) -> dict[str, Any]:
@@ -167,9 +220,10 @@ def _detail(path: Path) -> dict[str, Any]:
         "transcript": _of_kind(events, "transcript"),
         "tools": _of_kind(events, "tool"),
         "staged_actions": _of_kind(events, "action_staged"),
-        "submissions": _of_kind(events, "submit"),
+        "writes": _of_kind(events, "local_write"),
         "errors": [e for e in events if e.get("kind") in WARNING_KINDS],
         "provenance": _provenance(events),
+        "caller_id": _caller_id(events),
         "events": [e for e in events if e.get("kind") not in NOISE_KINDS],
     }
 

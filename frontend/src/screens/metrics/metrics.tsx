@@ -14,7 +14,7 @@ import "./overview.css";
 
 const SERIES: { id: OverviewSeries; label: string }[] = [
   { id: "calls", label: "Calls handled" },
-  { id: "bookings", label: "Booking reports" },
+  { id: "bookings", label: "Bookings" },
   { id: "duration", label: "Call duration" },
 ];
 const NUMBER_TIMING = { duration: 150, easing: "cubic-bezier(0.23, 1, 0.32, 1)" };
@@ -69,7 +69,7 @@ export function MetricsScreen() {
     : series === "calls"
       ? `${finishedCount.toLocaleString("en-GB")} completed calls in this range.`
       : series === "bookings"
-        ? stats.bookings == null ? "No booking details are available for this range." : `${stats.bookings.toLocaleString("en-GB")} accepted BOOK reports in ${stats.loaded} loaded calls.${incomplete ? " Partial sample." : ""} Reports do not confirm clinic bookings.`
+        ? stats.bookings == null ? "No booking details are available for this range." : `${stats.bookings.toLocaleString("en-GB")} appointments booked or moved by Rosario in ${stats.loaded} loaded calls.${incomplete ? " Partial sample." : ""}`
         : stats.duration == null ? "No recorded call durations in this range." : `${duration(stats.duration)} average across ${stats.durationCount} calls with a recorded duration.`;
   const chartHasData = series === "calls" ? finishedCount > 0 : series === "bookings" ? stats.loaded > 0 : stats.durationCount > 0;
   const chartPending = !available && !error || series === "bookings" && detailsPending && !chartHasData;
@@ -94,7 +94,7 @@ export function MetricsScreen() {
 
           <section className="overview-stats" aria-label="Reception summary">
             <Stat label="Calls handled" value={available ? finishedCount : null} pending={!available && !error} />
-            <Stat label="Bookings reported" value={stats.bookings} pending={(!available && !error || detailsPending) && stats.bookings == null} accent />
+            <Stat label="Bookings saved" value={stats.bookings} pending={(!available && !error || detailsPending) && stats.bookings == null} accent />
             <Stat label="Average call" value={available ? stats.duration : null} pending={!available && !error} unit="sec" />
             <Stat label="Median response gap" value={stats.latency == null ? null : stats.latency / 1000} pending={(!available && !error || detailsPending) && stats.latency == null} unit="sec" decimals={1} />
           </section>
@@ -103,14 +103,14 @@ export function MetricsScreen() {
               {detailsPending ? <ProgressStrip label="Partial sample" value={loadedDetails + failedDetails} max={sample.length} /> : <span role="status">{!available ? error ? "Call records unavailable" : "Loading call records" : incomplete ? `${loadedDetails}/${sample.length} calls sampled · partial` : `${loadedDetails} calls sampled`}</span>}
               {failedDetails > 0 ? <button type="button" disabled={detailsPending} onClick={() => setRetryAttempt((attempt) => attempt + 1)}>{detailsPending ? `${failedDetails} failed` : `Retry ${failedDetails} failed`}</button> : null}
             </div>
-            <p>Bookings sampled · Gap: {stats.latencyCount} call medians · Read-only clinic<span className="sr-only">. Response gap is the median of these recorded per-call medians.</span></p>
+            <p>Bookings sampled · Gap: {stats.latencyCount} call medians<span className="sr-only">. Response gap is the median of these recorded per-call medians.</span></p>
           </div>
 
           <div className="overview-chart-layout">
             <section className="overview-activity" aria-labelledby="activity-title">
               <div className="overview-section-heading">
                 <h2 id="activity-title">Reception activity</h2>
-                <span className="overview-chart-unit">{series === "duration" ? "seconds / call" : series === "bookings" ? "accepted reports" : "completed calls"}</span>
+                <span className="overview-chart-unit">{series === "duration" ? "seconds / call" : series === "bookings" ? "bookings saved" : "completed calls"}</span>
               </div>
               <div className="overview-series" role="group" aria-label="Activity series">
                 <SelectionIndicator activeKey={series} />
@@ -129,19 +129,19 @@ export function MetricsScreen() {
                           if (!active || !payload?.length) return null;
                           const value = payload[0]?.value;
                           const bucket = stats.buckets.find((item) => item.time === Number(label));
-                          return <div className="overview-tooltip"><p>{dayLabel(Number(label))} {wallClock(Number(label))}</p><strong>{value == null ? "Not available" : series === "duration" ? duration(Number(value)) : `${Number(value).toLocaleString("en-GB")} ${series === "calls" ? "calls" : "booking reports"}`}</strong>{series === "bookings" ? <span>{bucket?.loaded ?? 0} of {bucket?.calls ?? 0} call details loaded</span> : null}</div>;
+                          return <div className="overview-tooltip"><p>{dayLabel(Number(label))} {wallClock(Number(label))}</p><strong>{value == null ? "Not available" : series === "duration" ? duration(Number(value)) : `${Number(value).toLocaleString("en-GB")} ${series === "calls" ? "calls" : "bookings"}`}</strong>{series === "bookings" ? <span>{bucket?.loaded ?? 0} of {bucket?.calls ?? 0} call details loaded</span> : null}</div>;
                         }}
                       />
                       <Area type="linear" dataKey={series} stroke="var(--accent-ink)" strokeWidth={2.5} fill="var(--accent-ink)" fillOpacity={0.1} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
-                ) : <div className="overview-empty"><h3>{!available ? "Call records unavailable" : finishedCount === 0 ? "No completed calls in this range" : "No measurements available yet"}</h3><p>{!available ? "Use Try again to reload your call records." : finishedCount === 0 ? "Choose a wider range or check calls still in progress." : failedDetails && series === "bookings" ? "Retry the failed details to load booking reports." : "Only recorded measurements appear here."}</p></div>}
+                ) : <div className="overview-empty"><h3>{!available ? "Call records unavailable" : finishedCount === 0 ? "No completed calls in this range" : "No measurements available yet"}</h3><p>{!available ? "Use Try again to reload your call records." : finishedCount === 0 ? "Choose a wider range or check calls still in progress." : failedDetails && series === "bookings" ? "Retry the failed details to load bookings." : "Only recorded measurements appear here."}</p></div>}
               </div>
             </section>
 
             <section className="overview-outcomes" aria-labelledby="outcomes-title">
-              <div className="overview-section-heading"><h2 id="outcomes-title">Reported outcomes</h2></div>
-              {!available && !error ? <div className="overview-outcome-list" role="status"><span className="sr-only">Loading reported outcomes</span>{[0, 1, 2].map((row) => <div className="overview-outcome overview-outcome-skeleton" key={row} aria-hidden="true"><div><span className="loading-skeleton" /><span className="loading-skeleton" /></div><div className="overview-outcome-track" /></div>)}</div> : stats.outcomes.length ? <div className="overview-outcome-list loading-reveal">{stats.outcomes.map((outcome) => (
+              <div className="overview-section-heading"><h2 id="outcomes-title">Outcomes</h2></div>
+              {!available && !error ? <div className="overview-outcome-list" role="status"><span className="sr-only">Loading outcomes</span>{[0, 1, 2].map((row) => <div className="overview-outcome overview-outcome-skeleton" key={row} aria-hidden="true"><div><span className="loading-skeleton" /><span className="loading-skeleton" /></div><div className="overview-outcome-track" /></div>)}</div> : stats.outcomes.length ? <div className="overview-outcome-list loading-reveal">{stats.outcomes.map((outcome) => (
                 <div className="overview-outcome" key={outcome.key}>
                   <div><span>{outcome.label}</span><span><strong>{outcome.count}</strong><small>{Math.round(outcome.count / finishedCount * 100)}%</small></span></div>
                   <div className="overview-outcome-track" aria-hidden="true"><span className={outcome.key === "BOOK" ? "overview-outcome-booked" : undefined} style={{ transform: `scaleX(${outcome.count / finishedCount})` }} /></div>

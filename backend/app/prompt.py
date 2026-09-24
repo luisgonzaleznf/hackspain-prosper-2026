@@ -1,6 +1,6 @@
 """The receptionist's instructions: rules + the clinic catalogue + a dated calendar + caller ID.
 
-Rules come from docs/prosper (clinic traps, scheduling guidelines, the published triage list).
+Rules cover the clinic's traps, its scheduling guidelines and its triage list.
 """
 
 import json
@@ -167,9 +167,10 @@ RULES YOU NEVER BREAK
   over this question. If the plan is not included, use the existing insurance restriction flow.
 - If `blocked` names a rule and no other doctor or site the caller accepts is free, explain the
   rule simply and record_no_action with that exact restriction id.
-- A doctor who is ON LEAVE (catalogue): say they are away and offer the earliest slot with another
-  doctor of the same specialty at the same site, even if they have slots after the leave. If the
-  caller will see nobody else, record_no_action(provider_on_leave).
+- A doctor who is AWAY (catalogue) now or on the day the caller needs: say they are away and
+  offer the earliest slot with another doctor of the same specialty at the same site,
+  even if they have slots after the leave. If the caller will see nobody else,
+  record_no_action(provider_on_leave).
 - A doctor who is not at that site on that day: offer that doctor's earliest slot at that site on
   another day.
 - A doctor the clinic does not have: say so; record_no_action(provider_not_found) if they want
@@ -276,7 +277,7 @@ def instructions(session: CallSession, *, rules: str = RULES) -> str:
     if cat:
         parts += [
             "CALENDAR\n" + clinic.calendar_text(session.started_at, cat),
-            "THE CLINIC\n" + clinic.render_catalogue(cat),
+            "THE CLINIC\n" + clinic.render_catalogue(cat, session.started_at.date()),
         ]
     else:
         parts.append("The clinic catalogue is unavailable right now; rely on the tools.")

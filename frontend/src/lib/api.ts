@@ -1,4 +1,4 @@
-import type { CalendarSources, SchedulingRecord } from "./calendar.ts";
+import { parseCalendarFeed, type CalendarFeed } from "./calendar.ts";
 import type { CallDetail, CallsIndex } from "./types.ts";
 
 // Same-origin `/api/calls`: live local console when configured, otherwise imported recordings.
@@ -36,9 +36,21 @@ async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   }
 }
 
+/** Logs from before the clinic database (or the recording library) lack the write lists. */
+function withDefaults(detail: CallDetail): CallDetail {
+  return {
+    ...detail,
+    writes: Array.isArray(detail.writes) ? detail.writes : [],
+    provenance: Array.isArray(detail.provenance) ? detail.provenance : [],
+    staged_actions: Array.isArray(detail.staged_actions) ? detail.staged_actions : [],
+  };
+}
+
 export const api = {
-  calendar: (signal?: AbortSignal) => getJson<{ records: SchedulingRecord[]; sources?: CalendarSources }>("/api/clinic/calendar", signal),
+  /** One window of the clinic diary, `from`/`to` inclusive (YYYY-MM-DD, Madrid). */
+  calendar: async (from: string, to: string, signal?: AbortSignal): Promise<CalendarFeed> =>
+    parseCalendarFeed(await getJson<unknown>(`/api/clinic/calendar?from=${from}&to=${to}`, signal)),
   calls: (signal?: AbortSignal) => getJson<CallsIndex>("/api/calls", signal),
-  call: (id: string, signal?: AbortSignal) => getJson<CallDetail>(`/api/calls/${encodeURIComponent(id)}`, signal),
+  call: async (id: string, signal?: AbortSignal) => withDefaults(await getJson<CallDetail>(`/api/calls/${encodeURIComponent(id)}`, signal)),
   audioUrl: (id: string) => `/api/calls/${encodeURIComponent(id)}/audio`,
 };

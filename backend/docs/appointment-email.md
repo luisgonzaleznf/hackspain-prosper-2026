@@ -28,9 +28,8 @@ CUSTOMER_DB_PATH=logs/demo/customers.sqlite3
 ```
 
 Restart the server after configuring it. The feature is disabled by default; missing
-credentials or sender also disable it. `EVAL_MODE=1` always disables email. When
+credentials or sender also disable it. When
 disabled, the added prompts, tool schemas and customer-account scenario are absent.
-The `leaderboard/` package has no email integration.
 
 The example uses the team's `rosario.fyi` sender; the API key must belong to the
 Resend account that verified that domain. Otherwise use a domain you own and verify

@@ -74,8 +74,8 @@ function setPhase(phase, detail) {
   const presentations = {
     idle: ["idle", "Not connected", "Ready when you are", "Start voice rehearsal", "Your microphone stays off until you start."],
     connecting: ["busy", "Connecting", "Opening the studio…", "Connecting securely…", "Allow microphone access if your browser asks."],
-    live: ["live", "Live", "Rehearsal in progress", "End rehearsal", "Speak naturally. Prosper is listening."],
-    ending: ["busy", "Wrapping up", "Preparing your receipt…", "Ending safely…", "No action will be submitted."],
+    live: ["live", "Live", "Rehearsal in progress", "End rehearsal", "Speak naturally. Rosario is listening."],
+    ending: ["busy", "Wrapping up", "Preparing your receipt…", "Ending safely…", "Saving the outcome…"],
     complete: ["idle", "Complete", "Rehearsal complete", "Rehearsal complete", "Review your staged outcome."],
     error: ["error", "Attention needed", "The studio paused", "Try voice rehearsal again", detail || "Check your connection and try again."],
   };

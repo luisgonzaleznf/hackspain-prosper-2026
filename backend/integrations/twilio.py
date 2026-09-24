@@ -1,4 +1,4 @@
-"""Inbound PSTN calls: TwiML webhook and local outcomes for unscored demo calls."""
+"""Inbound PSTN calls: the TwiML webhook, and the session that serves them."""
 
 import os
 from dataclasses import dataclass
@@ -39,7 +39,7 @@ async def incoming_call(request: Request) -> Response:
 
 @dataclass
 class TwilioCallSession(LocalCallSession):
-    """Real clinic reads with persistent local patient/calendar writes."""
+    """Clinic database reads, with confirmed patient/calendar writes saved as they happen."""
 
     demo_mode: bool = True
 

@@ -4,7 +4,6 @@ import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 import { Shell, ToolsShell } from "./app";
 import { CallsScreen } from "./screens/calls/calls";
 import { CalendarScreen } from "./screens/calendar/calendar";
-import { CasesScreen } from "./screens/cases/cases";
 import { MetricsScreen } from "./screens/metrics/metrics";
 import { TalkScreen } from "./screens/talk/talk";
 import { SettingsScreen } from "./screens/settings/settings";
@@ -28,8 +27,6 @@ const router = createBrowserRouter([
   {
     element: <ToolsShell />,
     children: [
-      { path: "/cases", element: <CasesScreen /> },
-      { path: "/cases/:caseId", element: <CasesScreen /> },
       { path: "/talk", element: <TalkScreen /> },
     ],
   },

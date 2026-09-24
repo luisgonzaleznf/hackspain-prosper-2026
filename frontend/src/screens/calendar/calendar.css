@@ -8,7 +8,7 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   color: var(--fg-2);
 }
 
@@ -31,6 +31,41 @@
   line-height: 1.6;
 }
 
+.calendar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.calendar-filter-doctor {
+  width: 280px;
+  max-width: 100%;
+}
+
+.calendar-filter-site {
+  width: 200px;
+  max-width: 100%;
+}
+
+.calendar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.calendar-toggle[aria-pressed="true"] {
+  border-color: var(--line-2);
+  background: var(--surface-1);
+  color: var(--fg);
+}
+
+.calendar-toggle svg {
+  color: var(--accent-ink);
+}
+
 .calendar-loading {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -44,6 +79,9 @@
 }
 
 .calendar-status {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   line-height: 24px;
 }
 
@@ -63,7 +101,7 @@
 
 .calendar-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
   gap: 20px;
   align-items: start;
 }
@@ -93,9 +131,9 @@
   color: var(--fg-3);
 }
 
-
 .calendar-controls {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 4px;
 }
@@ -116,7 +154,6 @@
   color: var(--fg);
   background: transparent;
 }
-
 
 .calendar-table {
   width: 100%;
@@ -163,6 +200,10 @@
 .calendar-day[data-outside="true"] {
   color: var(--fg-3);
   background: var(--bg);
+}
+
+.calendar-day[data-closed="true"] .calendar-day-count {
+  color: var(--fg-3);
 }
 
 .calendar-day[data-selected="true"] {
@@ -213,9 +254,24 @@
 }
 
 .calendar-day-count {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
   margin-top: 6px;
   font-size: 11px;
+  font-variant-numeric: tabular-nums;
   color: var(--fg-2);
+}
+
+.calendar-day-count > span {
+  white-space: nowrap;
+}
+
+.calendar-day-away {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--fg-3);
 }
 
 .calendar-day-preview {
@@ -235,21 +291,26 @@
 
 .calendar-event-link {
   display: flex;
-  flex-direction: column;
-  color: inherit;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--fg);
 }
 
-.calendar-event-label {
+.calendar-event-link > svg {
+  flex: none;
+  color: var(--accent-ink);
+}
+
+.calendar-event-label,
+.calendar-day-note {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.calendar-event-call {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  color: var(--fg);
+.calendar-day-note {
+  color: var(--fg-3);
 }
 
 .calendar-more {
@@ -257,10 +318,16 @@
   color: var(--fg-3);
 }
 
-
 .calendar-agenda-heading {
-  padding: 20px 24px;
+  padding: 20px 24px 16px;
   border-bottom: 1px solid var(--line-1);
+}
+
+.calendar-agenda-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .calendar-agenda-heading h2 {
@@ -270,80 +337,198 @@
   font-weight: 300;
 }
 
+.calendar-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.calendar-group .tab {
+  padding: 5px 14px;
+  font-size: 13px;
+}
+
+/* The agenda sits on a card, so the moving selection needs a lighter fill than the card. */
+.calendar-group .selection-indicator {
+  background: var(--fill-hover);
+}
+
+.calendar-notes {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 24px;
+  list-style: none;
+  border-bottom: 1px solid var(--line-1);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+
+.calendar-notes li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.calendar-notes svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--fg-3);
+}
+
+.calendar-note-reason {
+  margin-left: 6px;
+  color: var(--fg-3);
+}
+
 .calendar-agenda-content {
   min-height: 244px;
 }
 
-.calendar-agenda-list {
+.diary-list {
   margin: 0;
-  padding: 0;
+  padding: 4px 8px;
   list-style: none;
 }
 
-.calendar-record {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--line-1);
+.diary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px;
+  align-items: center;
+  border-radius: var(--radius-tags);
+  transition: background-color var(--dur-state) var(--ease);
 }
 
-.calendar-record:last-child {
-  border-bottom: 0;
+.diary-row-main {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 6px 8px;
+  color: var(--fg);
+  font-size: 13px;
+  text-align: left;
 }
 
-.calendar-record-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  margin-bottom: 10px;
-  font-size: 14px;
+.diary-row-main[data-doctor="true"] {
+  grid-template-columns: 44px minmax(0, 1.2fr) minmax(0, 1fr) 56px;
 }
 
-.calendar-action {
-  font-size: 11px;
-  color: var(--fg-3);
+.diary-row-main:focus-visible {
+  outline: 1px solid var(--accent-ink);
+  outline-offset: -1px;
+  border-radius: var(--radius-tags);
 }
 
-.calendar-record h3 {
-  margin-bottom: 4px;
-  font-size: 16px;
-  font-weight: 400;
-  overflow-wrap: anywhere;
-}
-
-.calendar-record p {
+.diary-time {
   font-size: 12px;
-  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
   color: var(--fg-2);
 }
 
-.calendar-caller {
-  margin-top: 8px;
-}
-
-.calendar-record .calendar-change {
-  margin-top: 10px;
-  color: var(--fg-3);
-}
-
-.calendar-record-footer {
+.diary-patient {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 12px;
-  font-size: 11px;
+  gap: 6px;
+  min-width: 0;
+}
+
+.diary-patient-name,
+.diary-doctor,
+.diary-site {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.diary-call-mark {
+  flex: none;
+  color: var(--accent-ink);
+}
+
+.diary-doctor,
+.diary-site {
+  font-size: 12px;
+  color: var(--fg-2);
+}
+
+.diary-row[data-status="cancelled"] .diary-row-main {
   color: var(--fg-3);
 }
 
-.calendar-call-link {
+.diary-row[data-status="cancelled"] .diary-patient-name {
+  text-decoration: line-through;
+}
+
+.diary-row[data-status="cancelled"] .diary-doctor,
+.diary-row[data-status="cancelled"] .diary-site,
+.diary-row[data-status="cancelled"] .diary-time {
+  color: var(--fg-3);
+}
+
+.diary-call {
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
-  min-height: 44px;
-  font-size: 13px;
+  min-height: 36px;
+  padding: 0 8px;
+  font-size: 12px;
   color: var(--fg);
+}
+
+.diary-call svg {
+  color: var(--accent-ink);
+}
+
+.diary-call-missing {
+  color: var(--fg-3);
+}
+
+.diary-detail {
+  grid-column: 1 / -1;
+  padding: 4px 8px 12px 62px;
+}
+
+.diary-group {
+  padding-top: 8px;
+}
+
+.diary-group + .diary-group {
+  border-top: 1px solid var(--line-1);
+}
+
+.diary-group h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 16px 2px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--fg);
+}
+
+.diary-group-specialty {
+  font-size: 12px;
+  color: var(--fg-3);
+}
+
+.diary-group-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--fg-3);
+}
+
+.diary-placeholder {
+  display: grid;
+  gap: 10px;
+  padding: 16px 24px;
+}
+
+.diary-placeholder .loading-skeleton {
+  height: 20px;
 }
 
 .calendar-empty {
@@ -363,66 +548,35 @@
   line-height: 1.6;
 }
 
-.calendar-agenda-placeholder .loading-skeleton {
-  display: block;
-}
-
-.calendar-placeholder-time {
-  width: 48px;
-  height: 22px;
-}
-
-.calendar-placeholder-action {
-  width: 100px;
-  height: 18px;
-}
-
-.calendar-placeholder-title {
-  width: 72%;
-  height: 26px;
-}
-
-.calendar-placeholder-detail {
-  width: 88%;
-  height: 19px;
-}
-
-.calendar-placeholder-caller {
-  width: 60%;
-  height: 19px;
-}
-
-.calendar-placeholder-kind {
-  width: 72px;
-  height: 18px;
-}
-
-.calendar-placeholder-link {
-  width: 76px;
-  height: 18px;
-}
-
-.calendar-undated {
-  margin-top: 24px;
-  overflow: hidden;
-}
-
-.calendar-undated > h2 {
-  padding: 24px 24px 8px;
-}
-
-
-
 @media (hover: hover) and (pointer: fine) {
   .calendar-day:not([data-selected="true"]):hover,
-  .calendar-arrow:hover {
+  .calendar-arrow:hover,
+  .diary-row:hover {
     background: var(--fill-hover);
   }
 
-  .calendar-call-link:hover,
-  .calendar-event-link:hover .calendar-event-call,
-  .calendar-more:hover {
+  .calendar-event-link:hover,
+  .calendar-more:hover,
+  .diary-call:hover {
     color: var(--accent-ink);
+  }
+}
+
+/* Side by side, the day list scrolls on its own so a 100-appointment day never pushes the month away. */
+@media (min-width: 1200px) {
+  .calendar-agenda {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 160px);
+  }
+
+  .calendar-agenda-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 
@@ -430,15 +584,9 @@
   .calendar-layout {
     grid-template-columns: minmax(0, 1fr);
   }
-
-  .calendar-agenda-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 599px) {
-
   .calendar-toolbar,
   .calendar-agenda-heading {
     padding: 16px;
@@ -456,6 +604,19 @@
     flex-basis: 100%;
   }
 
+  .calendar-filter-doctor,
+  .calendar-filter-site {
+    width: 100%;
+  }
+
+  .calendar-status {
+    white-space: normal;
+  }
+
+  .calendar-loading {
+    grid-template-rows: auto;
+  }
+
   .calendar-day {
     height: 100px;
     padding: 8px 6px;
@@ -468,8 +629,8 @@
 
   .calendar-today-word,
   .calendar-event-label,
-  .calendar-call-view-word,
-  .calendar-count-word {
+  .calendar-count-word,
+  .calendar-day-note {
     display: none;
   }
 
@@ -477,12 +638,20 @@
     font-weight: 600;
   }
 
-  .calendar-agenda-list {
-    display: block;
+  .calendar-notes {
+    padding: 12px 16px;
   }
 
-  .calendar-record {
-    padding: 16px;
+  .diary-row-main[data-doctor="true"] {
+    grid-template-columns: 44px minmax(0, 1fr) 56px;
+  }
+
+  .diary-row-main[data-doctor="true"] .diary-doctor {
+    display: none;
+  }
+
+  .diary-detail {
+    padding-left: 8px;
   }
 
   .calendar-agenda-content {
@@ -495,7 +664,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .calendar-day {
+  .calendar-day,
+  .diary-row {
     transition: none;
   }
 }

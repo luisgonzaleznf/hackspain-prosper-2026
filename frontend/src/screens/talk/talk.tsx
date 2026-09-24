@@ -7,12 +7,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScreenHeader } from "@/app";
 import { CallTimeline, type TimelineHandle } from "@/components/call-timeline";
 import { Orb, useLevelMeter, type OrbLevels, type OrbState } from "@/components/orb";
-import { Empty, Label, PillSelect, SwapText } from "@/components/primitives";
+import { Empty, Label, OUTCOME_LABEL, PillSelect, SwapText } from "@/components/primitives";
 import { Transcript } from "@/components/transcript";
 import { api } from "@/lib/api";
-import { attribute, problemOf } from "@/lib/cases";
 import { duration } from "@/lib/format";
 import { isActive, useCallDetail, useCallsIndex } from "@/lib/store";
+import { actionVerbs } from "@/lib/timeline";
 
 export function TalkScreen() {
   const { calls } = useCallsIndex();
@@ -35,7 +35,6 @@ export function TalkScreen() {
   const recordingId = pickedId ?? candidates[0]?.call_id ?? null;
   const record = useCallDetail(recordingId);
   const timeline = record?.timeline ?? null;
-  const attributed = timeline && record ? attribute(record.summary, timeline) : null;
 
   const onLevels = useCallback((caller: number, agent: number) => {
     levels.current = { caller, agent };
@@ -91,7 +90,7 @@ export function TalkScreen() {
             {!stream && candidates.length > 0 ? <div className="grid gap-2">
               <Label>Recorded call</Label>
               <PillSelect value={recordingId ?? ""} onChange={(id) => { setPickedId(id); setPlayhead(0); setPlaying(false); setRevealDecision(null); }} label="Recorded call to listen to"
-                options={candidates.map((call) => ({ value: call.call_id, label: `${call.action === "NO_ACTION" ? "Declined" : call.action === "BOOK" ? "Booked" : call.action === "REGISTER" ? "Registered" : call.action} call · ${duration(call.duration_seconds)}`, hint: call.call_id.slice(0, 8) }))} />
+                options={candidates.map((call) => ({ value: call.call_id, label: `${OUTCOME_LABEL[actionVerbs(call.action).at(-1) ?? ""] ?? "Recorded"} call · ${duration(call.duration_seconds)}`, hint: call.call_id.slice(0, 8) }))} />
             </div> : null}
             <button type="button" className="pill pill-ghost" onClick={stream ? stopMic : () => void startMic()}>
               {stream ? <StopIcon size={16} /> : <MicrophoneIcon size={16} />}{stream ? "Stop microphone" : "Try your microphone"}
@@ -103,7 +102,7 @@ export function TalkScreen() {
         <section className="min-w-0" aria-label="Call recording and transcript">
           {record?.detail && timeline && recordingId ? <div className="card overflow-hidden">
             <div className="border-b border-line-1 px-4 py-5 md:px-6">
-              <h2 className="mb-5 text-[22px] font-extralight text-fg">{attributed ? problemOf(attributed.testCase.problem_id).name : "Inside the call"}</h2>
+              <h2 className="mb-5 text-[22px] font-extralight text-fg">Inside the call</h2>
               {!stream ? <CallTimeline key={recordingId} controller={controller} audioUrl={api.audioUrl(recordingId)} durationSeconds={record.detail.audio?.duration_seconds ?? 0} turns={timeline.turns} decisions={timeline.decisions} onTime={setPlayhead} onLevels={onLevels} onPlaying={onPlaying} onDecision={(decision) => {
                 setRevealDecision((previous) => ({ key: decision.key, request: (previous?.request ?? 0) + 1 }));
               }} /> : <p className="text-[14px] text-fg-2">Stop the microphone to return to the recording.</p>}

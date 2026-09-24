@@ -43,7 +43,7 @@ def _peak(pcm16: bytes) -> int:
 
 
 # A brain turn that ends on a promise ("one moment while I check...") leaves the line silent:
-# nothing restarts the brain until the caller speaks, and Prosper hangs up on silence. When that
+# nothing restarts the brain until the caller speaks, and callers hang up on silence. When that
 # happens we start the next turn ourselves (at most MAX_CONTINUES times in a row).
 PROMISE = re.compile(
     r"\b(one moment|just a moment|a moment|bear with me|let me (check|look|see|find|search|pull)"

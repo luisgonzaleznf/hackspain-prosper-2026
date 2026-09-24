@@ -4,6 +4,7 @@ import pytest
 from app import config
 from app.dashboard import app
 from fastapi.testclient import TestClient
+from integrations.local_store import LocalStore
 
 CALL = "00000000-0000-5000-8000-000000000001"
 
@@ -15,19 +16,26 @@ LINES = [
     {"t": 104.0, "kind": "tool", "name": "search_availability", "args": {}, "result": {"slots": 1}},
     {
         "t": 105.0,
+        "kind": "local_write",
+        "action": {"action": "BOOK", "patient_id": "P01842"},
+        "result": {"appointment_id": "LA1", "patient_id": "P01842"},
+    },
+    {
+        "t": 105.1,
         "kind": "action_staged",
         "action": {"action": "BOOK", "patient_id": "P01842"},
         "all_staged": [{"action": "BOOK", "patient_id": "P01842"}],
     },
     {
-        "t": 110.0,
-        "kind": "submit",
-        "action": {"action": "BOOK", "patient_id": "P01842"},
-        "status": 200,
-        "response": {"ok": True},
+        "t": 105.2,
+        "kind": "tool",
+        "name": "record_booking",
+        "args": {"patient_id": "P01842", "confirmed": True},
+        "result": {"appointment_id": "LA1", "persisted": True},
     },
-    {"t": 111.0, "kind": "call_ended", "submitted": [200]},
+    {"t": 111.0, "kind": "call_ended", "actions": [{"action": "BOOK", "patient_id": "P01842"}]},
 ]
+WRITE = LINES[5]
 
 
 @pytest.fixture
@@ -52,7 +60,7 @@ def test_index_summarises_every_call_newest_first(client):
         [c["started_at"] for c in body["calls"]], reverse=True
     )
     booked = next(c for c in body["calls"] if c["call_id"] == CALL)
-    assert booked["status"] == "submitted"
+    assert booked["status"] == "saved"
     assert booked["action"] == "BOOK"
     assert booked["duration_seconds"] == 11.0
     assert booked["has_audio"] is False
@@ -91,12 +99,12 @@ def test_new_call_appears_immediately_and_keeps_its_identity_after_hangup(client
 
     with path.open("a") as log:
         log.write(json.dumps({"t": 230.0, "kind": "stop_received"}) + "\n")
-        log.write(json.dumps({**LINES[-2], "t": 240.0}) + "\n")
+        log.write(json.dumps({**WRITE, "t": 240.0}) + "\n")
         log.write(json.dumps({"t": 241.0, "kind": "call_ended"}) + "\n")
     calls = client.get("/api/calls").json()["calls"]
     completed = [call for call in calls if call["call_id"] == call_id]
     assert len(completed) == 1
-    assert completed[0]["status"] == "submitted"
+    assert completed[0]["status"] == "saved"
     assert completed[0]["duration_seconds"] == 30.0
     assert completed[0]["action"] == "BOOK"
 
@@ -104,29 +112,68 @@ def test_new_call_appears_immediately_and_keeps_its_identity_after_hangup(client
 def test_detail_splits_the_log_the_way_the_console_reads_it(client):
     body = client.get(f"/api/calls/{CALL}").json()
     assert [t["text"] for t in body["transcript"]] == ["Clínica Arenal."]
-    assert [t["name"] for t in body["tools"]] == ["search_availability"]
-    assert len(body["submissions"]) == 1
+    assert [t["name"] for t in body["tools"]] == ["search_availability", "record_booking"]
+    assert [w["kind"] for w in body["writes"]] == ["local_write"]
     assert body["audio"] is None
     # Voice-layer chatter stays out of the timeline the screens project.
     assert not [e for e in body["events"] if e["kind"] == "codex"]
     assert all("_line" in e for e in body["events"])
 
 
-def test_provenance_ties_a_submit_back_to_its_lookup(client):
+def test_provenance_ties_a_saved_write_back_to_its_lookup(client):
     chain = client.get(f"/api/calls/{CALL}").json()["provenance"]
     assert len(chain) == 1
     assert chain[0]["action"]["action"] == "BOOK"
     assert chain[0]["lookup"]["name"] == "search_availability"
     assert chain[0]["recorded"]["kind"] == "action_staged"
+    assert chain[0]["write"]["kind"] == "local_write"
 
 
-def test_a_rejected_submit_is_not_reported_as_submitted(client, tmp_path):
+def test_a_refused_confirmed_write_is_reported_as_write_failed(client, tmp_path):
     path = tmp_path / "calls" / f"{CALL}.jsonl"
-    lines = [*LINES[:-2], {**LINES[-2], "status": 404}, LINES[-1]]
+    refused = {
+        "t": 106.0,
+        "kind": "tool",
+        "name": "record_booking",
+        "args": {"patient_id": "P01842", "confirmed": True},
+        "result": {"error": "That time was just booked."},
+    }
+    unconfirmed = {**refused, "args": {"patient_id": "P01842"}, "result": {"error": "Ask first."}}
+    lines = [*LINES[:5], unconfirmed, refused, LINES[-1]]
     path.write_text("".join(json.dumps(line) + "\n" for line in lines))
     body = client.get(f"/api/calls/{CALL}").json()
-    assert body["summary"]["status"] == "rejected"
-    assert "submit rejected: HTTP 404" in body["warnings"]
+    assert body["summary"]["status"] == "write failed"
+    assert body["warnings"] == ["write failed: That time was just booked."]
+    assert body["writes"] == [] and body["provenance"] == []
+
+
+def test_a_call_that_saved_nothing_shows_its_logged_outcome(client, tmp_path):
+    path = tmp_path / "calls" / f"{CALL}.jsonl"
+    ended = {"t": 111.0, "kind": "call_ended", "actions": [{"action": "NO_ACTION", "reason": "x"}]}
+    path.write_text("".join(json.dumps(line) + "\n" for line in [*LINES[:5], ended]))
+    summary = client.get(f"/api/calls/{CALL}").json()["summary"]
+    assert (summary["status"], summary["action"]) == ("ended", "NO_ACTION")
+
+
+def test_caller_id_names_the_one_chart_from_the_clinic_directory(client):
+    assert client.get(f"/api/calls/{CALL}").json()["caller_id"] is None  # nobody on file
+    chart = {
+        "patient_id": "P01842",
+        "given_name": "Rosa",
+        "first_surname": "Gil",
+        "second_surname": "Pardo",
+        "national_id": "12345678Z",
+        "phone": "600000000",
+    }
+    with LocalStore().connect() as db:
+        db.execute(
+            "INSERT INTO patients VALUES (?, ?, ?)", ("P01842", "12345678Z", json.dumps(chart))
+        )
+    assert client.get(f"/api/calls/{CALL}").json()["caller_id"] == {
+        "patient_id": "P01842",
+        "name": "Rosa Gil Pardo",
+        "source": "caller_id",
+    }
 
 
 def test_unknown_call_and_traversal_are_404(client):
