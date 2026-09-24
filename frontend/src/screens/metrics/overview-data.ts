@@ -1,5 +1,6 @@
-import type { CallRecord } from "@/lib/store";
-import type { CallSummary } from "@/lib/types";
+import type { CallRecord } from "../../lib/store.ts";
+import { actionVerbs, savedWrite } from "../../lib/timeline.ts";
+import type { CallSummary } from "../../lib/types.ts";
 
 export type OverviewRange = "24h" | "7d" | "all";
 export type OverviewSeries = "calls" | "bookings" | "duration";
@@ -17,7 +18,7 @@ export function median(values: number[]): number | null {
 }
 
 export function completed(call: CallSummary): boolean {
-  return call.status !== "in progress" && (measured(call.duration_seconds) || /^submitted \d{3}$/.test(call.status));
+  return call.status !== "in progress" && (measured(call.duration_seconds) || call.status === "saved" || call.status === "write failed");
 }
 
 export function selectCalls(calls: CallSummary[], range: OverviewRange, now: number) {
@@ -31,14 +32,15 @@ export function currentDetail(call: CallSummary, byId: Record<string, CallRecord
   return record?.detail && record.detailRevision === call.modified_at ? record : null;
 }
 
-/** Accepted BOOK actions only; identical retries inside one call count once. */
+/** Appointments Rosario saved: successful BOOK and RESCHEDULE writes, one per appointment,
+ * so a booking moved again in the same call counts once. */
 export function bookingCount(record: CallRecord): number {
   const bookings = new Set<string>();
-  for (const submission of record.detail?.submissions ?? []) {
-    if (submission.action.action !== "BOOK" || !(submission.status >= 200 && submission.status < 300)) continue;
-    const action = submission.action;
-    const key = action.appointment_id || JSON.stringify([action.patient_id, action.provider_id, action.location_id, action.appointment_type_id, action.slot]);
-    bookings.add(key);
+  for (const write of record.detail?.writes ?? []) {
+    const action = write.action;
+    if ((action?.action !== "BOOK" && action?.action !== "RESCHEDULE") || !savedWrite(write)) continue;
+    const id = write.result?.appointment_id;
+    bookings.add(typeof id === "string" && id ? id : JSON.stringify([action.action, action.appointment_id, action.patient_id, action.provider_id, action.location_id, action.slot]));
   }
   return bookings.size;
 }
@@ -46,18 +48,22 @@ export function bookingCount(record: CallRecord): number {
 const OUTCOMES = [
   ["BOOK", "Booked"], ["RESCHEDULE", "Rescheduled"], ["CANCEL", "Cancelled"],
   ["REGISTER", "Registered"], ["NO_ACTION", "No change"], ["ESCALATE", "Escalated"],
-  ["failed", "Submission failed"], ["unknown", "Not confirmed"],
+  ["failed", "Write failed"], ["unknown", "Nothing saved"],
 ] as const;
 
+const WRITE_VERBS = new Set(["BOOK", "RESCHEDULE", "CANCEL", "REGISTER"]);
+
+/** A write verb counts only when the call saved it; declining or escalating needs no write. */
 export function outcomeKey(call: CallSummary): string {
-  const status = /^submitted (\d{3})$/.exec(call.status)?.[1];
-  if (!status) return "unknown";
-  if (Number(status) < 200 || Number(status) >= 300) return "failed";
-  return OUTCOMES.some(([key]) => key === call.action) ? call.action : "unknown";
+  if (call.status === "write failed") return "failed";
+  const verb = actionVerbs(call.action).at(-1);
+  if (!verb) return "unknown";
+  if (WRITE_VERBS.has(verb)) return call.status === "saved" ? verb : "unknown";
+  return verb === "NO_ACTION" || verb === "ESCALATE" ? verb : "unknown";
 }
 
 export function outcomeLabel(call: CallSummary): string {
-  return OUTCOMES.find(([key]) => key === outcomeKey(call))?.[1] ?? "Not confirmed";
+  return OUTCOMES.find(([key]) => key === outcomeKey(call))?.[1] ?? "Nothing saved";
 }
 
 export function aggregateOverview(calls: CallSummary[], byId: Record<string, CallRecord>, range: OverviewRange, now: number) {

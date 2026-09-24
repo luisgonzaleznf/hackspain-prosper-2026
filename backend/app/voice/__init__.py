@@ -7,7 +7,7 @@ Contract:
 - give the model `app.tools.TOOLS` and route every call through `app.tools.call_tool(session, ...)`
   (pipecat services: `app.tools.register_pipecat_tools(llm, session)`);
 - log what was said: `session.log("transcript", role="user" | "agent", text=...)`;
-- return once the socket closes. Never submit: the server calls `session.finish()`.
+- return once the socket closes. Never finish the session: the server calls `session.finish()`.
 """
 
 import importlib

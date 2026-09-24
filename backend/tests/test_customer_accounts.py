@@ -4,10 +4,11 @@ import sqlite3
 
 import httpx
 import pytest
-from app import clinic, config, prosper
+from app import clinic, config
 from app.demo.state import build_action_evidence
 from app.session import CallSession
 from app.tools import TOOLS, call_tool, tools_for_session
+from integrations import local_clinic
 from integrations.twilio import TwilioCallSession
 
 DETAILS = {"name": "Alex Test", "email": "alex+demo@example.org"}
@@ -24,7 +25,6 @@ def setup(tmp_path, monkeypatch, request):
     monkeypatch.setattr(config, "APPOINTMENT_EMAILS_ENABLED", True)
     monkeypatch.setattr(config, "RESEND_API_KEY", "test-secret")
     monkeypatch.setattr(config, "RESEND_FROM_EMAIL", "Rosario <onboarding@resend.dev>")
-    monkeypatch.setattr(config, "EVAL_MODE", False)
     monkeypatch.setattr(clinic, "_catalogue", None)
     requests = []
     behavior = {"status": 200}
@@ -44,10 +44,10 @@ def setup(tmp_path, monkeypatch, request):
         lambda **kwargs: client_type(transport=httpx.MockTransport(resend), **kwargs),
     )
 
-    def no_prosper():
-        pytest.fail("Customer enrollment must not call Prosper")
+    def no_clinic(*_, **__):
+        pytest.fail("Customer enrollment must not read the clinic")
 
-    monkeypatch.setattr(prosper, "client", no_prosper)
+    monkeypatch.setattr(local_clinic, "client", no_clinic)
     return request.param(call_id="customer-test", demo_mode=True), requests, behavior
 
 
@@ -155,12 +155,12 @@ def test_email_rejection_preserves_customer_and_reports_failure(setup):
     assert "test-secret" not in (config.CALLS_DIR / "customer-test.jsonl").read_text()
 
 
-def test_scored_sessions_cannot_create_demo_customers(setup):
+def test_non_demo_sessions_cannot_create_demo_customers(setup):
     _, requests, _ = setup
-    scored = CallSession(call_id="scored")
-    assert tools_for_session(scored) is TOOLS
-    assert "HUMAN DEMO CUSTOMER ACCOUNTS" not in scored.instructions()
-    assert "error" in run(call_tool(scored, "prepare_customer_account", DETAILS))
+    plain = CallSession(call_id="plain")
+    assert tools_for_session(plain) is TOOLS
+    assert "HUMAN DEMO CUSTOMER ACCOUNTS" not in plain.instructions()
+    assert "error" in run(call_tool(plain, "prepare_customer_account", DETAILS))
     assert not config.CUSTOMER_DB_PATH.exists()
     assert not requests
 

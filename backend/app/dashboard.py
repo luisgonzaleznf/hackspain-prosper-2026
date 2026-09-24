@@ -2,8 +2,8 @@
 
     uv run --project . uvicorn app.dashboard:app --port 8000 --reload
 
-Deliberately NOT the Prosper call server (`app/server.py`). That one goes under a public
-tunnel during a run; this serves every transcript we hold and stays on localhost.
+Deliberately NOT the voice server (`app/server.py`). That one goes under a public tunnel;
+this serves every transcript we hold and stays on localhost.
 
 With `frontend/dist` built, it also serves the pages. Vite rewrites console routes to
 `console.html` through a dev-only plugin (`vite.config.ts`), so any other host has to do
@@ -22,7 +22,7 @@ from integrations.clinic_api import router as clinic_router
 from app.calls_api import router as calls_router
 
 DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
-CONSOLE_ROUTES = re.compile(r"^/(dashboard|live|calls|calendar|cases|metrics|talk)(/|$)")
+CONSOLE_ROUTES = re.compile(r"^/(dashboard|live|calls|calendar|metrics|talk)(/|$)")
 DEMO_ROUTE = re.compile(r"^/demo/?$")
 
 app = FastAPI(title="ROSARIO console")

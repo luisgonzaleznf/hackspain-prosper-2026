@@ -1,5 +1,13 @@
-from app import appointment_email
+"""Role cards for the Studio. Facts that depend on the diary are read from it on request."""
+
+from datetime import datetime
+
+from integrations.local_store import LocalStore
+
+from app import appointment_email, clinic, config
 from app.demo.models import DemoPersona
+
+UPCOMING = "Appointment"  # the fact filled in from the diary
 
 _SCENARIOS = (
     DemoPersona(
@@ -54,10 +62,7 @@ _SCENARIOS = (
             ("Date of birth", "9 December 1939"),
             ("DNI/NIE", "65699248R"),
             ("Insurance", "Cigna"),
-            (
-                "Appointment",
-                "Tuesday 13 October at 12:00 with Dra. Elena Iglesias at Arenal Sur",
-            ),
+            (UPCOMING, ""),
         ],
         objective="Cancel the one appointment on file because of a family commitment.",
         opening_hint="I need to cancel my appointment, please.",
@@ -82,9 +87,49 @@ _SCENARIOS = (
 )
 
 
+def _next_appointment(national_id: str) -> str:
+    """'Tuesday 13 October at 12:00 with Dra. Elena Iglesias at Arenal Sur', from the diary now."""
+    try:
+        with LocalStore().connect() as db:
+            row = db.execute(
+                "SELECT patient_id FROM patients WHERE national_id=?", (national_id,)
+            ).fetchone()
+        upcoming = [
+            a
+            for a in (LocalStore().appointments(row[0]) if row else [])
+            if datetime.fromisoformat(a["start_time"]) > datetime.now(config.TZ)
+        ]
+    except Exception:  # a missing database must not take the Studio down
+        upcoming = []
+    if not upcoming:
+        return "None on file: re-seed the clinic database (make seed)"
+    first = upcoming[0]
+    when = datetime.fromisoformat(first["start_time"]).astimezone(config.TZ)
+    try:
+        sites = {loc["id"]: loc["name"] for loc in clinic.load()["locations"]}
+    except Exception:
+        sites = {}
+    site = sites.get(first["location_id"], first["location_id"])
+    return (
+        f"{when:%A} {when.day} {when:%B} at {when:%H:%M} "
+        f"with {first.get('provider_name') or first['provider_id']} at {site}"
+    )
+
+
+def _with_diary(scenario: DemoPersona) -> DemoPersona:
+    if not any(label == UPCOMING for label, _ in scenario.facts):
+        return scenario
+    national_id = dict(scenario.facts)["DNI/NIE"]
+    facts = [
+        (label, _next_appointment(national_id) if label == UPCOMING else value)
+        for label, value in scenario.facts
+    ]
+    return scenario.model_copy(update={"facts": facts})
+
+
 def list_scenarios() -> list[DemoPersona]:
     return [
-        scenario
+        _with_diary(scenario)
         for scenario in _SCENARIOS
         if scenario.id != "account" or appointment_email.enabled()
     ]

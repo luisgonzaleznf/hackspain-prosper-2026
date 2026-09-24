@@ -44,7 +44,7 @@ The repository has three main parts:
 | --- | --- |
 | [frontend/](frontend/) | React console, landing page and browser Studio: calendar, call review and voice settings. |
 | [backend/](backend/) | Phone and browser voice sessions, clinic integration, persistent patient and appointment records, email and call artifacts. |
-| [leaderboard/](leaderboard/) | The scored agent and evaluation harness we used to win the HackSpain Prosper track against 11 other teams. |
+| [backend/seed/](backend/seed/) | The clinic's catalogue and the seed that rebuilds its database: 3 sites, 12 doctors, ~3000 patients and a realistic diary (`make seed`). |
 
 The backend separates speech from clinic operations. Pipecat carries audio between the caller and GPT-Live. The voice model delegates clinic requests to a reasoning model, which calls the patient, availability and appointment tools. Both the Twilio and browser entry points use the same local session and clinic logic.
 
@@ -55,8 +55,7 @@ flowchart TD
   audio <--> voice["GPT-Live speech"]
   voice <-->|Delegated clinic requests|brain["Reasoning model and tools"]
   brain --> session["Per-call validation and state"]
-  session -->|Read records and availability|clinic["Clinic API"]
-  session <-->|Patients and appointments|db[("SQLite")]
+  session <-->|Patients, availability and appointments|db[("SQLite clinic database")]
   session -->|Log decisions|events["JSONL call logs"]
   audio -->|Record audio|recordings["Stereo recordings"]
   db -->|Calendar|console["React console"]
@@ -85,7 +84,7 @@ Layer details worth knowing before moving any of them:
 - **Object storage covers logs as much as audio.** The console's call list, timeline and player read `CALLS_DIR` and `AUDIO_DIR` directly, so the console cannot leave the call host before the artifacts do. 
 - **WebSocket affinity is per connection, and a call is one long connection,** so pinning holds for the telephony path. The browser Studio is different: WebRTC is not a sticky-cookie problem, it needs STUN/TURN and a media relay of its own.
 - **Capacity is concurrent calls, not requests.** Each call holds an audio pipeline and its recording buffers, a few megabytes at the five-minute cap in [recorder.py](backend/app/recorder.py), so hosts are sized on `active_calls` (already reported by `/health`) and audio CPU.
-- **The upstream clinic API is a shared bottleneck and a external dependency.** `PLATFORM_API_KEY` access is read-only, and the catalogue and the submissions list are cached per process; more workers means more copies of those caches against the same provider rate limit.
+- **The catalogue is cached per process.** Each worker rebuilds it when the Madrid date or the database file changes; with a networked database that becomes a cache-invalidation signal to share.
 - **Carrier limits come first.** Twilio's concurrent media streams on the number bound how many calls can exist at all.
 
 Future interesting improvements:
@@ -115,7 +114,7 @@ cd rosario
 cp backend/.env.example .env
 ```
 
-Set `PLATFORM_API_KEY` for clinic access and `OPENAI_API_KEY` for the configured GPT-Live and reasoning models. Keep both on the server.
+Set `OPENAI_API_KEY` for the configured GPT-Live and reasoning models and keep it on the server. Build the clinic database once with `make seed` in `backend/` (it wipes local bookings when re-run).
 
 Start the browser voice backend:
 
@@ -146,4 +145,4 @@ For inbound phone calls, follow the [Twilio setup](backend/integrations/README.m
 
 ## Demo
 
-This is a hackathon demo. The included clinic integration uses synthetic data, and saved patients and appointments stay in Rosario's local database without changing the upstream clinic. It is intended for supervised demonstrations; appointments are not real medical bookings, and recorded escalations do not connect callers to a clinician.
+This is a hackathon demo. The included clinic integration uses synthetic data, and patients and appointments live in Rosario's own clinic database, rebuilt by `make seed`. It is intended for supervised demonstrations; appointments are not real medical bookings, and recorded escalations do not connect callers to a clinician.

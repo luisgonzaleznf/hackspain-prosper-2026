@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Expose the local /ws server to Prosper. Paste the printed wss://…/ws into the dashboard:
-# Settings → Integration → Endpoint (it applies to the next run).
+# Expose the local voice server so Twilio can reach it: point the number's voice webhook at
+# https://<host>/integrations/twilio/voice (the media stream follows on /integrations/twilio/ws).
 #
 #   scripts/tunnel.sh                         # ngrok if installed, else cloudflared quick tunnel
 #   NGROK_DOMAIN=name.ngrok-free.app scripts/tunnel.sh   # static ngrok domain: survives restarts
@@ -9,13 +9,13 @@ PORT="${PORT:-7860}"
 
 if command -v ngrok >/dev/null 2>&1; then
   if [[ -n "${NGROK_DOMAIN:-}" ]]; then
-    echo "Endpoint: wss://${NGROK_DOMAIN}/ws"
+    echo "Webhook: https://${NGROK_DOMAIN}/integrations/twilio/voice"
     exec ngrok http --url="${NGROK_DOMAIN}" "${PORT}"
   fi
-  echo "Endpoint: wss://<the https host ngrok prints>/ws  (a free URL changes on every restart)"
+  echo "Webhook: https://<the https host ngrok prints>/integrations/twilio/voice  (a free URL changes on every restart)"
   exec ngrok http "${PORT}"
 elif command -v cloudflared >/dev/null 2>&1; then
-  echo "Endpoint: wss://<the trycloudflare.com host printed below>/ws  (changes on every restart)"
+  echo "Webhook: https://<the trycloudflare.com host printed below>/integrations/twilio/voice  (changes on every restart)"
   exec cloudflared tunnel --url "http://localhost:${PORT}"
 else
   echo "No tunnel installed: brew install ngrok (then: ngrok config add-authtoken <token>)" >&2

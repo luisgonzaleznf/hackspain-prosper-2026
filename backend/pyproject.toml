@@ -1,7 +1,7 @@
 [project]
 name = "prosper-voice-agent-backend"
 version = "0.1.0"
-description = "Clínica Arenal voice agent plus the call record: the Prosper call server, the ROSARIO console API, and the post-run ledger workflow."
+description = "Clínica Arenal voice agent: the Twilio and browser call server, the clinic engine and its database, and the ROSARIO console API."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

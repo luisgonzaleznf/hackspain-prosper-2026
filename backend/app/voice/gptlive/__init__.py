@@ -290,7 +290,7 @@ async def run_call(
     async def on_client_disconnected(transport, client):
         # Callers often accept and hang up in one breath ("yes, book it, thanks, bye"): the
         # brain is still recording when the socket closes. Keep the model session alive a
-        # moment so that record lands; Prosper accepts submissions for 30 s after hang-up.
+        # moment so that record lands before the session logs the outcome.
         session.log("drain", seconds=DRAIN_SECS)
         await asyncio.sleep(DRAIN_SECS)
         await runner.cancel()

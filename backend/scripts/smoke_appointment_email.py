@@ -8,7 +8,6 @@ Use synthetic patient details only. Defaults to the published booking demo patie
 
 import argparse
 import asyncio
-import os
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
@@ -22,12 +21,9 @@ async def smoke(address: str, national_id: str, move: bool) -> None:
     if not appointment_email.enabled():
         raise SystemExit(
             "Set APPOINTMENT_EMAILS_ENABLED=1, RESEND_API_KEY and RESEND_FROM_EMAIL "
-            "in the ignored .env, and leave EVAL_MODE unset."
+            "in the ignored .env."
         )
     address = appointment_email.normalize_address(address)
-    config.PLATFORM_API_KEY = config.PLATFORM_API_KEY or os.getenv("PROSPER_API", "")
-    if not config.PLATFORM_API_KEY:
-        raise SystemExit("Set PLATFORM_API_KEY (or PROSPER_API) for live clinic lookups.")
     # Test recipients are real; keep the smoke trace out of committed call logs.
     config.CALLS_DIR = Path("logs/email-smoke")
     session = await CallSession.start(f"email-smoke-{uuid4()}", demo_mode=True)

@@ -31,7 +31,7 @@ from app.voice.deadair import DeadAirWatch, clip_path, observe
 SILENCE_PEAK = 300  # int16 peak below which a 20ms chunk counts as silence
 HANGOVER_MS = 600  # keep relaying through pauses shorter than this
 # A nudge counts as spoken by the model only if it starts talking this soon after the request
-# (evals: 9 of 12 spoken within ~0.6 s); otherwise the pre-rendered clip plays instead. Run All
+# (evals: 9 of 12 spoken within ~0.6 s); otherwise the pre-rendered clip plays instead. Test run
 # fe845bd3: 94 of 96 started within 2 s but one took 4.2 s, and the clip would have doubled it.
 CONFIRM_SECS = 5.0
 # No event of any kind from the voice session for this long: log it (evals saw two concurrent

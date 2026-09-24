@@ -1,7 +1,9 @@
 """Appointment summaries, sent through Resend after the final outcome.
 
 Use each patient's looked-up chart email automatically. A caller-confirmed address is
-only needed when the chart has none; only call finalization can send a message.
+only needed when the chart has none; only call finalization can send a message. A chart
+address on a reserved demo domain (example.com/.org/.net, *.test, *.example, *.invalid)
+counts as no address: nothing is ever sent to it automatically.
 """
 
 import hashlib
@@ -28,10 +30,7 @@ class Recipient:
 
 def enabled() -> bool:
     return bool(
-        config.APPOINTMENT_EMAILS_ENABLED
-        and config.RESEND_API_KEY
-        and config.RESEND_FROM_EMAIL
-        and not config.EVAL_MODE
+        config.APPOINTMENT_EMAILS_ENABLED and config.RESEND_API_KEY and config.RESEND_FROM_EMAIL
     )
 
 
@@ -66,12 +65,31 @@ def _has_appointment(session: "CallSession", patient_id: str) -> bool:
     return any(patient_for_action(session, action) == patient_id for action in session.actions)
 
 
-def address_on_file(session: "CallSession", patient_id: str) -> str | None:
-    """Read lookup evidence held by the backend, never an address supplied by the model."""
+_RESERVED_DOMAINS = {"example.com", "example.org", "example.net"}
+_RESERVED_TLDS = {"test", "example", "invalid"}
+
+
+def reserved(address: str) -> bool:
+    """RFC 2606/6761 names: seeded demo charts use them so no real person is ever mailed."""
+    domain = address.rpartition("@")[2].lower().rstrip(".")
+    return (
+        domain in _RESERVED_DOMAINS
+        or any(domain.endswith("." + d) for d in _RESERVED_DOMAINS)
+        or domain.rpartition(".")[2] in _RESERVED_TLDS
+    )
+
+
+def _chart_address(session: "CallSession", patient_id: str) -> str | None:
     try:
         return normalize_address(session.patients.get(patient_id, {}).get("email", ""))
     except ValueError:
         return None
+
+
+def address_on_file(session: "CallSession", patient_id: str) -> str | None:
+    """Read lookup evidence held by the backend, never an address supplied by the model."""
+    address = _chart_address(session, patient_id)
+    return None if address is None or reserved(address) else address
 
 
 async def set_recipient(session: "CallSession", args: dict) -> dict:
@@ -190,8 +208,8 @@ def message(session: "CallSession", action: dict, address: str) -> dict:
             )
         )
     disclaimer = (
-        "Demo HackSpain: propuesta guardada localmente, sin modificar la agenda. "
-        "Demo proposal saved locally; the clinic diary was not changed."
+        "Demo: cita guardada en la agenda de demostración de la clínica. "
+        "Demo appointment saved in the clinic's demo diary."
     ) + " No es una cita médica real. This is not a real medical appointment."
     text = (
         f"{clinic_name}\n{title}\n\n"
@@ -208,7 +226,7 @@ def message(session: "CallSession", action: dict, address: str) -> dict:
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="100%" style="max-width:520px;background:#fff;border-radius:16px" cellspacing="0" cellpadding="0"><tr><td style="padding:32px">
 <p style="margin:0 0 24px;letter-spacing:2px;font-size:12px">ROSARIO · {escape(clinic_name)}</p>
-<p style="color:#52715e;font-size:12px">HACKSPAIN 2026 · DEMO</p>
+<p style="color:#52715e;font-size:12px">DEMO</p>
 <h1 style="font-size:24px;line-height:1.3;margin:0 0 16px">{escape(title)}</h1>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0">{rows}</table>
 <p style="font-size:12px;line-height:1.6;color:#657069;margin:24px 0 0">{escape(disclaimer)}</p>
@@ -253,6 +271,13 @@ async def send_for_actions(session: "CallSession", actions: list[dict]) -> list[
         if on_file:
             recipient = Recipient(on_file, confirmed=True)
         if not recipient or not recipient.confirmed:
+            if (chart := _chart_address(session, patient_id)) and reserved(chart):
+                session.log(
+                    "appointment_email.skipped",
+                    patient_id=patient_id,
+                    action=action["action"],
+                    reason="reserved_domain",
+                )
             continue
         try:
             payload = message(session, action, recipient.address)

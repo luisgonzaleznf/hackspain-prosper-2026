@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from app import appointment_email, clinic, config, prosper
+from app import appointment_email, clinic, config
 from app.demo import app as demo_app
 from app.demo import bot, state
 from app.demo import settings as store
@@ -15,6 +15,7 @@ from app.demo.scenarios import get_scenario
 from app.tools import call_tool
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from integrations import local_clinic
 
 
 @pytest.fixture
@@ -25,14 +26,13 @@ def demo(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "APPOINTMENT_EMAILS_ENABLED", True)
     monkeypatch.setattr(config, "RESEND_API_KEY", "test-secret")
     monkeypatch.setattr(config, "RESEND_FROM_EMAIL", "Rosario <citas@example.org>")
-    monkeypatch.setattr(config, "EVAL_MODE", False)
     monkeypatch.setattr(clinic, "catalogue", AsyncMock(return_value={}))
     registry = state.DemoSessionRegistry()
     monkeypatch.setattr(state, "registry", registry)
     monkeypatch.setattr(demo_app, "registry", registry)
     monkeypatch.setattr(state, "_LEDGER_PATH", tmp_path / "ledger.jsonl")
     monkeypatch.setattr(
-        prosper, "client", Mock(side_effect=AssertionError("Unexpected Prosper call"))
+        local_clinic, "client", Mock(side_effect=AssertionError("Unexpected clinic read"))
     )
     app = FastAPI()
     register_demo_routes(app)
@@ -84,15 +84,9 @@ def test_browser_account_disconnect_persists_then_sends_and_exposes_receipt(demo
     assert len(demo.get("/api/demo/ledger").json()) == 1
 
 
-@pytest.mark.parametrize(
-    "enabled,evaluation,available",
-    [(True, False, True), (False, False, False), (True, True, False)],
-)
-def test_account_scenario_requires_configured_human_email(
-    demo, monkeypatch, enabled, evaluation, available
-):
+@pytest.mark.parametrize("enabled,available", [(True, True), (False, False)])
+def test_account_scenario_requires_configured_human_email(demo, monkeypatch, enabled, available):
     monkeypatch.setattr(config, "APPOINTMENT_EMAILS_ENABLED", enabled)
-    monkeypatch.setattr(config, "EVAL_MODE", evaluation)
     response = demo.get("/api/demo/scenarios")
     assert response.status_code == 200
     assert ("account" in {scenario["id"] for scenario in response.json()}) is available

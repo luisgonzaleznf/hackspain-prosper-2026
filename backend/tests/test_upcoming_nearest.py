@@ -11,7 +11,7 @@ from app.tools import TOOLS, call_tool
 
 @pytest.fixture
 def catalogue(monkeypatch, tmp_path):
-    cat = json.loads(Path("docs/prosper/data/clinic.json").read_text())
+    cat = json.loads(Path("seed/catalogue.json").read_text())
     monkeypatch.setattr(clinic, "_catalogue", cat)
     monkeypatch.setattr(config, "CALLS_DIR", tmp_path)
     return cat

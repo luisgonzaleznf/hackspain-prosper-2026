@@ -1,9 +1,10 @@
 // The one projection every screen renders: raw JSONL events -> ordered turns,
 // each agent turn carrying the decisions (tool calls, staged actions, guards,
-// submissions, errors) recorded since the previous agent turn.
+// errors) recorded since the previous agent turn. Writes to the clinic database
+// (`local_write`) are collected separately: their tool call is already a decision.
 // Raw timestamps remain intact; recorded speech endings set transcript replay positions.
 
-import type { CallDetail, ClinicAction, RawEvent, SubmitEvent, ToolEvent, TranscriptEvent } from "./types.ts";
+import type { CallDetail, ClinicAction, LocalWriteEvent, RawEvent, SubmitEvent, ToolEvent, TranscriptEvent } from "./types.ts";
 
 export type Stage = "GREET" | "IDENTIFY" | "LOOKUP" | "OFFER" | "CONFIRM" | "WRITE" | "CLOSE" | "ESCALATE";
 
@@ -52,7 +53,8 @@ export interface Timeline {
   markers: Marker[];
   stage: Stage;
   pending: ClinicAction[];
-  submitted: { action: ClinicAction; status: number }[];
+  /** Writes committed to the clinic database during the call, in order. */
+  writes: { t: number; action: ClinicAction; result: Record<string, unknown> | null }[];
   fromNumber: string | null;
   callerIdMatches: string[];
   callerIdName: string | null;
@@ -350,7 +352,7 @@ export function project(detail: CallDetail): Timeline {
   let engine: string | null = null;
   let model: string | null = null;
   let staged: ClinicAction[] = [];
-  const submitted: Timeline["submitted"] = [];
+  const writes: Timeline["writes"] = [];
   let medianResponseGapMs: number | null = null;
   let callerSeconds: number | null = null;
   let agentSeconds: number | null = null;
@@ -390,6 +392,11 @@ export function project(detail: CallDetail): Timeline {
       case "call_ended":
         endedAt = endedAt ?? event.t;
         return;
+      case "local_write": {
+        const write = event as LocalWriteEvent;
+        if (write.action && typeof write.action === "object") writes.push({ t: write.t, action: write.action, result: object(write.result) });
+        return;
+      }
       case "audio.timeline": {
         const seconds = nonnegativeNumber(object(event.turns)?.latency_p50_s);
         medianResponseGapMs = seconds == null ? null : nonnegativeNumber(seconds * 1000);
@@ -444,9 +451,8 @@ export function project(detail: CallDetail): Timeline {
       staged = (event as unknown as { all_staged?: ClinicAction[] }).all_staged ?? [(event as unknown as { action: ClinicAction }).action];
       stage = "CONFIRM";
     } else if (decision.kind === "submit") {
-      const submit = event as SubmitEvent;
-      submitted.push({ action: submit.action, status: submit.status });
-      if (submit.action.action === "ESCALATE") stage = "ESCALATE";
+      // Legacy logs only: the old platform submission closed the call.
+      if ((event as SubmitEvent).action.action === "ESCALATE") stage = "ESCALATE";
       staged = [];
     } else if (decision.kind === "fallback") {
       const action = (event as unknown as { action: ClinicAction }).action;
@@ -463,7 +469,6 @@ export function project(detail: CallDetail): Timeline {
     if (last) turns.push({ key: endedAt != null ? "turn-close" : "turn-open", role: "agent", text: "", t: last.t, offset: last.offset, interrupted: false, decisions: pendingDecisions });
   }
 
-  const submittedCount = detail.submissions.length;
   const lastT = Math.max(endedAt ?? startedAt, turns[turns.length - 1]?.t ?? startedAt, decisions[decisions.length - 1]?.t ?? startedAt);
   turns.sort((a, b) => a.offset - b.offset);
   markers.sort((a, b) => a.offset - b.offset);
@@ -474,9 +479,9 @@ export function project(detail: CallDetail): Timeline {
     turns,
     decisions,
     markers,
-    stage: submittedCount > 0 && stage !== "ESCALATE" ? "CLOSE" : stage,
+    stage,
     pending: staged,
-    submitted,
+    writes,
     fromNumber,
     callerIdMatches,
     callerIdName: detail.caller_id?.source === "caller_id" && callerIdMatches.length === 1 && callerIdMatches[0] === detail.caller_id.patient_id ? detail.caller_id.name : null,
@@ -494,7 +499,7 @@ export function project(detail: CallDetail): Timeline {
 export function callerLabel(timeline: Timeline | null): string {
   if (!timeline) return "connecting";
   if (timeline.identified) return timeline.identified.name;
-  const registered = timeline.submitted.find((s) => s.action.action === "REGISTER" && s.status >= 200 && s.status < 300)?.action;
+  const registered = timeline.writes.find((write) => write.action.action === "REGISTER" && savedWrite(write))?.action;
   if (registered) {
     const name = [registered.given_name, registered.first_surname, registered.second_surname].filter(Boolean).join(" ");
     if (name) return name;
@@ -510,14 +515,23 @@ export function isNoise(event: RawEvent): boolean {
   return event.kind in NOISE_KINDS;
 }
 
-/** Outcome verb for a call, from what was actually submitted. */
-export function outcomeOf(detail: CallDetail | null, summary: { action: string; status: string }): { verb: string; reason: string | null; status: number | null } {
-  const submit = detail?.submissions[detail.submissions.length - 1];
-  if (submit) return { verb: submit.action.action, reason: submit.action.reason ?? null, status: submit.status };
-  const status = /submitted (\d+)/.exec(summary.status)?.[1];
-  // The backend writes U+2014 as the action of a call that has not ended.
-  const verb = !summary.action || summary.action.codePointAt(0) === 0x2014
-    ? summary.status === "in progress" ? "in progress" : "Ended"
-    : summary.action;
-  return { verb, reason: null, status: status ? Number(status) : null };
+/** The verbs in a summary's action column: "REGISTER+BOOK" -> ["REGISTER", "BOOK"]. */
+export function actionVerbs(action: string): string[] {
+  return action.split("+").map((verb) => verb.trim()).filter((verb) => /^[A-Z_]+$/.test(verb));
+}
+
+/** A write the clinic database accepted: it returned a record, not an error. */
+export function savedWrite(write: { result: unknown }): boolean {
+  const result = object(write.result);
+  return result != null && result.error == null;
+}
+
+/** Outcome verb for a call: the last verb saved to the clinic database, else what the summary reports. */
+export function outcomeOf(detail: CallDetail | null, summary: { action: string; status: string }): { verb: string; reason: string | null; failed: boolean } {
+  const failed = summary.status === "write failed";
+  const saved = (detail?.writes ?? []).filter(savedWrite).map((write) => String(write.action?.action ?? "")).filter(Boolean);
+  // The backend writes U+2014 as the action of a call with nothing staged.
+  const verb = saved.at(-1) ?? actionVerbs(summary.action).at(-1) ?? (summary.status === "in progress" ? "in progress" : "Ended");
+  const staged = detail?.staged_actions.findLast((event) => event.action?.action === verb);
+  return { verb, reason: typeof staged?.action.reason === "string" ? staged.action.reason : null, failed };
 }

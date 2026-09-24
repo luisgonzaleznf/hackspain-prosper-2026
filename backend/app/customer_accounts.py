@@ -1,4 +1,4 @@
-"""Local customer enrollment for human demos; never a Prosper patient registration."""
+"""Local customer enrollment for human demos; never a clinic patient registration."""
 
 import asyncio
 import hashlib
@@ -177,5 +177,5 @@ prepare_customer_account immediately resets confirmation: read back again and wa
 yes. Pass email="" to prepare_customer_account if they withdraw the account request.
 After confirmation, explain the customer record will be saved and the welcome email sent when
 this call ends, and let them hang up. Never claim it is already saved or delivered. This account
-does not add a patient to Prosper's clinic records or make them eligible for an appointment.
+does not add a patient to the clinic's records or make them eligible for an appointment.
 """

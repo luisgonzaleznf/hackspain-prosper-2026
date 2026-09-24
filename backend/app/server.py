@@ -1,9 +1,11 @@
-"""Prosper wire: Twilio Media Streams over a plain WebSocket at /ws (docs/prosper/pages/04-call-contract.md).
+"""The phone line: Twilio Media Streams at /integrations/twilio/ws (integrations/twilio.py),
+plus the Role-play Studio routes.
 
-    VOICE=codex uv run python -m app.server     # ws://localhost:7860/ws ; expose with scripts/tunnel.sh
+    VOICE=codex uv run python -m app.server     # :7860 ; expose with scripts/tunnel.sh
 
-Every connection is its own call: fresh transport, fresh CallSession, fresh voice pipeline.
-When the socket closes, the session POSTs what the call staged (window: 30 s after hang-up).
+Every connection is its own call: fresh transport, fresh session, fresh voice pipeline.
+Confirmed writes are saved to the clinic database during the call; when the socket closes,
+the session logs the outcome and sends any follow-up email.
 """
 
 import asyncio
@@ -11,7 +13,6 @@ import base64
 import binascii
 import json
 from contextlib import asynccontextmanager, suppress
-from datetime import datetime
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
@@ -30,18 +31,6 @@ from app.recorder import WireRecorder
 from app.session import CallSession
 
 ACTIVE: set[str] = set()
-
-
-def _eval_reference_time(params: dict) -> datetime | None:
-    """The call's "now" in local evals (EVAL_MODE=1 only); None means the real clock."""
-    raw = params.get("eval_reference_time") if config.EVAL_MODE else None
-    if not raw:
-        return None
-    try:
-        return datetime.fromisoformat(raw).astimezone(config.TZ)
-    except ValueError:
-        logger.warning(f"ignoring bad eval_reference_time {raw!r}")
-        return None
 
 
 def instrument_inbound_events(
@@ -98,15 +87,14 @@ async def lifespan(app: FastAPI):
         await clinic.catalogue()
         logger.info("clinic catalogue loaded")
     except Exception as e:
-        logger.error(f"clinic catalogue not loaded (check PLATFORM_API_KEY): {e!r}")
+        logger.error(f"clinic catalogue not loaded (seed the clinic database: make seed): {e!r}")
     yield
 
 
 app = FastAPI(lifespan=lifespan)
 
-# Role-play Studio at /demo/ (app/demo/README.md). It shares this process's CallSession,
-# prompt and clinic tools, but never submits to Prosper, so it is safe to leave mounted:
-# the scored call path is /ws and is untouched by it.
+# Role-play Studio at /demo/ (app/demo/README.md). It shares this process's sessions, prompt
+# and clinic tools.
 register_demo_routes(app)
 app.include_router(twilio_router)
 
@@ -121,17 +109,14 @@ async def health():
     }
 
 
-@app.websocket("/ws")
-async def ws(websocket: WebSocket):
-    await run_telephony_call(websocket)
-
-
 @app.websocket("/integrations/twilio/ws")
 async def twilio_ws(websocket: WebSocket):
     await run_telephony_call(websocket, session_type=TwilioCallSession)
 
 
-async def run_telephony_call(websocket: WebSocket, session_type: type[CallSession] = CallSession):
+async def run_telephony_call(
+    websocket: WebSocket, session_type: type[CallSession] = TwilioCallSession
+):
     await websocket.accept()
     transport_type, call = await parse_telephony_websocket(websocket)
     recorder = WireRecorder()  # the call's clock starts once the handshake is in
@@ -142,8 +127,8 @@ async def run_telephony_call(websocket: WebSocket, session_type: type[CallSessio
     serializer = TwilioFrameSerializer(
         stream_sid=call.stream_id,
         call_sid=call.call_id,
-        # Closing the socket returns real Twilio calls to the webhook's <Hangup>.
-        # Prosper likewise owns hang-up; neither path needs Twilio API credentials.
+        # Closing the socket returns the call to the webhook's <Hangup>, so hang-up needs no
+        # Twilio API credentials.
         params=TwilioFrameSerializer.InputParams(auto_hang_up=False),
     )
     transport = FastAPIWebsocketTransport(
@@ -159,7 +144,6 @@ async def run_telephony_call(websocket: WebSocket, session_type: type[CallSessio
         call_id=call.call_id,
         stream_sid=call.stream_id or "",
         from_number=call.from_number,
-        started_at=_eval_reference_time(call.body),
     )
     caller_ulaw = bytearray() if config.RECORD_CALLER_AUDIO else None
     instrument_inbound_events(websocket, session, caller_ulaw)
@@ -178,8 +162,8 @@ async def run_telephony_call(websocket: WebSocket, session_type: type[CallSessio
         results = await session.finish()
         if caller_ulaw:
             await asyncio.to_thread(save_caller_audio, session, caller_ulaw)
-        logger.info(f"call {session.call_id} ended; outcome statuses {[r['status'] for r in results]}")
-        # Only after the submit: the audio can wait, the 30 s window cannot.
+        logger.info(f"call {session.call_id} ended; follow-ups {[r['status'] for r in results]}")
+        # Only after the outcome is logged: the audio can wait.
         try:
             session.log("audio.timeline", **await recorder.save(session.call_id, config.AUDIO_DIR))
         except Exception as e:

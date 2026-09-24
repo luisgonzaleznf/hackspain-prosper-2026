@@ -1,5 +1,5 @@
 """Problem 11: "the provider you book has to speak their language". search_availability's
-`language` filter, from the catalogue's per-provider languages (Prosper's API has none).
+`language` filter, from the catalogue's per-provider languages (availability has none).
 
 Mirrors languages-aa19667cb074: a Catalan caller asks for a Catalan-speaking doctor; the
 earliest orthopaedics slot is PR06 (en/es), the expected answer is PR10 (ca/es) at Norte."""
@@ -8,10 +8,11 @@ import asyncio
 from datetime import datetime
 
 import pytest
-from app import clinic, config, prosper
+from app import clinic, config
 from app.prompt import RULES
 from app.session import CallSession
 from app.tools import TOOLS, call_tool
+from integrations import local_clinic
 
 NOW = datetime(2026, 9, 18, 9, 0, tzinfo=config.TZ)
 CATALOGUE = {
@@ -44,7 +45,7 @@ SLOTS = [
 ]
 
 
-class FakeProsper:
+class FakeClinic:
     def __init__(self, slots):
         self.slots = slots
 
@@ -63,7 +64,7 @@ def setup(tmp_path, monkeypatch):
 
 
 def search(monkeypatch, slots=SLOTS, **extra) -> tuple[dict, CallSession]:
-    monkeypatch.setattr(prosper, "client", lambda: FakeProsper(slots))
+    monkeypatch.setattr(local_clinic, "client", lambda *_, **__: FakeClinic(slots))
     s = CallSession(call_id="00000000-0000-0000-0000-0000000000cc", started_at=NOW)
     args = {"specialty_id": "orthopaedics", "date_from": "2026-09-19", "date_to": "2026-10-02"}
     return asyncio.run(call_tool(s, "search_availability", args | extra)), s

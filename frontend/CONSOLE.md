@@ -6,17 +6,17 @@ Current implementation overrides the older component sketches below:
 
 - No chips, tags, decorative dots or left-side selection stripes. IDs and reason codes are plain mono text; outcomes and stages use icons and text.
 - Dropdowns use Base UI Select with token-styled popups, keyboard selection and viewport collision handling.
-- Calls use a stereo audiogram and individually clickable tool/action icons. Peaks come from the actual recording. Selecting an icon seeks and opens its decision; late submissions remain accessible after the audio ends.
+- Calls use a stereo audiogram and individually clickable tool/action icons. Peaks come from the actual recording. Selecting an icon seeks and opens its decision; late decisions remain accessible after the audio ends.
 - Talk uses the `orb-ui` radial component in controlled mode. Its button plays/pauses recordings or mutes/unmutes the local microphone. Directional levels come from Web Audio, never simulated caller activity. Live calls without an audio feed do not receive amplitude values.
 - `/talk` offers recorded calls and a local microphone preview, not a telephone session. Its old language selector is omitted because it could not change either mode. `/demo/` is the separate Roleplay Studio with real GPT-Live-1 browser calls.
-- `/` is the landing page. Its ROSARIO logos and “Sign in” links open `/metrics`; `/dashboard` redirects there. Primary navigation is Overview, Calls, Calendar and Settings. `/cases` and `/talk` have a separate tools header with a return to the dashboard. “Sign in” is a dashboard link, not an authentication flow.
+- `/` is the landing page. Its ROSARIO logos and “Sign in” links open `/metrics`; `/dashboard` redirects there. Primary navigation is Overview, Calls, Calendar and Settings. `/talk` has a separate tools header with a return to the dashboard. “Sign in” is a dashboard link, not an authentication flow.
 - The console shell is one viewport tall. Screen headers stay outside their content scroller; split-view lists and drawers scroll independently. Scrollable flex children may shrink below content height. Nested transcript scrolling chains to the outer panel at its edges. Mobile content has bottom clearance for navigation.
 - Live transcripts follow new turns only while the reader is within 48px of the bottom. Scrolling up preserves the reading position; returning to the bottom resumes following.
 - Light and dark themes share semantic tokens and persist across dashboard/tool routes. The theme switch adapts Magic UI's circular View Transition reveal; reduced motion skips the transition. Navigation and tabs share one moving selection background, measured again when individual controls resize after font or label changes.
 - Call review shows the full chat immediately. Playback reveals bubbles at detected speech endings and follows the current turn. Unmatched fragments retain logged timing. Scrolling disables following; pausing restores the full conversation. Clicking a message seeks; clicking a decision opens and scrolls to that exact card, including repeated selections. Only the actual playhead determines the current turn. Tooltips are portaled, kept within the viewport and hidden when their anchor scrolls away.
 - Caller-number lookups, canonical tools, legacy proxy steps and complete Codex tool wrappers contribute timeline markers. Matching wrapper echoes are deduplicated one-to-one; truncated payloads are not reconstructed.
-- Calendar defaults to persisted local telephone appointments, refreshed every five seconds from the local console API. The separate Call reports view shows accepted scheduling reports, including practice calls. The clinic API is read-only: acceptance does not reserve or change an appointment. Staged/rejected actions are excluded; changes reconcile by appointment ID within one call. Separate calls remain separate reports.
-- Calendar month tiles show the first booking with a direct source-call link; additional bookings are available in the selected-day details. Each appointment's call link opens the full call review. Successful local registrations supply the caller name and patient card, including registrations followed by a booking in the same call.
+- Calendar shows the clinic database's diary: every appointment, the doctors away and the closed sites, for the month on screen (`GET /api/clinic/calendar?from=&to=`), refreshed every ten seconds. Doctor and site filters and a "Booked by Rosario" toggle narrow it. Bookings Rosario made on a call carry a phone mark and link to that call.
+- Calendar month tiles show the booked count, doctors away, closures and the first Rosario booking with its call link. The selected day lists appointments as one-line rows, by time or grouped by doctor; a row opens its details. Cancelled rows stay, struck through and dimmed. Successful local registrations supply the caller name and patient card, including registrations followed by a booking in the same call.
 - Unknown data uses content-shaped skeletons, not zero counts or empty-state claims. Placeholders fade in after 150ms and remain still; cached content does not return to placeholders. Already-loaded records remain usable if an update fails. JSON requests time out after 15 seconds, freeing pending requests for retry.
 - Calls load details as rows approach the viewport, including older history. A loading drawer always has a Close button. Rows do not replay entrance animations as data arrives; newly available fields use a short opacity reveal. Reduced motion is immediate.
 - The decision lane has a fixed height. Each tool owns one square card; all remaining cards peek from alternating sides behind the first. Hover fans them out to the right, left, then farther outward, with no shared background or outline. Opening and closing use interruptible transforms. Touch expands before selecting; arrow keys, Home and End follow spatial order, and Escape closes the stack. Only oversized fans scroll. Reduced motion exposes a chronological strip. Audio and waveform retries remain separate.
@@ -24,7 +24,7 @@ Current implementation overrides the older component sketches below:
 - Caller bubbles use a distinct burgundy fill in dark mode and rose fill in light mode. Both speakers have visible borders; text contrast is above 11:1 in both themes.
 - Settings offers Rosario/Cove, Clara/Juniper and Serena/Spruce presets with red, blue and sage orb portraits. All nine GPT-Live-1 voices are selectable. Opening language is English or Spanish, followed by caller-language mirroring. Optional tone guidance is limited to 1,200 characters; clinic rules remain server-owned. Pace and tone use prompt guidance, not unsupported speed or temperature controls.
 - The speaker button beside Voice plays a bundled sample of the selected draft voice, without saving or starting a call. It becomes Stop during playback; changing voices or leaving Settings stops the sample. Failures offer Retry. The nine MP3s in `public/voice-samples/` were generated with their respective GPT-Live-1 voices on 20 September 2026, not downloaded official samples. Each says: "Hello. I'm here to help you find the right appointment. What would you like to do today?" They contain no caller audio or patient data.
-- Save persists through `GET`/`PUT /api/demo/settings` to `backend/logs/demo/voice-settings.json`. New Studio calls take one immutable snapshot; active calls, recordings and the scored agent are unchanged. Drafts survive dashboard navigation, failed saves preserve edits, and Discard restores the last confirmed save. `ROSARIO_DEMO_API` selects the backend; the development and preview servers proxy `/api/demo`, `/start` and Pipecat's `/sessions/` signaling routes.
+- Save persists through `GET`/`PUT /api/demo/settings` to `backend/logs/demo/voice-settings.json`. New Studio calls take one immutable snapshot; active calls and recordings are unchanged. Drafts survive dashboard navigation, failed saves preserve edits, and Discard restores the last confirmed save. `ROSARIO_DEMO_API` selects the backend; the development and preview servers proxy `/api/demo`, `/start` and Pipecat's `/sessions/` signaling routes.
 
 Settings references: [OpenAI's GPT-Live-1 voice catalogue and controls](https://help.openai.com/en/articles/20001274) and [Nielsen Norman Group on progressive disclosure](https://www.nngroup.com/articles/progressive-disclosure/).
 
@@ -150,7 +150,7 @@ Copied from navalabs.ai; shadcn/ui (Base UI) primitives restyled through the tok
 | Data table (console) | 13px sans body, 36px rows, no rules, hover `--surface-1`, selection inset left rule, numeric columns tabular. Column headers in mono uppercase grey like the comparison table. |
 | Transcript turn | single column, speaker in mono uppercase grey in a 72px gutter, 14px body, timestamps right in 12px mono. Interrupted turns end with a grey "cut off" in mono. |
 | Decision card | glass card at 16px radius between turns: mono header (kind, tool, latency), key-value grid in mono. Red left rule when it is a refusal, guard block or error. |
-| Waveform | two lanes, ROSARIO above in `--accent-ink`, caller below in `--fg-2`, inside a glass card. Markers as in Bland: decisions white, submit red, interruption red tick. |
+| Waveform | two lanes, ROSARIO above in `--accent-ink`, caller below in `--fg-2`, inside a glass card. Markers as in Bland: decisions white, writes red, interruption red tick. |
 | Orb (Talk) | disc `--accent-fill` on `--gradient-orb` with `--glow-orb`; ring `--line-accent`. Ring scales with ROSARIO's level, disc with the caller's. |
 | Toast | glass card 16px radius, bottom right, 300ms. |
 | Empty state | one grey sentence. No illustrations. |
@@ -167,9 +167,9 @@ Primary navigation uses a fixed-width desktop sidebar and a three-item mobile ba
 |---|---|---|
 | Overview | `/metrics` | Reception activity, reported bookings, duration and response gap |
 | Calls | `/calls` | Active calls above searchable, filterable call history |
-| Calendar | `/calendar` | Accepted scheduling reports by appointment date |
+| Calendar | `/calendar` | The clinic diary: appointments, doctors away and closures by date |
 
-Rehearsal (`/cases`) and the voice demo (`/talk`) live outside the dashboard in a separate tools shell. The landing-page footer links to both.
+The voice demo (`/talk`) lives outside the dashboard in a separate tools shell.
 
 ### 7.2 Live calls
 
@@ -183,49 +183,35 @@ Data comes from the calls index and per-call details. The index polls every four
 
 ### 7.3 Calls
 
-The history list shows time, caller, conversation strip, outcome, duration and recorded per-call median response gap (p50 gap), grouped by date. Quick filters narrow history; call-ID search also applies to active calls above it. Challenge attribution stays out of the primary review surface.
+The history list shows time, caller, conversation strip, outcome, duration and recorded per-call median response gap (p50 gap), grouped by date. Quick filters (Booked, Registered, Declined, Escalated, Write failed) narrow history; Booked and Registered mean the write was saved. Call-ID search also applies to active calls above it.
 
-The drawer places decision icons above the stereo audiogram and caller/ROSARIO chat below it. Its tabs are Transcript, Report, Patient and Raw. Report retains submitted actions, replies and recorded metadata; Patient is read-only lookup data. Full chat is available before playback. During playback, turns appear at detected speech endings, with frame updates at message boundaries rather than waiting for the next media timeupdate. Unmatched fragments retain logged timing; Raw keeps original timestamps. Scrolling or pausing restores full review; a message seeks the player. A marker switches to Transcript, clears search and opens its exact decision card, scrolling the transcript pane on desktop or the drawer on mobile.
+The drawer places decision icons above the stereo audiogram and caller/ROSARIO chat below it. Its tabs are Transcript, Report, Patient and Raw. Report shows what was saved to the clinic database (each `local_write` with its record) and the provenance chain lookup, staged action, saved write; Patient is read-only lookup data. Full chat is available before playback. During playback, turns appear at detected speech endings, with frame updates at message boundaries rather than waiting for the next media timeupdate. Unmatched fragments retain logged timing; Raw keeps original timestamps. Scrolling or pausing restores full review; a message seeks the player. A marker switches to Transcript, clears search and opens its exact decision card, scrolling the transcript pane on desktop or the drawer on mobile.
 
-### 7.4 Cases
-
-```
-CASES                                          Run All ▸   last run 21:14 · 31/49
-──────────────────────────────────────────────────────────────────────────────
-#   PROBLEM               W   OPEN   PUBLIC              LAST RUN
-1   simple_booking        1   yes    ✓ ✓ ✓ ✓             4/4
-3   doctor_and_site       2   yes    ✓ ✓ ✗ ✓ ·           3/4  record_mismatch
-6   the_rules             3   no     · · · · ·           —
-…
-```
-
-One row per problem (weight, open state), one glyph per public case (pass, fail, not run), last Run All fraction and failure signal. Click a case glyph: its persona prompt, expected actions, last transcript link, "Call" button (practice, 30s cooldown shown as a countdown in mono). Run All status line with the 15 minute cooldown. This screen is the eval story for the jury.
-
-### 7.5 Talk
+### 7.4 Talk
 
 The separate voice-demo page uses the `orb-ui` radial orb with actual recording or local-microphone levels. Recordings have the same audiogram and chat as call review. The orb button plays/pauses a recording or mutes/unmutes microphone preview. Browser telephone calling is not connected, and the page says so.
 
-### 7.6 Patients
+### 7.5 Patients
 
 Drawer opened from any patient chip: name, `patient_id`, DNI masked, date of birth, plans (policy chips), the record `note` verbatim (this is the "clinic knows who is calling" material), past visits and upcoming appointments as a hairline list, past calls to ROSARIO. Read only.
 
-### 7.7 Overview
+### 7.6 Overview
 
-Four metrics show handled calls, accepted booking reports, average call duration and median response gap. Ranges are 24 hours, seven days and all recorded calls. The activity chart switches between calls, booking reports and average duration; reported outcomes and recent conversations provide context.
+Four metrics show handled calls, bookings saved, average call duration and median response gap. Ranges are 24 hours, seven days and all recorded calls. The activity chart switches between calls, bookings and average duration; outcomes and recent conversations provide context.
 
-Completed-call counts and durations come from the index. Booking reports and response gaps use up to 60 recent completed-call details, with coverage shown. Response gap is the median of the available `audio.timeline.turns.latency_p50_s` values: recorded per-call medians, not pooled individual responses. Missing measurements stay unknown and are excluded, not counted as zero. Only accepted BOOK actions count as booking reports; moves, cancellations and registrations are separate. Accepted reports do not prove a clinic diary mutation.
+Completed-call counts and durations come from the index. Bookings and response gaps use up to 60 recent completed-call details, with coverage shown. Response gap is the median of the available `audio.timeline.turns.latency_p50_s` values: recorded per-call medians, not pooled individual responses. Missing measurements stay unknown and are excluded, not counted as zero. Bookings are successful BOOK and RESCHEDULE writes to the clinic database, one per appointment. Outcomes come from the call status: a write verb counts only when the call saved it (`saved`), `write failed` is its own outcome, and a call that saved nothing is "Nothing saved" unless it declined or escalated.
 
-Details load in batches of four. Sample-based statistics appear progressively with an explicit partial-sample count and progress bar. Changing range cancels future batches; cached values remain visible. Failed details can be retried without losing the usable sample. A concise sample/read-only note remains; the methodology dropdown is removed.
+Details load in batches of four. Sample-based statistics appear progressively with an explicit partial-sample count and progress bar. Changing range cancels future batches; cached values remain visible. Failed details can be retried without losing the usable sample. A concise sample note remains; the methodology dropdown is removed.
 
-### 7.8 Calendar
+### 7.7 Calendar
 
-Month navigation and Today select appointment dates in Europe/Madrid. A selected-day agenda shows patient/caller, time, provider/site where recorded, and the source call. Undated reports remain separate. Initial selection chooses a date as soon as recorded activity arrives, without overriding a date the reader selected. Details load in batches of four, prioritizing calls whose summary reports scheduling activity while still reading the full history. Counts remain explicitly partial until loading finishes. Leaving the screen cancels future batches.
+Month navigation, Today and the day arrows choose the date in Europe/Madrid; the month on screen is the feed window (the whole grid, at most 42 days), polled every ten seconds. Doctor and site filters and the "Booked by Rosario" toggle apply to the tiles, counts and the day list alike. Doctors and sites stay selectable while a new month loads.
 
-Only successful scheduling submissions appear. Identical retries within one call are deduplicated; appointment IDs link same-call changes and cancellations. Practice scenarios do not mutate the clinic, so separate calls are not merged into a fictional current diary. A short read-only notice stays above the calendar without a second provenance disclosure.
+The day list is one line per appointment: time, patient, doctor, site, and a call link on Rosario bookings. By time sorts by start then doctor; By doctor groups under each doctor with their specialty and count. Opening a row shows the time range, type, site, status, source and ids. Absences (whole day or hours, with the reason) and closures (every site, or one site) sit above the list and on the month tiles. Beside the month, the day list scrolls on its own. A 100-appointment day stays readable.
 
 ## 8. Copy rules
 
-- Labels are nouns, buttons are verbs, both short: "Run All", "Call", "Start call", "End", "Copy id".
+- Labels are nouns, buttons are verbs, both short: "Call", "Start call", "End", "Copy id".
 - Times in Europe/Madrid, 24h, `HH:MM` for wall clock, `+ss.s` for offsets, `1m 42s` for durations under an hour, `312 ms` for latencies.
 - Reason codes verbatim in mono (`provider_on_leave`) with the gloss beside them ("provider on leave"). Never rephrase the code.
 - Numbers of people: "4 matches", not "multiple".
@@ -249,4 +235,4 @@ The linter does not check density, hierarchy or copy. Those are reviewed by eye 
 
 1. Mark: `dial-rose-ten` (section 1). The brand page shows only the current identity; swapping is one `build-lockups.py` run.
 2. Accent: Nava's exact pair, #BC0400 fill and #FE0600 ink, as the brief specified. A truer wine is a one-token edit in `tokens.css`; recheck contrast if changed.
-3. Status color: monochrome plus red. No green token until the cases board proves unreadable to judges.
+3. Status color: monochrome plus red. No green token until a screen proves unreadable without one.

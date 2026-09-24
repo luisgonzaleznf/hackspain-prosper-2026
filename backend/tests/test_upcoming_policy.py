@@ -1,10 +1,11 @@
 import asyncio
 from datetime import datetime
 
-from app import clinic, config, prosper
+from app import clinic, config
 from app.prompt import RULES
 from app.session import CallSession
 from app.tools import call_tool
+from integrations import local_clinic
 
 
 def test_second_policy_is_forwarded_and_billed_without_changing_chart(monkeypatch, tmp_path):
@@ -30,7 +31,7 @@ def test_second_policy_is_forwarded_and_billed_without_changing_chart(monkeypatc
                 ],
             }
 
-    monkeypatch.setattr(prosper, "client", Quotes)
+    monkeypatch.setattr(local_clinic, "client", lambda *_, **__: Quotes())
     session = CallSession(
         call_id="second-policy", started_at=datetime(2026, 9, 19, tzinfo=config.TZ)
     )

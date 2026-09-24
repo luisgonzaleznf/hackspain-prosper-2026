@@ -4,15 +4,15 @@ Working rules for anything under `frontend/`. The repo-level `AGENTS.md` still a
 
 ## What this is
 
-ROSARIO is the brand and the web console for the team's voice agent in the HackSpain Prosper track (platform codename "El Turno", clinic "Clínica Arenal"). The console is a jury-scored feature, not polish: judges score "what you can see while a call is happening, what you can learn from it afterwards, and whether you can show it working". The leaderboard is decided by the backend's submitted record; the console's job is to make that record, and every utterance behind it, visible and explainable.
+ROSARIO is the brand and the web console for the team's voice receptionist at "Clínica Arenal". The agent reads and writes the clinic's own database (patients, the diary, doctors away, closures). The console is a jury-scored feature, not polish: judges score "what you can see while a call is happening, what you can learn from it afterwards, and whether you can show it working". Its job is to make every write to the clinic database, and every utterance behind it, visible and explainable.
 
 Three surfaces, in priority order:
 
 1. **Calls.** Actual active calls above completed history: caller, current stage, elapsed time and transcript updates. Click a row for the conversation and decision cards. Ten to twenty concurrent calls must stay readable. Completed recordings stay in history, never in a simulated live board.
-2. **Call detail.** Table on the left, drawer on the right: transcript with inline decision cards (lookups, availability queries, refusals with the stated reason, submissions), two-lane waveform with markers, context panel (patient, actions, report sent, platform verdict), raw event log.
-3. **Cases board.** The 18 problems and their public cases as a test grid: pass/fail per case, last run, failure signal, "Run All" status, per-problem weight. Plus a "Talk to ROSARIO" web-call page with the orb for the jury.
+2. **Call detail.** Table on the left, drawer on the right: transcript with inline decision cards (lookups, availability queries, refusals with the stated reason, writes), two-lane waveform with markers, context panel (patient, what was saved and its provenance), raw event log.
+3. **Calendar.** The clinic diary from the database: month grid and a day list for ~100 appointments across 12 doctors and 3 sites, doctor and site filters, doctors away and closures, Rosario's bookings linked to their calls. Plus a "Talk to ROSARIO" web-call page with the orb for the jury.
 
-Secondary: analytics strip (calls, pass rate, p50/p90 turn latency, spend), patient drawer (record, note, past visits, upcoming), flow view (static stage graph with live counts).
+Secondary: analytics strip (calls, bookings saved, p50 response gap, call duration), patient drawer (record, note, past visits, upcoming), flow view (static stage graph with live counts).
 
 ## Stack
 
@@ -32,7 +32,7 @@ frontend/
   package.json         dev / build / typecheck / lint scripts
   vite.config.ts       Vite + Tailwind; proxies /api to the call backend (ROSARIO_API, default calls.udarc.com)
   index.html           the brand landing page, served at / (static HTML + brand/)
-  console.html         console app entry; /dashboard, /calls, /calendar, /cases, /metrics and /talk are rewritten to it (vite.config.ts)
+  console.html         console app entry; /dashboard, /calls, /calendar, /metrics, /settings and /talk are rewritten to it (vite.config.ts)
   demo/                roleplay studio at /demo/, unlisted (noindex, linked from nowhere). Talks to the voice backend from the
                        demo branch through the /api/demo and /start proxies (ROSARIO_DEMO_API, default http://127.0.0.1:7860)
                        To run the backend: git worktree add <dir> origin/demo/roleplay-studio-recordings, link the repo .env into
@@ -57,12 +57,10 @@ src/
   main.tsx            routes (react-router)
   app.tsx             Shell (rail, phone tab bar), ScreenHeader, Mark
   styles/globals.css  imports ../../tokens/tokens.css, maps tokens onto Tailwind utilities, component classes (pill, tab, chip, card, tile, row)
-  data/public-cases.json   trimmed copy of the platform roster (persona, expected, protected); regenerate from playground/marcos/research/prosper-platform/public-cases.json with jq
-  lib/types.ts        backend shapes verbatim (CallSummary, CallDetail, RawEvent, ClinicAction, PublicCase)
-  lib/api.ts          GET /api/calls, GET /api/calls/{id}, audio URL
-  lib/timeline.ts     the projection: raw JSONL events -> turns with decision cards, stage, pending, markers; REASON_GLOSS, TOOL_GLOSS
-  lib/score.ts        port of scripts/prosper_cases.py (normalization, verdict, leak check); keep in lockstep
-  lib/cases.ts        roster helpers, call -> case attribution (run reference, else unique persona phone), verdictFor
+  lib/types.ts        backend shapes verbatim (CallSummary, CallDetail, RawEvent, ClinicAction, LocalWriteEvent)
+  lib/api.ts          GET /api/calls, GET /api/calls/{id}, audio URL, GET /api/clinic/calendar?from=&to=
+  lib/calendar.ts     the diary feed: tolerant parsing, month windows, filters, absences and closures per day
+  lib/timeline.ts     the projection: raw JSONL events -> turns with decision cards, stage, pending, writes, markers; outcomeOf; REASON_GLOSS, TOOL_GLOSS
   lib/store.ts        polling store: index every 4s, active-call detail every 1.5s; per-row subscriptions (useCallRecord)
   lib/replay.ts       transcript bounds for recorded playback
   lib/format.ts       Europe/Madrid clocks, durations, latencies, masked phone and DNI
@@ -72,12 +70,12 @@ src/
   components/transcript.tsx   Transcript, TranscriptTurn, DecisionCard
   components/call-timeline.tsx   stereo audiogram, stacked decision icons and recording transport
   screens/calls/      active calls above history + detail drawer (Transcript, Report, Patient, Raw)
-  screens/cases/      17 problems grid, glyph per public case, case drawer with accepted answers and last verdict
-  screens/metrics/    stat strip, hourly area chart, verdicts by problem
+  screens/calendar/   clinic diary: month grid, one-line day list by time or doctor, filters, absences and closures
+  screens/metrics/    stat strip, hourly area chart, outcomes
   screens/talk/       orb page: listen to a recording (stereo drives the orb) or the visitor's microphone
 ```
 
-Calls renders actual active records above completed history. It does not replay finished calls as live activity. “Run All” and “Call” remain disabled until the backend supports them. Talk does not carry a browser call; it plays recordings or meters the visitor's microphone.
+Calls renders actual active records above completed history. It does not replay finished calls as live activity. Talk does not carry a browser call; it plays recordings or meters the visitor's microphone.
 
 ## Contract with the backend
 
@@ -90,15 +88,15 @@ CallEvent {
   at: string                 ISO 8601 with offset
   kind: "call.started" | "call.stopped" | "turn.caller" | "turn.agent"
       | "turn.interrupted" | "stage.changed" | "tool.called" | "tool.result"
-      | "action.proposed" | "action.dropped" | "submit.sent" | "submit.result"
+      | "action.proposed" | "action.dropped" | "write.saved" | "write.failed"
       | "guard.blocked" | "engine.usage" | "error"
   payload: object            kind-specific; ids copied from clinic API responses
 }
 ```
 
-Read endpoints the console needs: `GET /api/calls?status=active|done`, `GET /api/calls/{id}` (metadata + events + audio URL), `GET /api/events` (SSE, all active calls), `GET /api/cases` (18 problems, public cases, last verdicts), `GET /api/patients/{id}`, `GET /api/metrics`. Write endpoints: `POST /api/cases/{case_id}/call` (practice), `POST /api/runs` (Run All). Supervisor controls (`inject note`, `end call`) are nice-to-have and stay behind a flag until the backend has them.
+Read endpoints the console uses: `GET /api/calls` (summaries; `status` is `in progress`, `ended`, `saved` or `write failed`, `action` the verbs written), `GET /api/calls/{id}` (events, `writes` = the `local_write` events, `provenance` chains lookup, recorded, write), `GET /api/calls/{id}/audio`, `GET /api/clinic/calendar?from=&to=` (the diary window) and the Studio's `/api/demo/*`. Supervisor controls (`inject note`, `end call`) are nice-to-have and stay behind a flag until the backend has them.
 
-Anything not in the contract is mocked in `src/lib/mock/` with fixtures generated from `research/../public-cases.json`, and the mock is named as such in the UI header ("fixture data"). Canned data never leaks into the demo path silently.
+Anything not in the contract is mocked and named as such in the UI header ("fixture data"). Canned data never leaks into the demo path silently.
 
 ## Working rules
 
@@ -110,7 +108,7 @@ Anything not in the contract is mocked in `src/lib/mock/` with fixtures generate
 - **Reason codes are the closed vocabulary from the contract.** Render them verbatim in mono plus a short human gloss from one lookup table; never rephrase them into the mono chip.
 - **Live view budget.** Twenty rows, each updating several times per second, must not re-render the whole board. Per-row subscriptions to the event buffer; virtualise the transcript past 200 turns.
 - **Copy.** Spanish-first UI labels are fine where the domain is Spanish (Centro, Norte, Sur, DNI); everything else in plain English. No marketing tone, no exclamation marks, no em dashes.
-- **Scope.** Overview, Calls and Calendar form the dashboard; Cases and Talk are separate tools. “Sign in” opens Overview. Authentication is not implemented.
+- **Scope.** Overview, Calls and Calendar form the dashboard; Talk is a separate tool. “Sign in” opens Overview. Authentication is not implemented.
 - **Verification.** Run `pnpm lint:design`, `pnpm typecheck` (once scaffolded) and walk the three surfaces with fixture data before claiming done. Screenshots go to `demo/`.
 
 ## Scripts

@@ -1,12 +1,12 @@
 """Dead-air re-prompt: when the line has gone quiet after the agent spoke, ask whether the caller
 is still there instead of letting the carrier hang up on the silence.
 
-Prosper hangs up about 30-45 s after our last audible audio (run 15f7762b: 9 calls cut as
-agent_silence 34.5-36.4 s after it). Pure logic, fed signals and a clock: `DeadAirWatch` says
+Test callers hung up about 30-45 s after our last audible audio (run 15f7762b: 9 calls cut
+as agent_silence 34.5-36.4 s after it). Pure logic, fed signals and a clock: `DeadAirWatch` says
 when to re-prompt, `observe` turns the voice's events into those signals.
 
 Caller speech is what the voice model itself heard (its caller-transcript events), not raw
-loudness: problem 12 mixes a noise bed under every call, and noise must not count as speech.
+loudness: a bad line carries a noise bed under the whole call, and noise must not count as speech.
 """
 
 from __future__ import annotations
@@ -32,16 +32,16 @@ def _env_int(name: str, default: int) -> int:
 
 
 # A/B-testable via env, read once at import: WATCHDOG_SILENCE_S, WATCHDOG_REPEAT_S, WATCHDOG_MAX.
-# 12 s, not 8: problem 13 scripts an 8 s caller pause, and ~40% of Prosper's ordinary replies arrive
+# 12 s, not 8: callers pause for 8 s, and ~40% of the test callers' ordinary replies arrived
 # 8-15 s after our turn. 12/22/32 s still beats the ~35 s cut.
 QUIET_SECS = _env_float("WATCHDOG_SILENCE_S", 12.0)  # nothing audible either way for this long...
 EVERY_SECS = _env_float("WATCHDOG_REPEAT_S", 10.0)  # ...and at least this long since last prompt
 MAX_IN_ROW = _env_int("WATCHDOG_MAX", 3)  # stop after this many unanswered re-prompts
-# Late caller fragments reset the in-a-row count (practice call 08efe9f8: 10 nudges in one call,
+# Late caller fragments reset the in-a-row count (test call 08efe9f8: 10 nudges in one call,
 # on top of delayed replies), so the whole call has a ceiling too.
 MAX_PER_CALL = _env_int("WATCHDOG_MAX_PER_CALL", 5)
 # Opt-in (0 = off) until one live check: the voice model normally closes a caller turn ~1.8 s after
-# the caller's audio stops arriving (p90 2.7 s), but in the scored run 10 turns sat open 8-14.5 s
+# the caller's audio stops arriving (p90 2.7 s), but in one test run 10 turns sat open 8-14.5 s
 # and each closed only when a nudge was appended, which then replaced the answer. After this long
 # with the turn open and no caller speech arriving, ask for a response instead
 # (`response.create` on the data channel: in the v3 client-event enum, unverified on the
@@ -49,8 +49,8 @@ MAX_PER_CALL = _env_int("WATCHDOG_MAX_PER_CALL", 5)
 STUCK_TURN_SECS = _env_float("STUCK_TURN_SECS", 0.0)
 BUSY_MAX_SECS = 20.0  # a lookup or brain turn open longer than this no longer holds it back
 # Caller speech on the line itself, ahead of any transcript (they lag 1-2 s, and 41 of 176
-# Prosper replies arrive 10-15 s after our turn): never nudge within this long of it. Speech is
-# audio well above the line's own noise floor, so problem 12's noise bed does not count.
+# test-caller replies arrived 10-15 s after our turn): never nudge within this long of it. Speech is
+# audio well above the line's own noise floor, so a bad line's noise bed does not count.
 CALLER_QUIET_SECS = 4.0
 SPEECH_OVER_FLOOR = 3.0  # ~+10 dB over the floor
 MIN_SPEECH_RMS = 300.0

@@ -1,27 +1,129 @@
-"""The clinic catalogue (fetched once, identical for every call) and the text the model reads.
+"""The clinic catalogue and the text the model reads.
+
+The static part (sites, doctors, specialties, types, plans, rules) lives in the clinic database
+(`meta.catalogue`, written by `make seed`). The live part is computed for today in Madrid: the
+bookable calendar, closures, each doctor's absences, and counts. It is cached and recomputed
+when the Madrid date or the database file changes.
 
 Also the pure helpers the checks rely on: the DNI/NIE check letter and the dated calendar.
 """
 
+import json
 import re
 from datetime import date, datetime, timedelta
+from typing import Any
 
-from app import prosper
+from integrations.local_store import LocalStore
 
+from app import config
+
+MAX_SPAN_DAYS = 14
+SLOT_MINUTES = 15
+
+
+class ClinicError(Exception):
+    """A clinic read the model has to hear about, carrying a status and a detail for it."""
+
+    def __init__(self, status: int, detail: Any):
+        super().__init__(f"{status}: {detail}")
+        self.status = status
+        self.detail = detail
+
+
+# Tests set `_catalogue` to a fixed dict; any dict this module did not build is used as-is.
 _catalogue: dict | None = None
+_built: dict | None = None
+_built_key: tuple | None = None
+
+
+def _key(store: LocalStore) -> tuple:
+    try:
+        stamp = store.path.stat().st_mtime_ns
+    except OSError:
+        stamp = None
+    return datetime.now(config.TZ).date(), str(store.path), stamp
+
+
+def load() -> dict:
+    """The catalogue for today: a test's fixed dict, the cached one, or a fresh build."""
+    global _catalogue, _built, _built_key
+    if _catalogue is not None and _catalogue is not _built:
+        return _catalogue
+    store = LocalStore()
+    key = _key(store)
+    if _catalogue is None or key != _built_key:
+        _catalogue = _built = build(store, key[0])
+        _built_key = key
+    return _catalogue
 
 
 async def catalogue() -> dict:
-    """GET /api/v1/clinic once per process; it never changes during the event."""
-    global _catalogue
-    if _catalogue is None:
-        _catalogue = await prosper.client().clinic()
-    return _catalogue
+    return load()
 
 
 def cached() -> dict | None:
-    """The catalogue if it has been fetched, for code that must not wait on the network."""
+    """The catalogue if it has been loaded, for code that must not touch the database."""
     return _catalogue
+
+
+def build(store: LocalStore, today: date) -> dict:
+    """meta.catalogue plus calendar, closures, absences and counts as of `today`."""
+    with store.connect() as db:
+        meta = {row["key"]: row["value"] for row in db.execute("SELECT key, value FROM meta")}
+        if "catalogue" not in meta:
+            raise ClinicError(503, "The clinic database is not seeded. Run `make seed`.")
+        cat = json.loads(meta["catalogue"])
+        ends = meta.get("horizon_end") or (today + timedelta(days=27)).isoformat()
+        closures = [
+            {"date": row["date"], "location_id": row["location_id"], "name": row["name"]}
+            for row in db.execute(
+                "SELECT date, location_id, name FROM closures WHERE date BETWEEN ? AND ? "
+                "ORDER BY date, location_id",
+                (today.isoformat(), ends),
+            )
+        ]
+        absences = db.execute(
+            "SELECT provider_id, start_date, end_date, start_time, end_time, reason "
+            "FROM absences WHERE end_date >= ? ORDER BY start_date, start_time",
+            (today.isoformat(),),
+        ).fetchall()
+        booked = db.execute(
+            "SELECT COUNT(*) FROM appointments WHERE status='booked' AND start_date >= ?",
+            (today.isoformat(),),
+        ).fetchone()[0]
+        patients = db.execute("SELECT COUNT(*) FROM patients").fetchone()[0]
+    sites = {loc["id"] for loc in cat["locations"]}
+    closed: dict[str, set] = {}
+    for c in closures:
+        closed.setdefault(c["date"], set()).update(
+            sites if c["location_id"] is None else {c["location_id"]}
+        )
+    cat["calendar"] = {
+        "starts": today.isoformat(),
+        "ends": ends,
+        "max_span_days": MAX_SPAN_DAYS,
+        "slot_minutes": SLOT_MINUTES,
+        "closure_days": sorted(day for day, where in closed.items() if where >= sites),
+        "closures": closures,
+        "appointment_count": booked,
+    }
+    cat["patient_count"] = patients
+    for p in cat["providers"]:
+        mine = [
+            {
+                "start": a["start_date"],
+                "end": a["end_date"],
+                "start_time": a["start_time"],
+                "end_time": a["end_time"],
+                "reason": a["reason"],
+            }
+            for a in absences
+            if a["provider_id"] == p["id"]
+        ]
+        p["absences"] = mine
+        whole = [a for a in mine if a["start_time"] is None]
+        p["leave"] = {k: whole[0][k] for k in ("start", "end", "reason")} if whole else None
+    return cat
 
 
 # ── National id ─────────────────────────────────────────────────────
@@ -30,7 +132,7 @@ _ID_LETTERS = "TRWAGMYFPDXBNJZSQVHLCKE"
 
 
 def normalize_national_id(raw: str) -> str:
-    """'x-1234567-l' -> 'X1234567L': the scorer's own normalization."""
+    """'x-1234567-l' -> 'X1234567L': separators and case never tell two people apart."""
     return re.sub(r"[^0-9A-Za-z]", "", raw).upper()
 
 
@@ -67,7 +169,33 @@ def _week(days: list[dict]) -> str:
     return "; ".join(f"{'/'.join(names)} {hours}" for hours, names in groups.items())
 
 
-def render_catalogue(cat: dict) -> str:
+def _short(day: str) -> str:
+    d = date.fromisoformat(day)
+    return f"{d:%a} {d.day} {d:%b}"
+
+
+def _away(p: dict, today: date | None) -> list[str]:
+    """Current and future absences: 'AWAY 2026-09-30 to 2026-10-02 (congress)' or, for part of
+    a day, 'AWAY Fri 2 Oct 12:00-14:00 (personal)'."""
+    absences = p.get("absences")
+    if absences is None:  # a catalogue with only the single `leave` window
+        absences = [p["leave"]] if p.get("leave") else []
+    lines = []
+    for a in absences:
+        if today and date.fromisoformat(a["end"]) < today:
+            continue
+        if a.get("start_time"):
+            days = _short(a["start"]) + (
+                "" if a["end"] == a["start"] else f" to {_short(a['end'])}"
+            )
+            lines.append(f"AWAY {days} {a['start_time']}-{a['end_time']} ({a['reason']})")
+        else:
+            days = a["start"] + ("" if a["end"] == a["start"] else f" to {a['end']}")
+            lines.append(f"AWAY {days} ({a['reason']})")
+    return lines
+
+
+def render_catalogue(cat: dict, today: date | None = None) -> str:
     """Compact reference the model keeps in its prompt: ids are what the record_* tools take."""
     lines = ["SITES (location_id):"]
     for loc in cat["locations"]:
@@ -86,9 +214,7 @@ def render_catalogue(cat: dict) -> str:
         extra = []
         if p["refused_insurers"]:
             extra.append("does NOT take " + ", ".join(i["id"] for i in p["refused_insurers"]))
-        if p["leave"]:
-            leave = p["leave"]
-            extra.append(f"ON LEAVE {leave['start']} to {leave['end']} ({leave['reason']})")
+        extra += _away(p, today)
         lines.append(
             f"- {p['id']}: {p['name']} — {p['specialty_id']} — speaks {', '.join(p['languages'])} "
             f"— {where}" + (f" — {'; '.join(extra)}" if extra else "")
@@ -132,9 +258,20 @@ def render_catalogue(cat: dict) -> str:
     return "\n".join(lines)
 
 
+def _and(names: list[str]) -> str:
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
 def calendar_text(now: datetime, cat: dict, days: int = 28) -> str:
     """Dated day list from today, so the model never does weekday arithmetic itself."""
     closures = set(cat["calendar"]["closure_days"])
+    site_names = {loc["id"]: loc.get("name", loc["id"]) for loc in cat["locations"]}
+    holiday_names: dict[str, str] = {}
+    partial: dict[str, list[dict]] = {}
+    for c in cat["calendar"].get("closures", []):
+        holiday_names.setdefault(c["date"], c["name"])
+        if c["location_id"] is not None:
+            partial.setdefault(c["date"], []).append(c)
     last = date.fromisoformat(cat["calendar"]["ends"])
     saturday_sites = [
         loc["id"]
@@ -146,7 +283,7 @@ def calendar_text(now: datetime, cat: dict, days: int = 28) -> str:
         f"Right now it is {now:%A %d %B %Y, %H:%M} in Madrid.",
         "Nothing is ever booked for today: the earliest bookable day is tomorrow.",
         f"The bookable calendar ends {last:%A %d %B %Y} ({last.isoformat()}): nothing after it "
-        "can be booked, and a search past it is refused.",
+        "can be booked, and searches stop there.",
         "",
         "Upcoming days:",
     ]
@@ -164,11 +301,19 @@ def calendar_text(now: datetime, cat: dict, days: int = 28) -> str:
             label += " = a week from today"
         elif i == 14:
             label += " = in a fortnight"
-        if d.isoformat() in closures:
-            label += " — CLOSED everywhere (public holiday)"
+        day = d.isoformat()
+        if day in closures:
+            name = holiday_names.get(day)
+            label += f" — CLOSED everywhere (public holiday{': ' + name if name else ''})"
         elif d.weekday() == 6:
             label += " — closed (Sunday)"
-        elif d.weekday() == 5:
-            label += f" — Saturday: only {', '.join(saturday_sites)} is open"
+        else:
+            if d.weekday() == 5:
+                label += f" — Saturday: only {', '.join(saturday_sites)} is open"
+            if day in partial:
+                where = _and(
+                    [site_names.get(c["location_id"], c["location_id"]) for c in partial[day]]
+                )
+                label += f" — closed at {where} ({partial[day][0]['name']})"
         lines.append(label)
     return "\n".join(lines)

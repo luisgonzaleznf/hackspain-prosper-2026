@@ -12,9 +12,10 @@ from pathlib import Path
 
 import httpx
 import pytest
-from app import clinic, config, prosper
+from app import clinic, config
 from app.session import CallSession
 from app.tools import call_tool
+from integrations import local_clinic
 
 NOW = datetime(2026, 9, 19, 9, 0, tzinfo=config.TZ)
 PATIENT = {
@@ -74,7 +75,7 @@ ROUTE = {
 
 @pytest.fixture(autouse=True)
 def catalogue(monkeypatch, tmp_path):
-    cat = json.loads(Path("docs/prosper/data/clinic.json").read_text())
+    cat = json.loads(Path("seed/catalogue.json").read_text())
     monkeypatch.setattr(clinic, "_catalogue", cat)
     monkeypatch.setattr(config, "CALLS_DIR", tmp_path)
     return cat
@@ -179,7 +180,7 @@ def test_failed_origins_get_route_then_book_looked_up_slot(
                 "appointment_type": {"id": appointment_type, "name": "Review", "guidance": ""},
             }
 
-    monkeypatch.setattr(prosper, "client", ClinicAPI)
+    monkeypatch.setattr(local_clinic, "client", lambda *_, **__: ClinicAPI())
     session = CallSession(call_id=f"nearest-{specialty}-{site}", started_at=NOW)
 
     async def run():

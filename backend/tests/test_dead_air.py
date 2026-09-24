@@ -1,5 +1,5 @@
 """Dead-air re-prompt (app/voice/deadair.py): ask "are you still there?" on a silent line instead
-of letting Prosper hang up ~35 s after our last audible audio (run 15f7762b, 9 agent_silence)."""
+of letting the caller hang up ~35 s after our last audible audio (run 15f7762b, 9 agent_silence)."""
 
 import asyncio
 import importlib
@@ -51,7 +51,7 @@ def test_reprompts_are_at_least_ten_seconds_apart_and_stop_after_three():
 
 
 def test_late_caller_fragments_cannot_keep_it_nudging_past_five_per_call():
-    # 08efe9f8 (Prosper practice call): each late fragment reset the in-a-row count, 10 nudges.
+    # 08efe9f8 (test call): each late fragment reset the in-a-row count, 10 nudges.
     w = spoke_at(0.0)
     said = []
     for t in range(8, 300):
@@ -105,7 +105,7 @@ def test_the_turn_release_is_off_by_default_and_waits_for_the_brain():
 
 
 def test_caller_speech_on_the_line_holds_the_nudge_before_any_transcript():
-    # 41 of 176 Prosper replies land 10-15 s after our turn, and transcripts lag 1-2 s.
+    # 41 of 176 test-caller replies land 10-15 s after our turn, and transcripts lag 1-2 s.
     w = spoke_at(0.0)
     frames(w, 0.0, 7.5, lambda i: 0.0)  # digital silence
     frames(w, 7.5, 1.0, lambda i: 3000.0)  # the caller starts talking

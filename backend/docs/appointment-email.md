@@ -28,9 +28,8 @@ CUSTOMER_DB_PATH=logs/demo/customers.sqlite3
 ```
 
 Restart the server after configuring it. The feature is disabled by default; missing
-credentials or sender also disable it. `EVAL_MODE=1` always disables email. When
+credentials or sender also disable it. When
 disabled, the added prompts, tool schemas and customer-account scenario are absent.
-The `leaderboard/` package has no email integration.
 
 The example uses the team's `rosario.fyi` sender; the API key must belong to the
 Resend account that verified that domain. Otherwise use a domain you own and verify
@@ -61,13 +60,11 @@ email_results = await session.finish_demo()
 ```
 
 This saves the final proposals in the call JSONL, sends the requested emails and logs
-`call_ended`. Repeated finalization is a no-op. It does **not** call Prosper's submission
-API: a Twilio/browser call ID is not registered with Prosper. Audio and normal call
-artifacts are still saved by the existing handlers.
+`call_ended`. Repeated finalization is a no-op. Audio and normal call artifacts are still
+saved by the existing handlers.
 
-For scored Prosper calls, the normal `CallSession.finish()` continues to submit every
-action and never contacts Resend. The tools and prompt exclude both email and customer
-enrollment, and their handlers also reject direct invocation outside human demo mode.
+Outside human demo mode the tools and prompt exclude both email and customer enrollment,
+and their handlers also reject direct invocation.
 
 ## Customer welcome emails
 

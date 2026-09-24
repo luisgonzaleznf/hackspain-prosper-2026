@@ -1,8 +1,9 @@
-"""Per-call state: what this call has looked up, what it will report, and its JSONL log.
+"""Per-call state: what this call has looked up, what it decided, and its JSONL log.
 
-Actions are *staged* during the call and only POSTed by `finish()` once the socket closes
-(the window stays open 30 s after hang-up). A submission can never be taken back, so staging
-is what lets a caller change their mind on the third turn without leaving a wrong record.
+Actions are *staged* during the call and the outcome is logged by `finish()` once the socket
+closes. Staging is what lets a caller change their mind on the third turn without leaving a
+wrong record; phone and browser calls (integrations/local_session.py) also save each confirmed
+write to the clinic database as it happens.
 """
 
 import json
@@ -12,11 +13,11 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from loguru import logger
+from integrations import local_clinic
 
-from app import appointment_email, clinic, config, customer_accounts, prosper
+from app import appointment_email, clinic, config, customer_accounts
 
-# Reported when a call ends with nothing staged: silence always fails, so a reason always goes out.
+# Logged when a call ends with nothing staged: every call ends with a stated reason.
 FALLBACK = {"action": "NO_ACTION", "reason": "out_of_scope"}
 SEARCH_BATCH_SECS = 5.0  # searches this close to the last one belong to the same brain step
 _TERMINAL = {"NO_ACTION", "ESCALATE"}
@@ -54,7 +55,7 @@ class CallSession:
 
     @property
     def clinic_client(self) -> Any:
-        return prosper.client()
+        return local_clinic.client(self.started_at)
 
     async def execute_tool(
         self, name: str, args: dict, handler: Callable[..., Awaitable[dict]]
@@ -185,7 +186,7 @@ class CallSession:
         return [s for s in self.searches if s["t"] >= last - SEARCH_BATCH_SECS]
 
     def fallback(self) -> dict:
-        """The report for a call that staged nothing (silence always fails).
+        """The outcome of a call that staged nothing: it still ends with a stated reason.
 
         The latest batch of searches is the best evidence left. If any of them found a slot,
         something was on offer: `out_of_scope`. If all came back empty with nothing blocked,
@@ -205,29 +206,12 @@ class CallSession:
         return FALLBACK
 
     async def finish(self) -> list[dict]:
-        """POST every staged action (or the fallback) once. Called by the server on hang-up."""
-        if self.demo_mode:
-            return await self.finish_demo()
-        if self.finished:
-            return []
-        self.finished = True
-        actions = self.actions
-        if not actions:
-            actions = [self.fallback()]
-            self.log("fallback", action=actions[0], search_batch=self.last_search_batch())
-        results = []
-        for action in actions:
-            payload = {**action, "call_id": self.call_id}
-            status, body = await self._submit_once_retrying(payload)
-            self.log("submit", action=action, status=status, response=body)
-            if status not in (200, 409):
-                logger.error(f"call {self.call_id}: submit {action['action']} -> {status} {body}")
-            results.append({"action": action, "status": status, "response": body})
-        self.log("call_ended", submitted=[r["status"] for r in results])
-        return results
+        """Close the call once, on hang-up: log its outcome (the staged actions, or the
+        evidence-based fallback), then run the human-demo follow-ups."""
+        return await self.finish_demo()
 
     async def finish_demo(self, *, source: str = "browser") -> list[dict]:
-        """Finalize a human browser/Twilio demo; its call ID is not registered with Prosper.
+        """Log the final outcome, then create any demo customer account and send emails.
 
         Persist the final proposal before sending real, clearly labelled demo emails.
         """
@@ -235,19 +219,10 @@ class CallSession:
             return []
         self.finished = True
         actions = self.actions or ([] if self.customer_account else [self.fallback()])
-        self.log("demo_outcome", source=source, actions=actions, submitted=False)
+        self.log("demo_outcome", source=source, actions=actions)
         self.customer_account_result = await customer_accounts.finalize(self)
         emails = await appointment_email.send_for_actions(self, self.actions)
-        self.log("call_ended", source=source, actions=actions, submitted=False)
+        self.log("call_ended", source=source, actions=actions)
         if self.customer_account_result:
             return [{"action": "REGISTER_CUSTOMER", **self.customer_account_result}, *emails]
         return emails
-
-    async def _submit_once_retrying(self, payload: dict) -> tuple[int, Any]:
-        # One retry on a network failure only: the record is binary and the window is 30 s.
-        for attempt in (1, 2):
-            try:
-                return await prosper.client().submit(payload)
-            except Exception as e:
-                self.log("submit_error", attempt=attempt, error=repr(e))
-        return 0, "network error"

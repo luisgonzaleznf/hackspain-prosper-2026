@@ -23,14 +23,15 @@ and allow microphone access. The first scenario registers a new patient by name 
 their first visit. On subsequent calls that profile already exists (name + scenario phone).
 Stop with the orb; Review call opens the recording and trace.
 
-The root `.env` must provide `OPENAI_API_KEY` and `PLATFORM_API_KEY`.
+The root `.env` must provide `OPENAI_API_KEY`. Build the clinic database first with `make seed`.
 Calls, transcripts, recordings and the calendar use the local console when
 `ROSARIO_CLINIC_API` is set (override calls separately with `ROSARIO_CALLS_API`).
 The console needs `make console CONSOLE_PORT=8001` in `backend/`.
 Both backend processes must use the same `LOCAL_CLINIC_DB` if overriding the default.
-No writes go to Prosper. Main’s optional Resend email/account flow remains available
-when configured. Appointment confirmations use the identified patient's email on file;
-see [email setup](../../docs/appointment-email.md). The scored `/ws` flow is unchanged.
+The optional Resend email/account flow remains available when configured. Appointment
+confirmations use the identified patient's email on file (never a reserved demo domain);
+see [email setup](../../docs/appointment-email.md). Rehearsals change the diary for good:
+re-seed to reset it. The cancellation card reads Ignacio's upcoming appointment from it.
 
 Every rehearsal saves:
 

@@ -1,15 +1,16 @@
 """Faster identification: find_patient's DNI/NIE path and the caller-ID chart in the prompt.
-Offline: the Prosper client is replaced by a recorder."""
+Offline: the clinic is replaced by a recorder."""
 
 import asyncio
 import json
 from datetime import datetime
 
 import pytest
-from app import config, prosper
+from app import config
 from app.prompt import instructions
 from app.session import CallSession
 from app.tools import call_tool
+from integrations import local_clinic
 
 NOW = datetime(2026, 9, 18, 19, 30, tzinfo=config.TZ)
 IGNACIO = {
@@ -47,7 +48,7 @@ def calls_dir(tmp_path, monkeypatch):
 
 def fake(monkeypatch, answer: list[dict]) -> Directory:
     d = Directory(answer)
-    monkeypatch.setattr(prosper, "client", lambda: d)
+    monkeypatch.setattr(local_clinic, "client", lambda *_, **__: d)
     return d
 
 
@@ -109,7 +110,7 @@ def test_a_misheard_name_sharing_a_surname_is_not_flagged(monkeypatch):
     [
         {"name": "Ignacio Vázquez Moreno", "date_of_birth": "1939-12-09"},
         {"name": "Ignacio Vázquez Moreno"},
-        {"national_id": "65699248R", "phone": "731169716"},  # Prosper's own phone digit rule
+        {"national_id": "65699248R", "phone": "731169716"},  # the directory's own phone digit rule
         {"national_id": "65699248R", "date_of_birth": "9 Dec 1939"},  # /directory rejects it
     ],
 )
