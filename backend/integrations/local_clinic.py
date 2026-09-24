@@ -64,15 +64,25 @@ class LocalClinic:
             blocked = list(data["blocked"])
             for slot in data["slots"]:
                 specialty = specialties[providers[slot["provider_id"]]["specialty_id"]]
-                dob = date.fromisoformat(patient["date_of_birth"])
-                day = datetime.fromisoformat(slot["start_time"]).astimezone(config.TZ).date()
-                months = (day.year - dob.year) * 12 + day.month - dob.month - (day.day < dob.day)
                 reason = None
-                if months < specialty["min_age_months"] or (
-                    specialty["max_age_months"] is not None and months > specialty["max_age_months"]
+                # A name-only registration has no date of birth yet: the age check waits
+                # for reception, and the agent routes children under 14 to paediatrics.
+                if patient.get("date_of_birth"):
+                    dob = date.fromisoformat(patient["date_of_birth"])
+                    day = datetime.fromisoformat(slot["start_time"]).astimezone(config.TZ).date()
+                    months = (
+                        (day.year - dob.year) * 12 + day.month - dob.month - (day.day < dob.day)
+                    )
+                    if months < specialty["min_age_months"] or (
+                        specialty["max_age_months"] is not None
+                        and months > specialty["max_age_months"]
+                    ):
+                        reason = "not_eligible_age"
+                if (
+                    not reason
+                    and specialty["referral_required"]
+                    and specialty["id"] not in patient["referrals"]
                 ):
-                    reason = "not_eligible_age"
-                elif specialty["referral_required"] and specialty["id"] not in patient["referrals"]:
                     reason = "referral_required"
                 if reason:
                     item = {"provider_id": slot["provider_id"], "restriction": reason}

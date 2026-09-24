@@ -35,7 +35,10 @@ the same database. Keep this file to retain the diary across restarts.
 These writes are local only: Prosper's read-only records remain unchanged. Cancelling
 an upstream appointment locally does not release its upstream availability. For new
 local patients, insured specialist care needs staff verification because Prosper cannot
-verify their patient-specific authorization. Appointment emails follow the flow below.
+verify their patient-specific authorization. A new patient gives only their name and surnames
+(the caller-ID phone is kept to verify them on later calls). They book on a provisional
+private plan and complete DNI/NIE, date of birth and insurance at reception on arrival.
+Appointment emails follow the flow below.
 
 The local console's `/calendar` defaults to saved appointments; the Call reports view
 retains the scored practice reports. Start it with `make console CONSOLE_PORT=8001`

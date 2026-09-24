@@ -23,13 +23,13 @@ Rosario is a voice receptionist for clinics. It answers phone and browser calls,
 
 A caller can ask for a particular doctor, choose a clinic site, describe a time in ordinary language or request several appointments. Rosario looks up the patient and searches the clinic's availability before offering a slot. When details match several people, it asks follow-up questions. When a clinic rule prevents the booking, it explains the restriction instead of inventing an appointment.
 
-Confirmed registrations and appointment changes persist locally during the call. A new patient can register and book in the same conversation. If the caller changes their mind, Rosario uses the saved appointment to move or cancel it. Later calls see those changes, and local bookings block overlapping slots.
+Confirmed registrations and appointment changes persist locally during the call. A new patient registers with just their name and surnames, books in the same conversation, and is told to complete their registration at reception on arrival. If the caller changes their mind, Rosario uses the saved appointment to move or cancel it. Later calls see those changes, and local bookings block overlapping slots.
 
 Rosario can also handle a relative calling for someone else, explain that no eligible slot is available or record that a medical request needs human attention. It does not diagnose or provide treatment advice.
 
 ## Functionalities
 
-- **Patient registration:** Save new patient profiles during a call and use them to book immediately. Profiles remain available on later calls.
+- **Patient registration:** Register a new patient with just their name and book them immediately; they complete their registration at reception on arrival. Profiles remain available on later calls.
 - **Appointment management:** Book, move and cancel confirmed appointments, with a shared calendar that persists across calls and restarts.
 - **Audio and transcription tracking:** Save recordings, transcripts, tool inputs and results, and a decision timeline for each call. Staff can replay conversations and inspect how Rosario reached an outcome.
 - **Email and customer records:** With Resend enabled, automatically send final appointment summaries after hang-up to the identified patient's email on file, read directly from the backend record. Only patients without a usable email on file need to spell and confirm an address; callers can decline email. Callers can also consent to a saved customer record and welcome email; this record is separate from the clinic patient profile and does not create a login.

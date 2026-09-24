@@ -331,7 +331,7 @@ function PatientTab({ timeline }: { timeline: Timeline }) {
           <KeyValue
             className="mt-3"
             rows={[
-              ["date_of_birth", `${String(m.date_of_birth)} (${String(m.age)})`],
+              ["date_of_birth", m.date_of_birth ? `${String(m.date_of_birth)} (${String(m.age)})` : "\u2013"],
               ["has_visited_before", String(m.has_visited_before)],
               ["matched_on", Array.isArray(m.matched_on) ? (m.matched_on as string[]).join(", ") : "\u2013"],
               ["referrals", Array.isArray(m.referrals) && (m.referrals as string[]).length > 0 ? (m.referrals as string[]).join(", ") : "none"],

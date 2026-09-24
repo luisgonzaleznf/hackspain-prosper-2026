@@ -23,6 +23,14 @@ def normalized(value: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFKD", value).lower() if c.isalnum())
 
 
+def full_name(person: dict) -> str:
+    return normalized(
+        " ".join(
+            str(person.get(k) or "") for k in ("given_name", "first_surname", "second_surname")
+        )
+    )
+
+
 def phone_digits(value: str) -> str:
     digits = "".join(c for c in value if c.isdigit())
     if digits.startswith("00"):
@@ -78,14 +86,18 @@ class LocalStore:
         matches = []
         for patient in self.patients():
             name = " ".join(patient[k] for k in ("given_name", "first_surname", "second_surname"))
+            # A name-only registration holds no DNI/NIE or date of birth (None): it never matches them.
             checks = {
                 "name": all(
                     normalized(w) in normalized(name) for w in query.get("name", "").split()
                 ),
-                "national_id": normalized(query.get("national_id", ""))
-                == normalized(patient["national_id"]),
-                "phone": phone_digits(query.get("phone", "")) == phone_digits(patient["phone"]),
-                "date_of_birth": query.get("date_of_birth") == patient["date_of_birth"],
+                "national_id": bool(normalized(query.get("national_id", "")))
+                and normalized(query.get("national_id", ""))
+                == normalized(patient.get("national_id") or ""),
+                "phone": bool(phone_digits(query.get("phone", "")))
+                and phone_digits(query.get("phone", ""))
+                == phone_digits(patient.get("phone") or ""),
+                "date_of_birth": query.get("date_of_birth") == patient.get("date_of_birth"),
             }
             fields = [k for k, v in query.items() if v and k in checks]
             if fields and all(checks[k] for k in fields):
@@ -139,13 +151,28 @@ class LocalStore:
             verb = action["action"]
             if verb == "REGISTER":
                 patient_id = registration_id or "LP" + uuid.uuid4().hex
-                existing = db.execute(
-                    "SELECT patient_id FROM patients WHERE national_id=?", (action["national_id"],)
-                ).fetchone()
-                if existing and existing[0] != patient_id:
-                    raise ValueError(
-                        "This DNI/NIE is already registered. Use find_patient to verify the existing profile."
+                if action.get("national_id"):
+                    existing = db.execute(
+                        "SELECT patient_id FROM patients WHERE national_id=?",
+                        (action["national_id"],),
+                    ).fetchone()
+                    if existing and existing[0] != patient_id:
+                        raise ValueError(
+                            "This DNI/NIE is already registered. Use find_patient to verify the existing profile."
+                        )
+                elif action.get("phone"):
+                    # Without a DNI/NIE, the same name from the same phone is the same person.
+                    rows = db.execute(
+                        "SELECT data FROM patients WHERE patient_id != ?", (patient_id,)
                     )
+                    if any(
+                        full_name(other) == full_name(action)
+                        and phone_digits(other.get("phone") or "") == phone_digits(action["phone"])
+                        for other in (json.loads(row[0]) for row in rows)
+                    ):
+                        raise ValueError(
+                            "This patient is already registered from this phone. Verify them with find_patient: full name and phone number."
+                        )
                 record = {k: v for k, v in action.items() if k != "action"}
                 record.update(
                     patient_id=patient_id,
@@ -162,7 +189,9 @@ class LocalStore:
                     return {"patient_id": patient_id, "patient": record}
                 db.execute(
                     "INSERT INTO patients VALUES (?, ?, ?) ON CONFLICT(patient_id) DO UPDATE SET national_id=excluded.national_id, data=excluded.data",
-                    (patient_id, record["national_id"], json.dumps(record)),
+                    # The column is NOT NULL UNIQUE in existing databases: a name-only
+                    # registration keys it by its own patient_id until reception adds the DNI/NIE.
+                    (patient_id, record.get("national_id") or patient_id, json.dumps(record)),
                 )
                 result = {"patient_id": patient_id, "patient": record}
             elif verb in {"BOOK", "RESCHEDULE", "CANCEL"}:
@@ -216,7 +245,9 @@ class LocalStore:
                     status = "booked"
                 record.update(
                     patient_name=" ".join(
-                        patient[k] for k in ("given_name", "first_surname", "second_surname")
+                        patient[k]
+                        for k in ("given_name", "first_surname", "second_surname")
+                        if patient.get(k)
                     ),
                     source="local",
                     call_id=call_id,
