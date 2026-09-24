@@ -19,8 +19,8 @@ ROSARIO_DEMO_API=http://127.0.0.1:18762 ROSARIO_CLINIC_API=http://127.0.0.1:8001
 ```
 
 Open <http://127.0.0.1:4180/demo/>, choose a scenario, press the microphone orb,
-and allow microphone access. The first scenario supplies synthetic details for
-registering and booking a new patient. On subsequent calls that profile already exists.
+and allow microphone access. The first scenario registers a new patient by name only and books
+their first visit. On subsequent calls that profile already exists (name + scenario phone).
 Stop with the orb; Review call opens the recording and trace.
 
 The root `.env` must provide `OPENAI_API_KEY` and `PLATFORM_API_KEY`.

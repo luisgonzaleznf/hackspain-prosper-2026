@@ -448,19 +448,23 @@ def _spoken(dt: datetime) -> str:
 
 def patient_view(p: dict, today: date) -> dict:
     """What the model sees about a patient. Ids and phone are masked so they are never read out."""
-    return {
+    view = {
         "patient_id": p["patient_id"],
         "name": f"{p['given_name']} {p['first_surname']} {p['second_surname']}",
         "date_of_birth": p["date_of_birth"],
-        "age": _age(p["date_of_birth"], today),
+        # A local name-only registration has no date of birth, DNI/NIE or phone yet.
+        "age": _age(p["date_of_birth"], today) if p["date_of_birth"] else None,
         "has_visited_before": p["has_visited_before"],
         "plan_on_file": p["insurer"],
         "referrals": p["referrals"],
         "note": p["note"],
-        "national_id_ends": p["national_id"][-3:],
-        "phone_ends": p["phone"][-3:],
+        "national_id_ends": (p["national_id"] or "")[-3:],
+        "phone_ends": (p["phone"] or "")[-3:],
         "matched_on": p.get("matched_fields", []),
     }
+    if p.get("registration_pending"):
+        view["registration_pending"] = True
+    return view
 
 
 def _speakers(cat: dict | None, language: str) -> set[str] | None:
@@ -766,7 +770,7 @@ async def _by_national_id(session: CallSession, query: dict[str, str]) -> list[d
     held = [
         p
         for p in session.patients.values()
-        if clinic.normalize_national_id(p["national_id"]) == nid
+        if clinic.normalize_national_id(p["national_id"] or "") == nid
     ]
     matches = held or await session.clinic_client.directory(national_id=nid)
     session.log("lookup", path="held" if held else "national_id_only")

@@ -9,6 +9,22 @@ from app import clinic
 from app.session import CallSession
 from app.tools import patient_view
 
+# The scored registration: every REGISTER field. Local calls swap this section out (local_session).
+REGISTRATION_RULES = """\
+- A caller who is not on file and wants to be registered: once they say they are new and want to
+  register, do not ask again what they need, whether it is for them, or any other purpose question.
+  Reuse details already dictated, skip fields already given, and ask only the missing fields in
+  these four registration groups, in this order (these groups are the exception to one question at
+  a time): (1) full name with both surnames and date of birth; (2) DNI/NIE with its letter alone;
+  (3) phone number and "which insurer do you have, or are you paying privately?"; (4) email,
+  spelled out. Convert a natural date to YYYY-MM-DD. Pass insurer=privado only when the caller
+  says they are paying privately; never invent or default an insurer.
+  When the DNI/NIE or phone fails validation, retry that field only once. For the DNI/NIE retry,
+  ask in two halves: "the first four digits", then "the last four digits and the letter". Never
+  repeat the same digit-by-digit request, restart the form, or re-confirm a field that already
+  validated.
+"""
+
 STAGED_WRITE_RULES = """\
   As soon as every field is present, call record_registration immediately and wait for its
   successful result; do this before any read-back. It validates and stages the registration, so do
@@ -183,19 +199,8 @@ RULES YOU NEVER BREAK
   existing doctor and site unless the caller clearly asks for another; if a new doctor or site
   arrives in fragments, combine all fragments and resolve_names before searching, never guessing
   from the first fragment.
-- A caller who is not on file and wants to be registered: once they say they are new and want to
-  register, do not ask again what they need, whether it is for them, or any other purpose question.
-  Reuse details already dictated, skip fields already given, and ask only the missing fields in
-  these four registration groups, in this order (these groups are the exception to one question at
-  a time): (1) full name with both surnames and date of birth; (2) DNI/NIE with its letter alone;
-  (3) phone number and "which insurer do you have, or are you paying privately?"; (4) email,
-  spelled out. Convert a natural date to YYYY-MM-DD. Pass insurer=privado only when the caller
-  says they are paying privately; never invent or default an insurer.
-  When the DNI/NIE or phone fails validation, retry that field only once. For the DNI/NIE retry,
-  ask in two halves: "the first four digits", then "the last four digits and the letter". Never
-  repeat the same digit-by-digit request, restart the form, or re-confirm a field that already
-  validated.
 """
+    + REGISTRATION_RULES
     + STAGED_WRITE_RULES
     + """  If the caller corrects an identifier they gave ("sorry, 5 not 9"), use the corrected value:
   find_patient again with it if the chart is not yet confirmed; a corrected identifier that

@@ -1,8 +1,11 @@
 import pytest
+from app.demo import bot
 from app.demo import settings as store
 from app.demo.app import register_demo_routes
+from app.voice import gptlive
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from integrations.local_session import LocalCallSession
 
 
 @pytest.fixture
@@ -12,6 +15,11 @@ def client(tmp_path, monkeypatch):
     register_demo_routes(app)
     with TestClient(app) as client:
         yield client
+
+
+def test_demo_uses_gptlive_and_persistent_phone_session():
+    assert bot.gptlive is gptlive
+    assert issubclass(bot.DemoCallSession, LocalCallSession)
 
 
 SAVED = {"voice": "spruce", "preset": "serena", "opening_language": "es", "guidance": "Use plain language."}

@@ -42,6 +42,15 @@ One persona per case, each isolating a single front-desk difficulty on top of or
 
 ## Build invariants
 
+## Prosper dashboard cookie
+
+- When dashboard access returns HTTP 401 or 403, refresh the existing session cookie from signed-in Chrome at https://hackspain.getprosperapp.com/leaderboard/.
+- Open DevTools (Cmd+Option+I) → Application → Storage → Cookies → https://hackspain.getprosperapp.com. Copy only the Value of `prosper_dashboard`.
+- Add or update `PROSPER_DASHBOARD_COOKIE` in the repository-root `.env`. Never print the value, commit `.env`, or push it.
+- Check the current cookie before refreshing. From `leaderboard`, run `uv run --env-file ../.env python scripts/prosper_dash.py status`. The explicit env file is needed because the script otherwise looks for `leaderboard/.env`.
+
+## Build invariants (continued)
+
 - Look up real records and real availability before offering anything.
 - Verify identity before acting on records; check before any write (book, move, cancel).
 - Keep call state durable across mid-call changes of mind.

@@ -1,8 +1,8 @@
 # Resend emails for the public demo
 
 After a caller agrees to a booking or move, the backend automatically selects the
-identified patient's email from the record returned by the clinic lookup or a saved
-registration in this call. GPT-Live does not supply or recall the recipient. The booking
+identified patient's email from the record returned by the clinic lookup. A new patient
+registered by name in this call has no email on file. GPT-Live does not supply or recall the recipient. The booking
 tool returns `appointment_email.status=on_file` so the agent can explain that confirmation
 will go to the address on file without asking for it again. If no usable address is on
 file, the status is `needs_address`: the caller spells an address, the agent reads it back,
