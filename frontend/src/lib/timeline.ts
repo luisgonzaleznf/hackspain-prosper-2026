@@ -57,6 +57,7 @@ export interface Timeline {
   writes: { t: number; action: ClinicAction; result: Record<string, unknown> | null }[];
   fromNumber: string | null;
   callerIdMatches: string[];
+  callerIdName: string | null;
   identified: { patient_id: string; name: string; note?: string; plan?: string } | null;
   matchCount: number | null;
   engine: string | null;
@@ -483,6 +484,7 @@ export function project(detail: CallDetail): Timeline {
     writes,
     fromNumber,
     callerIdMatches,
+    callerIdName: detail.caller_id?.source === "caller_id" && callerIdMatches.length === 1 && callerIdMatches[0] === detail.caller_id.patient_id ? detail.caller_id.name : null,
     identified,
     matchCount,
     engine,
@@ -491,6 +493,21 @@ export function project(detail: CallDetail): Timeline {
     callerSeconds,
     agentSeconds,
   };
+}
+
+/** Display names may use caller ID; only lookup events populate `identified`. */
+export function callerLabel(timeline: Timeline | null): string {
+  if (!timeline) return "connecting";
+  if (timeline.identified) return timeline.identified.name;
+  const registered = timeline.writes.find((write) => write.action.action === "REGISTER" && savedWrite(write))?.action;
+  if (registered) {
+    const name = [registered.given_name, registered.first_surname, registered.second_surname].filter(Boolean).join(" ");
+    if (name) return name;
+  }
+  if (timeline.matchCount != null && timeline.matchCount > 1) return `${timeline.matchCount} matches`;
+  if (timeline.matchCount === 0) return "not in records";
+  if (timeline.callerIdName) return timeline.callerIdName;
+  return timeline.endedAt == null && (timeline.stage === "GREET" || timeline.stage === "IDENTIFY") ? "identifying" : "unknown caller";
 }
 
 /** The raw log minus the transport chatter, for the Raw tab's default filter. */

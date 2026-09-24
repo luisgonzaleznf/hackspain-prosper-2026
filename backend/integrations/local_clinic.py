@@ -102,10 +102,18 @@ class LocalClinic:
             survivors = [
                 p
                 for p in patients
+                # A name-only registration holds no DNI/NIE or date of birth: it never matches them.
                 if (
-                    "phone" not in query or phone_digits(query["phone"]) == phone_digits(p["phone"])
+                    "phone" not in query
+                    or (
+                        bool(phone_digits(query["phone"]))
+                        and phone_digits(query["phone"]) == phone_digits(p.get("phone") or "")
+                    )
                 )
-                and ("date_of_birth" not in query or query["date_of_birth"] == p["date_of_birth"])
+                and (
+                    "date_of_birth" not in query
+                    or query["date_of_birth"] == p.get("date_of_birth")
+                )
             ]
             if name:
                 spoken = set(_words(name))
@@ -228,7 +236,13 @@ class LocalClinic:
             )
             else 0
         )
-        dob = date.fromisoformat(patient["date_of_birth"]) if patient else None
+        # A name-only registration has no date of birth yet: the age check waits for
+        # reception, and the agent routes children under 14 to paediatrics.
+        dob = (
+            date.fromisoformat(patient["date_of_birth"])
+            if patient and patient.get("date_of_birth")
+            else None
+        )
 
         def of_age(day: date) -> bool:
             if dob is None:

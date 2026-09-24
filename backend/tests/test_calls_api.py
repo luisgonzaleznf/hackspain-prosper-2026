@@ -1,4 +1,5 @@
 import json
+import sqlite3
 
 import pytest
 from app import config
@@ -180,3 +181,62 @@ def test_unknown_call_and_traversal_are_404(client):
     assert client.get("/api/calls/nope").status_code == 404
     assert client.get("/api/calls/nope/audio").status_code == 404
     assert client.get("/api/calls/..%2F..%2Fetc%2Fpasswd").status_code == 404
+
+
+def _chart(patient_id="P01842", phone="600000000", **names):
+    chart = {
+        "patient_id": patient_id,
+        "given_name": "Ana",
+        "first_surname": "García",
+        "second_surname": "López",
+        "national_id": f"ID{patient_id}",
+        "phone": phone,
+        **names,
+    }
+    with LocalStore().connect() as db:
+        db.execute(
+            "INSERT INTO patients VALUES (?, ?, ?)",
+            (patient_id, chart["national_id"], json.dumps(chart)),
+        )
+
+
+def test_caller_name_resolves_exact_logged_phone_match(client):
+    _chart()
+    body = client.get(f"/api/calls/{CALL}").json()
+    assert body["caller_id"] == {
+        "patient_id": "P01842", "name": "Ana García López", "source": "caller_id",
+    }
+    # The display fallback neither invents a lookup event nor changes the transcript.
+    assert [e["kind"] for e in body["events"]] == [
+        e["kind"] for e in LINES if e["kind"] != "codex"
+    ]
+    assert client.get(f"/api/calls/{CALL}").json()["caller_id"] == body["caller_id"]
+
+
+def test_a_chart_whose_phone_changed_does_not_supply_a_name(client):
+    _chart(phone="611111111")
+    assert client.get(f"/api/calls/{CALL}").json()["caller_id"] is None
+
+
+@pytest.mark.parametrize("matches", [[], ["P01842", "P00001"]])
+def test_no_unique_logged_match_skips_directory_lookup(client, tmp_path, monkeypatch, matches):
+    _chart()
+
+    def unexpected(self, patient_id):
+        raise AssertionError("no lookup without exactly one logged match")
+
+    monkeypatch.setattr(LocalStore, "patient", unexpected)
+    lines = [LINES[0], {**LINES[1], "matches": matches}, LINES[-1]]
+    (tmp_path / "calls" / f"{CALL}.jsonl").write_text("\n".join(map(json.dumps, lines)))
+    assert client.get(f"/api/calls/{CALL}").json()["caller_id"] is None
+
+
+def test_directory_failure_keeps_recording_and_transcript_available(client, monkeypatch):
+    def broken(self, patient_id):
+        raise sqlite3.OperationalError("database is locked")
+
+    monkeypatch.setattr(LocalStore, "patient", broken)
+    response = client.get(f"/api/calls/{CALL}")
+    assert response.status_code == 200
+    assert response.json()["caller_id"] is None
+    assert response.json()["transcript"][0]["text"] == "Clínica Arenal."

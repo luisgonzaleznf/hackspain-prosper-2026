@@ -33,6 +33,10 @@ confirmation. Future calls see those records, and bookings block overlapping slo
 a cancellation frees its slot. `LOCAL_CLINIC_DB` can override the database path; voice
 and console must use the same database. Re-seeding resets the diary.
 
+A new patient gives only their name and surnames (the caller-ID phone is kept to verify
+them on later calls). They book on a provisional private plan and complete DNI/NIE, date of
+birth and insurance at reception on arrival. Appointment emails follow the flow below.
+
 The local console's `/calendar` shows a window of the diary, with the appointments
 calls made or changed linked to their call. Start it with `make console CONSOLE_PORT=8001`
 after building the frontend (`cd ../frontend && pnpm build`). For Vite development,

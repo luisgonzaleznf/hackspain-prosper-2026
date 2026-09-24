@@ -61,6 +61,15 @@ def normalized(value: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFKD", value).lower() if c.isalnum())
 
 
+def name_key(person: dict) -> str:
+    """The full name folded for comparison (accents, case, spaces and hyphens ignored)."""
+    return normalized(
+        " ".join(
+            str(person.get(k) or "") for k in ("given_name", "first_surname", "second_surname")
+        )
+    )
+
+
 def phone_digits(value: str) -> str:
     digits = "".join(c for c in value if c.isdigit())
     if digits.startswith("00"):
@@ -209,13 +218,28 @@ class LocalStore:
             verb = action["action"]
             if verb == "REGISTER":
                 patient_id = registration_id or "LP" + uuid.uuid4().hex
-                existing = db.execute(
-                    "SELECT patient_id FROM patients WHERE national_id=?", (action["national_id"],)
-                ).fetchone()
-                if existing and existing[0] != patient_id:
-                    raise ValueError(
-                        "This DNI/NIE is already registered. Use find_patient to verify the existing profile."
+                if action.get("national_id"):
+                    existing = db.execute(
+                        "SELECT patient_id FROM patients WHERE national_id=?",
+                        (action["national_id"],),
+                    ).fetchone()
+                    if existing and existing[0] != patient_id:
+                        raise ValueError(
+                            "This DNI/NIE is already registered. Use find_patient to verify the existing profile."
+                        )
+                elif action.get("phone"):
+                    # Without a DNI/NIE, the same name from the same phone is the same person.
+                    rows = db.execute(
+                        "SELECT data FROM patients WHERE patient_id != ?", (patient_id,)
                     )
+                    if any(
+                        name_key(other) == name_key(action)
+                        and phone_digits(other.get("phone") or "") == phone_digits(action["phone"])
+                        for other in (json.loads(row[0]) for row in rows)
+                    ):
+                        raise ValueError(
+                            "This patient is already registered from this phone. Verify them with find_patient: full name and phone number."
+                        )
                 record = {k: v for k, v in action.items() if k != "action"}
                 record.update(
                     patient_id=patient_id,
@@ -234,7 +258,9 @@ class LocalStore:
                     return {"patient_id": patient_id, "patient": record}
                 db.execute(
                     "INSERT INTO patients VALUES (?, ?, ?) ON CONFLICT(patient_id) DO UPDATE SET national_id=excluded.national_id, data=excluded.data",
-                    (patient_id, record["national_id"], json.dumps(record)),
+                    # The column is NOT NULL UNIQUE in existing databases: a name-only
+                    # registration keys it by its own patient_id until reception adds the DNI/NIE.
+                    (patient_id, record.get("national_id") or patient_id, json.dumps(record)),
                 )
                 result = {"patient_id": patient_id, "patient": record}
             elif verb in {"BOOK", "RESCHEDULE", "CANCEL"}:

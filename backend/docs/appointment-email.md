@@ -1,8 +1,8 @@
 # Resend emails for the public demo
 
 After a caller agrees to a booking or move, the backend automatically selects the
-identified patient's email from the record returned by the clinic lookup or a saved
-registration in this call. GPT-Live does not supply or recall the recipient. The booking
+identified patient's email from the record returned by the clinic lookup. A new patient
+registered by name in this call has no email on file. GPT-Live does not supply or recall the recipient. The booking
 tool returns `appointment_email.status=on_file` so the agent can explain that confirmation
 will go to the address on file without asking for it again. If no usable address is on
 file, the status is `needs_address`: the caller spells an address, the agent reads it back,
@@ -60,13 +60,11 @@ email_results = await session.finish_demo()
 ```
 
 This saves the final proposals in the call JSONL, sends the requested emails and logs
-`call_ended`. Repeated finalization is a no-op. It does **not** call Prosper's submission
-API: a Twilio/browser call ID is not registered with Prosper. Audio and normal call
-artifacts are still saved by the existing handlers.
+`call_ended`. Repeated finalization is a no-op. Audio and normal call artifacts are still
+saved by the existing handlers.
 
-For scored Prosper calls, the normal `CallSession.finish()` continues to submit every
-action and never contacts Resend. The tools and prompt exclude both email and customer
-enrollment, and their handlers also reject direct invocation outside human demo mode.
+Outside human demo mode the tools and prompt exclude both email and customer enrollment,
+and their handlers also reject direct invocation.
 
 ## Customer welcome emails
 

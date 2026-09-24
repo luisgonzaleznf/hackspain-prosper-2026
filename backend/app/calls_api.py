@@ -15,6 +15,7 @@ Never mount this on the voice server: that app goes under a public tunnel, and t
 every transcript. `app/dashboard.py` serves it on its own port.
 """
 
+import asyncio
 import json
 import sqlite3
 import wave
@@ -245,11 +246,11 @@ def list_calls() -> dict[str, Any]:
 
 
 @router.get("/{call_id}")
-def get_call(call_id: str) -> dict[str, Any]:
+async def get_call(call_id: str) -> dict[str, Any]:
     path = _calls_dir() / f"{call_id}.jsonl"
     if not path.is_file() or path.parent.resolve() != _calls_dir().resolve():
         raise HTTPException(404, f"No log for call {call_id}.")
-    return _detail(path)
+    return await asyncio.to_thread(_detail, path)
 
 
 @router.get("/{call_id}/audio")

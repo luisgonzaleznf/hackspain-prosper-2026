@@ -189,6 +189,14 @@ def message(session: "CallSession", action: dict, address: str) -> dict:
     ]
     if location.get("address"):
         fields.append(("Dirección / Address", location["address"]))
+    if patient.get("registration_pending"):
+        fields.append(
+            (
+                "Paciente nuevo / New patient",
+                "Complete su registro en recepción al llegar (DNI/NIE y tarjeta del seguro). "
+                "Please complete your registration at reception on arrival (ID and insurance card).",
+            )
+        )
     if action["action"] == "RESCHEDULE":
         previous = datetime.fromisoformat(
             session.appointments[action["appointment_id"]]["start_time"]

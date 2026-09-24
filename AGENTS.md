@@ -40,6 +40,12 @@ One persona per case, each isolating a single front-desk difficulty on top of or
 
 **Jury — final boss, human.** Judges what the leaderboard ignores: how the call sounds, interruption handling, whether the caller feels known, call orchestration, live visibility, post-call insight, safety, language coverage, and demonstrated proof that the agent works.
 
+## After the event
+
+The Prosper platform is gone. Rosario now runs on its own clinic database: `make seed` (in
+`backend/`) rebuilds it from `backend/seed/` with the same 3 sites, 12 doctors and rules,
+~3000 patients and a realistic diary.
+
 ## Build invariants
 
 - Look up real records and real availability before offering anything.

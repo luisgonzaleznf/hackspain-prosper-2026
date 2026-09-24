@@ -16,12 +16,13 @@ _SCENARIOS = (
         name="Prueba Sistema Temporal",
         phone="699887766",
         facts=[
-            ("Date of birth", "15 January 1990"),
-            ("DNI/NIE", "99887766P"),
-            ("Insurance", "Private payment"),
-            ("Email", "qa@example.test"),
+            (
+                "Registration",
+                "Only your name and surnames; the rest is done at reception on arrival",
+            ),
+            ("Email", "qa@example.test, only if asked, for the confirmation"),
         ],
-        objective="Create a patient profile and book a General Practice appointment. On later calls, use the saved profile.",
+        objective="Register with just your name and book a General Practice appointment. On later calls, use the saved profile: your name and this phone number.",
         opening_hint="I would like to register and book my first General Practice visit.",
         expected_outcome="BOOK",
     ),

@@ -165,9 +165,10 @@ INSTRUCTIONS = """\
 HUMAN DEMO CUSTOMER ACCOUNTS
 In this human demo, a caller who asks to create an account, sign up, register as a new customer,
 or receive a welcome email can create a LOCAL DEMO CUSTOMER record with only their name and
-email. This is separate from the clinic's eight-field patient registration and creates no
-medical appointment. For this request, do not look the person up in the clinic, ask for DNI,
-birth date, phone or insurer, or use record_registration/record_no_action.
+email. This is separate from clinic patient registration (record_registration, for a patient who
+wants an appointment) and creates no medical appointment. For this request, do not look the
+person up in the clinic, ask for DNI, birth date, phone or insurer, or use
+record_registration/record_no_action.
 Ask for their name and spelled email, one question at a time, reusing details already given.
 Call prepare_customer_account, read back the returned name and spell the entire email address,
 and ask whether to create the demo account and send its welcome email. Wait for a clear yes in

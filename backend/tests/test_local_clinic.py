@@ -6,9 +6,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 import pytest
-from app import clinic, config
+from app import clinic, config, prompt
 from app.session import CallSession
-from app.tools import TOOLS, call_tool
+from app.tools import REGISTER_FIELDS, TOOLS, call_tool
 from integrations.local_store import LocalStore
 from integrations.twilio import TwilioCallSession
 
@@ -26,6 +26,9 @@ PROFILE = {
     "email": "ana@mail.es",
     "insurer": "privado",
 }
+# A new local patient gives only a name; the phone comes from caller ID, never asked.
+NEW_PATIENT = {"given_name": "Ana", "first_surname": "García", "second_surname": "López"}
+PHONE = "+34612345678"
 # Already on file: same name as the caller who registers, another DNI and phone.
 SEEDED = patient(
     "P001",
@@ -74,7 +77,7 @@ def run(session, tool_name, **args):
 
 
 def register(session, **overrides):
-    result = run(session, "record_registration", **{**PROFILE, "confirmed": True, **overrides})
+    result = run(session, "record_registration", **{**NEW_PATIENT, "confirmed": True, **overrides})
     assert "error" not in result, result
     return result["patient_id"]
 
@@ -127,10 +130,19 @@ def identify(session, national_id=PROFILE["national_id"]):
     )
 
 
+def identify_by_phone(session):
+    return run(session, "find_patient", name="Ana García López", phone="612345678")
+
+
 def test_register_book_and_recall_in_new_call(setup):
-    first = TwilioCallSession(call_id="CA-first", started_at=NOW)
-    assert "error" in run(first, "record_registration", **PROFILE)
+    first = TwilioCallSession(call_id="CA-first", started_at=NOW, from_number=PHONE)
+    assert "error" in run(first, "record_registration", **NEW_PATIENT)
     patient_id = register(first)
+    saved = first.store.patient(patient_id)
+    assert saved["registration_pending"] is True
+    assert saved["insurer"] == "privado"
+    assert saved["phone"] == "612345678"
+    assert saved["national_id"] is None and saved["date_of_birth"] is None
     assert times(search(first, patient_id)) == FREE
     booking = book(first, patient_id)
     assert booking["persisted"] is True
@@ -142,8 +154,13 @@ def test_register_book_and_recall_in_new_call(setup):
         TwilioCallSession.start(call_id="CA-second", from_number="+34612345678", started_at=NOW)
     )
     assert second.caller_matches[0]["patient_id"] == patient_id
+    assert '"registration_pending": true' in prompt._caller_id(second)
     assert "error" in run(second, "list_appointments", patient_id=patient_id)
-    assert identify(second)["verified_patient_ids"] == [patient_id]
+    # A chart without a date of birth can't be verified by one; name + phone verifies it.
+    unverified = run(second, "find_patient", name="Ana García López", date_of_birth="1988-03-14")
+    # (The seeded namesake born that day, P001, is verified by it: a different chart.)
+    assert patient_id not in unverified["verified_patient_ids"]
+    assert patient_id in identify_by_phone(second)["verified_patient_ids"]
     diary = run(second, "list_appointments", patient_id=patient_id)["appointments"]
     assert diary[0]["appointment_id"] == booking["appointment_id"]
 
@@ -197,23 +214,46 @@ def test_seeded_patient_books_and_sees_it_in_a_later_call(setup):
 
 
 def test_duplicate_registration_and_identity_guard(setup):
-    first = TwilioCallSession(call_id="CA-one", started_at=NOW)
+    first = TwilioCallSession(call_id="CA-one", started_at=NOW, from_number=PHONE)
     patient_id = register(first)
-    second = TwilioCallSession(call_id="CA-two", started_at=NOW)
-    assert "error" in run(second, "record_registration", **PROFILE, confirmed=True)
-    assert "error" in run(
-        second,
-        "record_registration",
-        **{**PROFILE, "national_id": SEEDED["national_id"]},
-        confirmed=True,
-    )
-    run(second, "find_patient", national_id=PROFILE["national_id"])
+    second = TwilioCallSession(call_id="CA-two", started_at=NOW, from_number=PHONE)
+    assert "error" in run(second, "record_registration", **NEW_PATIENT, confirmed=True)
+    # The name alone, or an identifier the chart doesn't hold, never verifies.
+    run(second, "find_patient", name="Ana García López")
+    run(second, "find_patient", name="Ana García López", date_of_birth="")
     search(second, patient_id)
     assert "error" in book(second, patient_id)
     assert "error" in book(second, patient_id, confirmed=False)
     assert first.store.appointments(patient_id) == []
-    identify(second)
+    identify_by_phone(second)
     assert book(second, patient_id)["persisted"]
+    # A namesake on another line is a different person.
+    other = TwilioCallSession(call_id="CA-three", started_at=NOW, from_number="+34699000222")
+    assert register(other) != patient_id
+    # Full profiles (seeded, not phone-registered) still refuse a repeated DNI/NIE.
+    LocalStore().save("seed", {**PROFILE, "action": "REGISTER"})
+    with pytest.raises(ValueError):
+        LocalStore().save("seed-again", {**PROFILE, "action": "REGISTER"})
+
+
+def test_siblings_on_one_phone_and_withheld_caller_id(setup):
+    family = TwilioCallSession(call_id="CA-family", started_at=NOW, from_number=PHONE)
+    ana = register(family)
+    mariana = register(family, given_name="Mariana")
+    later = TwilioCallSession(call_id="CA-family-2", started_at=NOW)
+    # "Ana" is inside "Mariana" and both charts hold this phone: the spoken full name decides.
+    assert identify_by_phone(later)["verified_patient_ids"] == [ana]
+    found = run(later, "find_patient", name="Mariana García López", phone="612345678")
+    assert found["verified_patient_ids"] == sorted([ana, mariana])
+    # Twilio's withheld-number placeholder is never stored as the patient's phone, and a
+    # caller ID with no digits never matches charts that hold no phone.
+    hidden = TwilioCallSession(call_id="CA-hidden", started_at=NOW, from_number="+266696687")
+    assert LocalStore().patient(register(hidden, given_name="Luz"))["phone"] is None
+    for withheld in ("+266696687", "anonymous"):
+        stranger = asyncio.run(
+            TwilioCallSession.start(call_id=f"CA-{withheld}", from_number=withheld, started_at=NOW)
+        )
+        assert stranger.caller_matches == []
 
 
 def test_rechecks_availability_before_write(setup):
@@ -229,10 +269,17 @@ def test_rechecks_availability_before_write(setup):
 
 def test_local_age_and_referral_rules(setup):
     session = TwilioCallSession(call_id="CA-child", started_at=NOW)
-    patient_id = register(session, date_of_birth="2020-01-01")
+    child = {**PROFILE, "date_of_birth": "2020-01-01", "action": "REGISTER"}
+    patient_id = LocalStore().save("seed", child)["patient_id"]
+    found = run(
+        session, "find_patient", name="Ana García López", national_id=PROFILE["national_id"]
+    )
+    assert found["verified_patient_ids"] == [patient_id]
     result = search(session, patient_id)
     assert result["slots_found"] == 0
     assert result["blocked"][0]["restriction"] == "not_eligible_age"
+    # No date of birth on file yet: the age check waits for reception.
+    assert search(session, register(session, given_name="Pedro"))["slots_found"] == 4
     clinic._catalogue["specialties"][0].update(min_age_months=0, referral_required=True)
     result = search(session, patient_id)
     assert result["slots_found"] == 0
@@ -292,6 +339,13 @@ def test_plain_tools_keep_original_contract_and_clear_does_not_undo_saved(setup)
         "confirmed"
         not in next(t for t in TOOLS if t["name"] == "record_booking")["parameters"]["required"]
     )
+    registration = next(t for t in local if t["name"] == "record_registration")["parameters"]
+    assert registration["required"] == ["given_name", "first_surname", "confirmed"]
+    assert set(registration["properties"]) == {*NEW_PATIENT, "patient_id", "confirmed"}
+    plain_registration = next(t for t in TOOLS if t["name"] == "record_registration")
+    assert plain_registration["parameters"]["required"] == REGISTER_FIELDS
+    plain = run(CallSession(call_id="plain-registration"), "record_registration", **NEW_PATIENT)
+    assert "Still missing" in plain["error"]
     patient_id = register(session)
     search(session, patient_id)
     book(session, patient_id)
@@ -301,15 +355,18 @@ def test_plain_tools_keep_original_contract_and_clear_does_not_undo_saved(setup)
 
 
 def test_two_registrations_and_explicit_correction(setup):
-    session = TwilioCallSession("CAfamilies", started_at=NOW)
+    session = TwilioCallSession("CAfamilies", started_at=NOW, from_number=PHONE)
     first = register(session)
-    second = register(session, given_name="Pedro", national_id="87654321X")
+    assert register(session) == first  # A retry of the same name reuses the profile.
+    second = register(session, given_name="Pedro")
     assert first != second
-    corrected = register(session, patient_id=first, email="corrected@example.test")
+    corrected = register(session, patient_id=first, second_surname="Lopes")
     assert corrected == first
-    assert {p["patient_id"] for p in LocalStore().patients()} >= {first, second}
+    single = register(session, given_name="John", first_surname="Smith", second_surname="")
+    assert {p["patient_id"] for p in LocalStore().patients()} >= {first, second, single}
     assert LocalStore().patient(second)["given_name"] == "Pedro"
-    assert LocalStore().patient(first)["email"] == "corrected@example.test"
+    assert LocalStore().patient(first)["second_surname"] == "Lopes"
+    assert LocalStore().patient(single)["second_surname"] == ""
     assert LocalStore().patient(first)["insurer_authorizations"] == []
 
 
@@ -412,7 +469,7 @@ def test_persisted_booking_emails_only_if_still_active(
     monkeypatch.setattr(appointment_email, "send_message", sender)
     session = TwilioCallSession("CApersisted-email", started_at=NOW)
     if existing_patient:
-        patient_id = register(TwilioCallSession("CAearlier-registration", started_at=NOW))
+        patient_id = LocalStore().save("seed", {**PROFILE, "action": "REGISTER"})["patient_id"]
         found = identify(session)
         assert found["verified_patient_ids"] == [patient_id]
     else:
@@ -420,14 +477,26 @@ def test_persisted_booking_emails_only_if_still_active(
     search(session, patient_id)
     booking = book(session, patient_id)
     appointment = booking["appointment_id"]
-    assert booking["appointment_email"] == {"patient_id": patient_id, "status": "on_file"}
-    assert session.appointment_emails == {}  # No model-supplied recipient or confirmation.
+    if existing_patient:
+        assert booking["appointment_email"] == {"patient_id": patient_id, "status": "on_file"}
+        assert session.appointment_emails == {}  # No model-supplied recipient or confirmation.
+        address = PROFILE["email"]
+    else:
+        # A name-only registration has no email: it is asked for only to send the confirmation.
+        assert booking["appointment_email"] == {"patient_id": patient_id, "status": "needs_address"}
+        address = "ana.nueva@mail.es"
+        captured = run(session, "set_appointment_email", patient_id=patient_id, email=address)
+        assert captured["email_to_read_back"] == address
+        confirmed = run(session, "confirm_appointment_email", patient_id=patient_id, email=address)
+        assert confirmed["status"] == "confirmed"
     if cancel:
         run(session, "record_cancellation", appointment_id=appointment, confirmed=True)
     asyncio.run(session.finish())
     assert sender.await_count == (0 if cancel else 1)
     if not cancel:
-        assert sender.call_args.args[0]["to"] == [PROFILE["email"]]
+        sent = sender.call_args.args[0]
+        assert sent["to"] == [address]
+        assert ("registration at reception on arrival" in sent["text"]) is not existing_patient
     assert len(LocalStore().appointments(patient_id)) == (0 if cancel else 1)
 
 
@@ -440,6 +509,10 @@ def test_local_prompt_separates_persisted_writes_from_staged_registration(setup,
     assert "do not wait for confirmation" not in local
     assert "the new patient CAN book" in local
     assert "confirmed=true" in local
+    assert "four registration groups" in staged
+    assert "four registration groups" not in local
+    assert "register as a new patient at reception" in local
+    assert "needs_address" in local
 
 
 def test_a_hyphenated_surname_is_verified_from_its_spoken_words(setup):
