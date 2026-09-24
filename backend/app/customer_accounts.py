@@ -110,7 +110,6 @@ def _message(account: dict, address: str) -> dict:
     html = f"""<!doctype html><html lang="es"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;background:#f3f5f2;font-family:Arial,sans-serif;color:#152a22;padding:24px 12px">
 <div style="max-width:480px;margin:auto;background:white;border-radius:16px;padding:28px">
-<p style="letter-spacing:2px;font-size:12px">ROSARIO · DEMO</p>
 <h1 style="font-size:25px">Tu cuenta está lista</h1>
 <p>Hola {escape(name)},</p><p>Hemos guardado tu nombre y correo en la base de datos local de la demo.</p>
 <p>Your Rosario demo customer account is ready. Your name and email have been saved.</p>

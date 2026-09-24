@@ -199,7 +199,6 @@ def message(session: "CallSession", action: dict, address: str) -> dict:
 <body style="margin:0;background:#2d1012;font-family:Helvetica,Arial,sans-serif;color:#fefefe">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:32px 12px">
 <table role="presentation" width="100%" style="max-width:520px;background:#14090a;border:1px solid #2d1012;border-radius:35px" cellspacing="0" cellpadding="0"><tr><td style="padding:32px">
-<p style="margin:0 0 24px;color:#bc0400;font-size:10px;font-weight:400;letter-spacing:2.5px;text-transform:uppercase">ROSARIO · {escape(clinic_name)}</p>
 <h1 style="font-size:28px;line-height:1.3;margin:0 0 16px;font-weight:300;letter-spacing:-0.56px">{escape(title)}</h1>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0">{rows}</table>
 <p style="border-top:1px solid #5e1f25;margin:24px 0 0;padding-top:16px;font-size:12px;line-height:1.8;font-weight:300;color:#d4a5a5">{escape(disclaimer)}</p>
