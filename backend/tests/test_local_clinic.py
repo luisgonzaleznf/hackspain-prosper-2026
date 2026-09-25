@@ -216,9 +216,8 @@ def test_seeded_patient_books_and_sees_it_in_a_later_call(setup):
 def test_duplicate_registration_and_identity_guard(setup):
     first = TwilioCallSession(call_id="CA-one", started_at=NOW, from_number=PHONE)
     patient_id = register(first)
-    second = TwilioCallSession(call_id="CA-two", started_at=NOW, from_number=PHONE)
-    assert "error" in run(second, "record_registration", **NEW_PATIENT, confirmed=True)
-    # The name alone, or an identifier the chart doesn't hold, never verifies.
+    # Caller ID withheld: the name alone, or an identifier the chart doesn't hold, never verifies.
+    second = TwilioCallSession(call_id="CA-two", started_at=NOW)
     run(second, "find_patient", name="Ana García López")
     run(second, "find_patient", name="Ana García López", date_of_birth="")
     search(second, patient_id)
@@ -231,9 +230,13 @@ def test_duplicate_registration_and_identity_guard(setup):
     other = TwilioCallSession(call_id="CA-three", started_at=NOW, from_number="+34699000222")
     assert register(other) != patient_id
     # Full profiles (seeded, not phone-registered) still refuse a repeated DNI/NIE.
-    LocalStore().save("seed", {**PROFILE, "action": "REGISTER"})
+    elsewhere = {**PROFILE, "phone": "600999888", "action": "REGISTER"}
+    LocalStore().save("seed", elsewhere)
     with pytest.raises(ValueError):
-        LocalStore().save("seed-again", {**PROFILE, "action": "REGISTER"})
+        LocalStore().save("seed-again", {**elsewhere, "phone": "600999777"})
+    # The same full name from the same phone is refused even with a new DNI/NIE.
+    with pytest.raises(ValueError, match="already registered from this phone"):
+        LocalStore().save("dup", {**PROFILE, "national_id": "00000000T", "action": "REGISTER"})
 
 
 def test_siblings_on_one_phone_and_withheld_caller_id(setup):
@@ -341,7 +344,13 @@ def test_plain_tools_keep_original_contract_and_clear_does_not_undo_saved(setup)
     )
     registration = next(t for t in local if t["name"] == "record_registration")["parameters"]
     assert registration["required"] == ["given_name", "first_surname", "confirmed"]
-    assert set(registration["properties"]) == {*NEW_PATIENT, "patient_id", "confirmed"}
+    assert set(registration["properties"]) == {
+        *NEW_PATIENT,
+        "date_of_birth",
+        "national_id",
+        "patient_id",
+        "confirmed",
+    }
     plain_registration = next(t for t in TOOLS if t["name"] == "record_registration")
     assert plain_registration["parameters"]["required"] == REGISTER_FIELDS
     plain = run(CallSession(call_id="plain-registration"), "record_registration", **NEW_PATIENT)
@@ -528,3 +537,114 @@ def test_a_hyphenated_surname_is_verified_from_its_spoken_words(setup):
     session = TwilioCallSession(call_id="CA-hyphen", started_at=NOW)
     found = run(session, "find_patient", name="Luis García Moreno", date_of_birth="1970-01-01")
     assert found["verified_patient_ids"] == ["P002"]
+
+
+# Production call CA2b5804173eaa1884479dc80c17b6ff5b: registered by name only the day before, he
+# called again from the same number, gave his name and date of birth, was not found, was told
+# he was already registered, and was asked for the phone he was calling from. He hung up.
+LUIS = {"given_name": "Luis", "first_surname": "González", "second_surname": "Navarro"}
+LUIS_LINE = "+34633977818"
+
+
+def registered_yesterday() -> str:
+    yesterday = TwilioCallSession(call_id="CA-yesterday", started_at=NOW, from_number=LUIS_LINE)
+    patient_id = register(yesterday, **LUIS)
+    chart = LocalStore().patient(patient_id)
+    assert (chart["phone"], chart["date_of_birth"]) == ("633977818", None)
+    return patient_id
+
+
+def test_caller_id_and_full_name_identify_a_name_only_patient_and_save_his_birth_date(setup):
+    patient_id = registered_yesterday()
+    today = asyncio.run(
+        TwilioCallSession.start(
+            call_id="CA2b5804173eaa1884479dc80c17b6ff5b", from_number=LUIS_LINE, started_at=NOW
+        )
+    )
+    assert [m["patient_id"] for m in today.caller_matches] == [patient_id]
+    found = run(today, "find_patient", name="Luis González Navarro", date_of_birth="1998-12-03")
+    assert found["verified_patient_ids"] == [patient_id]
+    assert [m["patient_id"] for m in found["matches"]] == [patient_id]
+    assert found["matches"][0]["date_of_birth"] == "1998-12-03"
+    assert "do not ask for their phone number" in found["note"]
+    assert LocalStore().patient(patient_id)["date_of_birth"] == "1998-12-03"
+    # The agent registers him anyway: that resolves to his profile, never "ask for the phone".
+    again = run(today, "record_registration", **LUIS, confirmed=True)
+    assert "error" not in again, again
+    assert (again["patient_id"], again["already_registered"]) == (patient_id, True)
+    assert "Do not ask for their phone number." in again["note"]
+    luises = [p for p in LocalStore().patients() if p["given_name"] == "Luis"]
+    assert [p["patient_id"] for p in luises] == [patient_id]
+    assert today.actions == []  # nothing new was registered, so nothing is reported as one
+    search(today, patient_id)
+    assert book(today, patient_id)["persisted"]
+
+
+def test_registration_from_the_registered_line_resolves_to_the_existing_profile(setup):
+    patient_id = registered_yesterday()
+    # The exact order of the production call: nobody found, then "new patient? yes".
+    today = TwilioCallSession(call_id="CA-today", started_at=NOW, from_number=LUIS_LINE)
+    result = run(today, "record_registration", **LUIS, date_of_birth="1998-12-03", confirmed=True)
+    assert "error" not in result, result
+    assert result["patient_id"] == patient_id and result["already_registered"]
+    assert result["verified_patient_ids"] == [patient_id]
+    assert LocalStore().patient(patient_id)["date_of_birth"] == "1998-12-03"
+    assert run(today, "list_appointments", patient_id=patient_id)["appointments"] == []
+
+
+def test_caller_id_never_verifies_against_a_conflict_or_from_another_line(setup):
+    patient_id = registered_yesterday()
+    first = TwilioCallSession(call_id="CA-dob", started_at=NOW, from_number=LUIS_LINE)
+    run(first, "find_patient", name="Luis González Navarro", date_of_birth="1998-12-03")
+    # A date of birth on file that differs from the one said does not verify, nor register.
+    later = TwilioCallSession(call_id="CA-wrong-dob", started_at=NOW, from_number=LUIS_LINE)
+    wrong = run(later, "find_patient", name="Luis González Navarro", date_of_birth="1998-12-04")
+    assert wrong["verified_patient_ids"] == [] and "date of birth" in wrong["note"]
+    refused = run(later, "record_registration", **LUIS, date_of_birth="1998-12-04", confirmed=True)
+    assert "date of birth" in refused["error"]
+    assert LocalStore().patient(patient_id)["date_of_birth"] == "1998-12-03"
+    # Another patient's DNI/NIE is never adopted, and never verifies him.
+    taken = run(
+        later, "find_patient", name="Luis González Navarro", national_id=SEEDED["national_id"]
+    )
+    assert taken["verified_patient_ids"] == []
+    assert LocalStore().patient(patient_id)["national_id"] is None
+    # The full name alone, on his own line, is enough; a partial name is not.
+    assert run(later, "find_patient", name="Luis González")["verified_patient_ids"] == []
+    alone = run(later, "find_patient", name="luis gonzalez navarro")
+    assert alone["verified_patient_ids"] == [patient_id]
+    # From another line the full name alone verifies nobody.
+    other = TwilioCallSession(call_id="CA-other", started_at=NOW, from_number="+34699000222")
+    assert run(other, "find_patient", name="Luis González Navarro")["verified_patient_ids"] == []
+    assert "error" in run(other, "list_appointments", patient_id=patient_id)
+
+
+def test_a_dni_or_birth_date_given_is_saved_never_dropped(setup):
+    patient_id = registered_yesterday()
+    call = TwilioCallSession(call_id="CA-dni", started_at=NOW, from_number=LUIS_LINE)
+    found = run(call, "find_patient", name="Luis González Navarro", national_id="48064716-y")
+    assert found["verified_patient_ids"] == [patient_id]
+    assert LocalStore().patient(patient_id)["national_id"] == "48064716Y"
+    later = TwilioCallSession(call_id="CA-dni-2", started_at=NOW)
+    assert (
+        asyncio.run(later.clinic_client.directory(national_id="48064716Y"))[0]["patient_id"]
+        == patient_id
+    )
+    # A new patient's date of birth and DNI/NIE go on the new chart; bad ones are sent back.
+    new = TwilioCallSession(call_id="CA-new", started_at=NOW, from_number="+34699000333")
+    assert (
+        "YYYY-MM-DD"
+        in run(new, "record_registration", **NEW_PATIENT, date_of_birth="3/12/98", confirmed=True)[
+            "error"
+        ]
+    )
+    assert (
+        "not a valid DNI/NIE"
+        in run(new, "record_registration", **NEW_PATIENT, national_id="48064716A", confirmed=True)[
+            "error"
+        ]
+    )
+    ana = register(new, date_of_birth="1988-03-14", national_id="87654321X")
+    chart = LocalStore().patient(ana)
+    assert (chart["date_of_birth"], chart["national_id"]) == ("1988-03-14", "87654321X")
+    assert chart["registration_pending"] is True

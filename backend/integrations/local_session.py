@@ -4,15 +4,15 @@ import asyncio
 import re
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
-from datetime import datetime
+from datetime import date, datetime
 from functools import cached_property
 
-from app import appointment_email, prompt, tools
+from app import appointment_email, clinic, prompt, tools
 from app.session import CallSession
 
 from integrations import local_clinic
 from integrations.local_clinic import LocalClinic
-from integrations.local_store import LocalStore, name_key, normalized, phone_digits
+from integrations.local_store import LocalStore, full_name, name_key, normalized, phone_digits
 
 WRITES = {"record_registration", "record_booking", "record_reschedule", "record_cancellation"}
 NAME_FIELDS = ("given_name", "first_surname", "second_surname")
@@ -25,8 +25,9 @@ LOCAL_REGISTRATION_RULES = """\
   find_patient finds nobody after the details were rechecked, ask only for the patient's given
   name and surnames (both, if they have two). Do not ask for a DNI/NIE, date of birth, phone,
   address, insurer or email, not even to look them up. Read the name back, ask whether to create their
-  profile, and after a yes call record_registration with confirmed=true, then carry on straight
-  to the appointment they want with the returned patient_id. Tell them clearly, once, that they
+  profile, and after a yes call record_registration with confirmed=true (with the date of birth or
+  DNI/NIE too if the caller already said it, so it is saved), then carry on straight to the
+  appointment they want with the returned patient_id. Tell them clearly, once, that they
   must register as a new patient at reception when they arrive at the clinic, bringing their
   DNI/NIE and insurance card; their details and insurance are completed there. Until then the
   chart shows registration_pending and a provisional private plan: book with policy_id=privado,
@@ -59,9 +60,12 @@ this same call. Do not invent referrals, insurance authorization or previous vis
 Correcting the name of a profile created in this call uses record_registration again with
 its patient_id, the corrected name and confirmed=true. Omit patient_id when registering a
 different person. If it already exists, find and verify it instead of creating a duplicate.
-A chart with registration_pending was registered by phone with only a name: its only
-identifier is the phone it was registered from, so verify it with the full name and the
-phone number the caller says (never the caller ID alone), and remind them to complete their
+A chart with registration_pending was registered by phone with only a name. When the call
+comes from the number it was registered from, the full name identifies it: find_patient with
+the full name verifies it (and saves a date of birth or DNI/NIE the caller gives), and
+record_registration with that same name returns the existing profile, never a duplicate.
+Never ask for a phone number the call is already coming from. From another line, verify it
+with the full name and the phone number it was registered from. Remind them to complete their
 registration at reception when they arrive.
 
 After the caller agrees to the exact doctor, site and time, call record_booking with
@@ -74,22 +78,54 @@ NO_ACTION and ESCALATE do not erase saved registrations or appointments.
 """
 
 
+def _caller_phone(session: CallSession) -> str | None:
+    """The caller-ID number as stored on a chart, or None when it is withheld."""
+    caller = phone_digits(session.from_number or "")
+    return caller if caller and caller not in WITHHELD_CALLER_IDS else None
+
+
+def _details(session: CallSession, args: dict) -> dict | str:
+    """The date of birth and DNI/NIE the caller gave, checked for saving, or what is wrong."""
+    details = {}
+    dob = str(args.get("date_of_birth") or "").strip()
+    if dob:
+        try:
+            born = date.fromisoformat(dob)
+        except ValueError:
+            return "date_of_birth must be YYYY-MM-DD."
+        if born > session.started_at.date():
+            return "That date of birth is in the future: ask the caller to repeat it."
+        details["date_of_birth"] = born.isoformat()
+    national_id = clinic.normalize_national_id(str(args.get("national_id") or ""))
+    if national_id:
+        if not clinic.national_id_valid(national_id):
+            return (
+                f"{national_id} is not a valid DNI/NIE: the check letter does not match the "
+                "digits. Ask the caller to repeat it slowly."
+            )
+        details["national_id"] = national_id
+    return details
+
+
 async def _register_by_name(session: CallSession, args: dict) -> dict:
-    """A new patient needs only a name: reception completes DNI/NIE, birth date and insurance."""
+    """A new patient needs only a name: reception completes DNI/NIE, birth date and insurance.
+    A date of birth or DNI/NIE the caller already gave is saved, never dropped."""
     names = {k: str(args.get(k) or "").strip() for k in NAME_FIELDS}
     missing = [k for k in ("given_name", "first_surname") if not names[k]]
     if missing:
         return {"error": f"Still missing: {', '.join(missing)}. Ask the caller."}
-    caller = phone_digits(session.from_number or "")
+    details = _details(session, args)
+    if isinstance(details, str):
+        return {"error": details}
     return tools._staged(
         session,
         {
             "action": "REGISTER",
             **names,
-            "national_id": None,
-            "date_of_birth": None,
-            # Caller ID, never asked for: lets a later call verify them by name + phone.
-            "phone": caller if caller and caller not in WITHHELD_CALLER_IDS else None,
+            "national_id": details.get("national_id"),
+            "date_of_birth": details.get("date_of_birth"),
+            # Caller ID, never asked for: a later call from it is identified by the full name.
+            "phone": _caller_phone(session),
             "email": None,
             "insurer": "privado",
             "registration_pending": True,
@@ -138,7 +174,7 @@ class LocalCallSession(CallSession):
     def tool_specs(self, specs: list[dict]) -> list[dict]:
         specs = [deepcopy(s) for s in specs if s["name"] != "clear_recorded_actions"]
         descriptions = {
-            "record_registration": "Create a persistent local patient profile from the new patient's name only, after the caller confirms it. Nothing else is collected: they complete their registration at reception on arrival. Returns patient_id, usable immediately to search and book with policy_id=privado. Correct the name of a profile created in this call by calling again with its patient_id and confirmation.",
+            "record_registration": "Create a persistent local patient profile from the new patient's name, after the caller confirms it. Never ask for anything else: they complete their registration at reception on arrival, but pass a date of birth or DNI/NIE the caller already said so it is saved. Returns patient_id, usable immediately to search and book with policy_id=privado. If this full name is already registered from the number the call comes from, it returns that existing profile (already_registered=true), verified, instead of a duplicate. Correct the name of a profile created in this call by calling again with its patient_id and confirmation.",
             "record_booking": "Save an actual local appointment after the caller accepts its exact details. Returns appointment_id. A different booking adds an appointment; use record_reschedule to move an existing one.",
             "record_reschedule": "Persist a move of an upcoming appointment after the caller agrees to the new exact slot.",
             "record_cancellation": "Persist cancellation of an upcoming appointment after the caller agrees.",
@@ -155,6 +191,12 @@ class LocalCallSession(CallSession):
                     "type": "string",
                     "description": "Second surname, if they have one.",
                 }
+                for field in ("date_of_birth", "national_id"):
+                    spec["parameters"]["properties"][field] = {
+                        **properties[field],
+                        "description": properties[field]["description"]
+                        + " Only if the caller already said it; never ask for it.",
+                    }
                 spec["parameters"]["properties"]["patient_id"] = {
                     "type": "string",
                     "description": "Only for correcting a profile created in this call. Omit for a new person.",
@@ -168,9 +210,10 @@ class LocalCallSession(CallSession):
                 spec["parameters"]["required"].append("confirmed")
         return specs
 
-    def _verify(self, args: dict, result: dict) -> None:
+    def _verify(self, args: dict, result: dict) -> str | None:
+        """The patient_id this lookup verifies by the full name and an identifier on the chart."""
         if not args.get("name"):
-            return
+            return None
         # Hyphens split words too: "García-Moreno" on file is said "García Moreno".
         words = {normalized(w) for w in re.split(r"[\s-]+", args["name"]) if normalized(w)}
         # A shared family phone also returns the other charts on it (Ana inside Mariana, a
@@ -188,7 +231,7 @@ class LocalCallSession(CallSession):
         if len(named) > 1:
             named = [p for p in named if name_key(p) == normalized(args["name"])]
         if len(named) != 1 or len(words) < 2:
-            return
+            return None
         patient = named[0]
         # Both sides must hold the identifier: a name-only chart has no DNI/NIE or date of birth,
         # and "missing == missing" must never verify anyone.
@@ -206,9 +249,101 @@ class LocalCallSession(CallSession):
                 and phone_digits(args["phone"]) == phone_digits(patient["phone"])
             )
         )
-        if exact:
-            self.verified.add(patient["patient_id"])
-            self.log("identity_verified", patient_id=patient["patient_id"])
+        if not exact:
+            return None
+        self.verified.add(patient["patient_id"])
+        self.log("identity_verified", patient_id=patient["patient_id"])
+        return patient["patient_id"]
+
+    def _on_caller_line(self, name: str, args: dict) -> tuple[dict, dict] | str | None:
+        """The one name-only chart registered from the number this call comes from under exactly
+        this full name, with the details to save on it: that number plus the full name identify
+        it. None if there is no such chart; a message when what the caller said contradicts it."""
+        caller = _caller_phone(self)
+        if not caller or not normalized(name):
+            return None
+        patients = self.store.patients()
+        charts = [
+            p
+            for p in patients
+            if p.get("registration_pending")
+            and phone_digits(p.get("phone") or "") == caller
+            and name_key(p) == normalized(name)
+        ]
+        if len(charts) != 1:
+            return None
+        chart = charts[0]
+        details = _details(self, args)
+        if isinstance(details, str):
+            return details
+        said = {**details, "phone": phone_digits(str(args.get("phone") or ""))}
+        on_file = {
+            "date_of_birth": chart.get("date_of_birth"),
+            "national_id": clinic.normalize_national_id(chart.get("national_id") or ""),
+            "phone": caller,
+        }
+        labels = {
+            "date_of_birth": "date of birth",
+            "national_id": "DNI/NIE",
+            "phone": "phone number",
+        }
+        for field, value in said.items():
+            if value and on_file[field] and value != on_file[field]:
+                return (
+                    "A profile with this full name is registered from the number they are calling "
+                    f"from, but the {labels[field]} they gave does not match it. Recheck the "
+                    f"{labels[field]} with the caller; never create a duplicate profile."
+                )
+        if details.get("national_id") and any(
+            p is not chart
+            and clinic.normalize_national_id(p.get("national_id") or "") == details["national_id"]
+            for p in patients
+        ):
+            return "That DNI/NIE is on another patient's record: recheck it with the caller."
+        return chart, details
+
+    def _adopt(self, chart: dict, details: dict) -> dict | str:
+        """Verify the chart the caller-ID line and full name identify, saving the details given."""
+        patient_id = chart["patient_id"]
+        try:
+            saved = self.store.add_details(self.call_id, patient_id, details)
+        except ValueError as error:
+            return str(error)
+        added = sorted(k for k in details if saved.get(k) and not chart.get(k))
+        if added:
+            self.log("patient_details_saved", patient_id=patient_id, fields=added)
+        self.remember_patients([{**saved, "matched_fields": ["name", "phone"]}])
+        self.verified.add(patient_id)
+        self.log("identity_verified", patient_id=patient_id, via="caller_id_and_full_name")
+        return self.patients[patient_id]
+
+    def _identify_on_caller_line(self, args: dict, result: dict) -> str | None:
+        """find_patient: the caller-ID line's name-only chart, when the full name is its own."""
+        found = self._on_caller_line(str(args["name"]), args)
+        if not isinstance(found, tuple):
+            return found
+        patient = self._adopt(*found)
+        if isinstance(patient, str):
+            return patient
+        result["matches"] = [tools.patient_view(patient, self.started_at.date())]
+        result["count"] = 1
+        return (
+            "Identified and verified: this full name is the profile registered from the number "
+            "they are calling from. Use this patient_id; do not ask for their phone number."
+        )
+
+    def _already_registered(self, chart: dict, details: dict) -> dict:
+        patient = self._adopt(chart, details)
+        if isinstance(patient, str):
+            return {"error": patient}
+        return {
+            "patient_id": patient["patient_id"],
+            "patient": tools.patient_view(patient, self.started_at.date()),
+            "already_registered": True,
+            "persisted": True,
+            "verified_patient_ids": sorted(self.verified),
+            "note": "Already registered from the number they are calling from: this is their existing profile, now verified, and nothing new was created. Tell them they are already on file and carry on with this patient_id. Do not ask for their phone number.",
+        }
 
     async def execute_tool(
         self, name: str, args: dict, handler: Callable[..., Awaitable[dict]]
@@ -238,6 +373,14 @@ class LocalCallSession(CallSession):
                         ),
                         None,
                     )
+                if not self.registration_id:
+                    # Already registered from this line under this name: that profile, not an
+                    # error that sends the caller round for a phone number the call carries.
+                    found = self._on_caller_line(full_name(args), args)
+                    if isinstance(found, str):
+                        return {"error": found}
+                    if found:
+                        return self._already_registered(*found)
             if name in {
                 "record_booking",
                 "record_reschedule",
@@ -304,12 +447,20 @@ class LocalCallSession(CallSession):
             except ValueError as error:
                 return {"error": str(error)}
             if name == "find_patient":
-                self._verify(args, result)
+                note = None
+                if (
+                    self._verify(args, result) is None
+                    and args.get("name")
+                    and "error" not in result
+                ):
+                    note = self._identify_on_caller_line(args, result)
                 result["verified_patient_ids"] = sorted(self.verified)
                 if result.get("count") == 0:
                     result["note"] = (
-                        "No matching patient. Recheck the details; if new, take only their name and consent, then register and book using the returned patient_id. A patient registered by phone with only a name is found with their full name and phone number."
+                        "No matching patient. Recheck the details; if new, take only their name and consent, then register and book using the returned patient_id. A patient registered by phone with only a name is found by their full name when calling from that phone, or from another line by their full name and that phone number."
                     )
+                if note:
+                    result["note"] = note
             if self.saved:
                 result.update(
                     self.saved,

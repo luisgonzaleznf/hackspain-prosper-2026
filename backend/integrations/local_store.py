@@ -227,8 +227,8 @@ class LocalStore:
                         raise ValueError(
                             "This DNI/NIE is already registered. Use find_patient to verify the existing profile."
                         )
-                elif action.get("phone"):
-                    # Without a DNI/NIE, the same name from the same phone is the same person.
+                if action.get("phone"):
+                    # The same full name from the same phone is the same person, DNI/NIE or not.
                     rows = db.execute(
                         "SELECT data FROM patients WHERE patient_id != ?", (patient_id,)
                     )
@@ -238,7 +238,7 @@ class LocalStore:
                         for other in (json.loads(row[0]) for row in rows)
                     ):
                         raise ValueError(
-                            "This patient is already registered from this phone. Verify them with find_patient: full name and phone number."
+                            "A patient with this full name is already registered from this phone: do not create a duplicate. Use their existing profile: find_patient with their full name and date of birth."
                         )
                 record = {k: v for k, v in action.items() if k != "action"}
                 record.update(
@@ -342,3 +342,44 @@ class LocalStore:
                 (call_id, uuid.uuid4().hex, time.time(), json.dumps(action), json.dumps(result)),
             )
             return result
+
+    def add_details(self, call_id: str, patient_id: str, details: dict) -> dict:
+        """Fill the chart's missing date_of_birth / national_id with what the caller said.
+
+        Never overwrites a value on file; a DNI/NIE already on another chart is refused.
+        Returns the chart as saved."""
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute(
+                "SELECT data FROM patients WHERE patient_id=?", (patient_id,)
+            ).fetchone()
+            if row is None:
+                raise ValueError("Unknown patient_id.")
+            record = json.loads(row[0])
+            added = {
+                k: details[k]
+                for k in ("date_of_birth", "national_id")
+                if details.get(k) and not record.get(k)
+            }
+            if not added:
+                return record
+            if (
+                added.get("national_id")
+                and db.execute(
+                    "SELECT 1 FROM patients WHERE national_id=? AND patient_id != ?",
+                    (added["national_id"], patient_id),
+                ).fetchone()
+            ):
+                raise ValueError("This DNI/NIE is already on another patient's record.")
+            record.update(added)
+            db.execute(
+                "UPDATE patients SET national_id=?, data=? WHERE patient_id=?",
+                (record.get("national_id") or patient_id, json.dumps(record), patient_id),
+            )
+            action = {"action": "ADD_DETAILS", "patient_id": patient_id, **added}
+            result = {"patient_id": patient_id, "added": sorted(added)}
+            db.execute(
+                "INSERT INTO changes(call_id,operation_key,created_at,action,result) VALUES (?,?,?,?,?)",
+                (call_id, uuid.uuid4().hex, time.time(), json.dumps(action), json.dumps(result)),
+            )
+            return record
